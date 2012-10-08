@@ -1,10 +1,9 @@
 PURIKURA
 ========
+ 
+'purukura' is a term used in Japan for their ubiquitous style of photo booths.
+This is part of a DIY wedding photo booth project.
 
-'purukura' is a term used in Japan for their ubiquitous style of photo booth.  This project is a DIY photo booth for weddings.
-
-
-Python is used as well as some Automator scripts for mac.
 
 Hardware:
     Eye-Fi X2 card (any model)
