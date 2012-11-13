@@ -48,6 +48,7 @@ jpegifyCommand = '{0} convert {1} {2}'
 
 
 # returns miffs
+# launches a separate thread for each photo
 def preprocess(images):
     new_names = []
     children = []
@@ -73,16 +74,16 @@ def import_to_iphoto(images):
 
 
 # return miff
-def montage(images):
-    path = picturesPath + 'montage.miff'
+def montage(images, dest):
     cmd = montageCommand.format(gm_binary).split()
     cmd.extend(images)
-    cmd.append(path)
+    cmd.append(dest)
     subprocess.call(cmd)
-    return path
+    return dest
 
 
 # return miff
+# broken
 def double(image):
     path = picturesPath + 'double.miff'
     cmd = ['gm', 'montage', '-geometry', '1440x5760+20+0', image, image, path]
@@ -93,15 +94,14 @@ def double(image):
 
 
 # return miff
-def stamp(image):
-    path = picturesPath + 'stamped.miff'
-    stamp = picturesPath + 'title-left.png'
-    cmd = stampCommand.format(gm_binary, stamp, image, path)
+def stamp(image, stamp, dest):
+    cmd = stampCommand.format(gm_binary, stamp, image, dest)
     subprocess.call(cmd.split())
-    return path
+    return dest
 
 
 # return miff
+# broken
 def frame(image):
     path = picturesPath + 'framed.miff'
     cmd = 'gm convert -frame 215x0+0+0 -mattecolor white'.split()
@@ -135,39 +135,68 @@ def padleft(image):
 
 
 if __name__ == '__main__':
+    current = {}
+
+    print 'starting image processor...'
+
+    os.chdir(picturesPath)
+    os.chdir('events')
+
+    # check that the event folder exists and is writable
+    ok = False
+    if os.path.exists(settings.event):
+        os.chdir(settings.event)
+        if os.path.exists('title-left.png'):
+            ok = True
+
+    if not ok:
+        raise Exception, 'missing event directory or title stamp'
+
+
+    os.chdir(picturesPath)
+
+    print 'all systems go (hopefully)'
+
+    # template is ok, lets start watching for files
     while 1:
-        time.sleep(2)
-        images = glob.glob('{0}*.JPG'.format(picturesPath))[:4]
+        time.sleep(0.5)
 
-        if len(images) == 4:
-            print "processing next batch of four pictures..."
-            new = preprocess(images)
+        # check for jpegs from the camera
+        jpegs = glob.glob('*.JPG')
 
-            for filename in images:
-                new_path = picturesPath + "originals/" + os.path.split(filename)[1]
-                os.rename(filename, new_path)
+        # we have some jpegs lets convert them to miffs for processing
+        if jpegs:
+            preprocess(jpegs)
 
-            this_montage = montage(new)
-            [ os.unlink(i) for i in new ]
+            # move the jpegs into the originals folder
+            for filename in jpegs:
+                new_path = os.path.join('events', settings.event, 'originals')
+                os.rename(filename, os.path.join(new_path, filename))
+
+        # check for preprocessed images (miff)
+        miffs = glob.glob('*.miff')[:4]
+
+        # we have enough preprocessed images to make a photo strip
+        if len(miffs) == 4:
+            this_montage = montage(miffs, 'montage.miff')
+            [ os.unlink(i) for i in miffs ]
 
             this_pad = padleft(this_montage)
             os.unlink(this_montage)
 
-            this_stamped = stamp(this_pad)
+            stamp_name = os.path.join('events', settings.event, 'title-left.png')
+            this_stamped = stamp(this_pad, stamp_name, 'stamped.miff')
             this_jpeg = jpegify(this_stamped)
+            os.unlink(this_stamped)
             os.unlink(this_pad)
 
+            # make prints
             for i in range(settings.prints):
                 make_print(this_jpeg)
 
-            os.unlink(this_stamped)
-
+            # iphoto?
             if settings.iphoto:
                 print "waiting for iphoto to settle..."
-                jpegs = [ jpegify(i) for i in new ]
-                jpegs.append(this_jpeg)
                 import_to_iphoto(jpegs)
                 time.sleep(5)
-                [ os.unlink(i) for i in jpegs ]
 
-            print "finished, waiting for new pictures"
