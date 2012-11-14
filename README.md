@@ -3,7 +3,7 @@ PURIKURA
 
 PURIKURA is a set of hardware and software plans for a DIY wedding photo booth.
 
-It is capable of producing excellent looking 2x6 inch color photo strips with 4 square photos.
+It is capable of producing excellent looking 2x6 inch color photo strips with 4 square photos or any other design if designed and coded into the script.
 
 
 Suggested Use
@@ -19,6 +19,14 @@ The arduino is connected to a button and the camera.  The button is a simple mic
 The arduino has a simple shield that mimicks a shutter release cable using two relays.
 
 Inside the camera is a Eye-Fi X2 4gb SD card with wifi.  As soon as the picture is taken, the photo is sent to the computer.  The python script continously monitors the incoming photo folder and once there are four new photos on the computer, the script uses GraphicsMagick to compose a print and the resulting image is sent to the printer.
+
+
+Modifications
+-------------
+
+The script is completely open to customization and a few variables can be changed right in the script.  I've chosen to have the photo booth activated with a rope, but you could make it a button, or anything else you desire.
+
+The booth I use for weddings is a PVC pipe cage with cloth draped over the sides and a small side table for the printer and my computer.  If guests want reprints or to have the photos emailed, I can quickly handle their requests on the computer.
 
 
 The Name
