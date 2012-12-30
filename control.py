@@ -28,8 +28,8 @@ parser.add_argument('--prints',
 
 parser.add_argument('--sound',
                     help='filename of sound to be played after trigger',
-                    type=string,
-                    default=os.path.join('sounds', 'beep.wav')
+                    type=str,
+                    default=os.path.join('sounds', 'beep.wav'))
 
 settings = parser.parse_args()
 
@@ -221,5 +221,10 @@ def monitor(path, serial_port):
 
 
 if __name__ == '__main__':
-    arduinoPort = serial.Serial(arduinoPortNumber)
+    try:
+        arduinoPort = serial.Serial(arduinoPortNumber)
+    except serial.SerialException:
+        msg = "Cannot open arduino on port: {}"
+        raise Exception, msg.format(arduinoPortNumber)
+
     monitor(picturesPath, arduinoPort)

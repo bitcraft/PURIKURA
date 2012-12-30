@@ -38,6 +38,7 @@ settings = parser.parse_args()
 
 picturesPath = '/Volumes/Mac2/Users/Leif/Pictures/Eye-Fi/'
 gm_binary = '/usr/local/bin/gm'
+#picturesPath = os.path.join(root, 'events', settings.event)
 
 
 montageCommand = '{0} montage -geometry 1280x1280+0+-20 -tile 1x4 -borderwidth 40 -bordercolor black'
@@ -57,11 +58,19 @@ def preprocess(images):
         new_filename = os.path.splitext(filename)[0] + ".miff"
         new_names.append(new_filename)
         names = (gm_binary, filename, new_filename)
-        child = subprocess.Popen(styleCommand.format(*names).split())
-        children.append(child)
+        cmd = styleCommand.format(*names).split()
+        child = subprocess.Popen(cmd)
+        children.append((child, filename, cmd))
 
-    while [ child for child in children if child.poll() != 0 ]:
+    # wait for all the children to finish
+    while any(i for i in children if i[0].poll() is None):
         pass
+
+    # sometimes a JPG is found but not completely written to disk
+    # in these cases, gm will fail and return 1
+    failed = [ i[1] for i in children if i[0].poll() == 1 ]
+    if failed:
+        preprocess(failed)
 
     return new_names
 
