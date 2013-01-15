@@ -1,3 +1,10 @@
+"""
+display the camera's live preview using pyglet.
+
+somewhat faster performace that the pygame version, uses a background process
+to format the live feed.
+"""
+
 import piggyphoto
 import pyglet
 import os
@@ -137,7 +144,7 @@ if __name__ == '__main__':
 
     @window.event
     def on_draw():
-        #window.clear()
+        window.clear()
         live_view.draw()
 
     try:

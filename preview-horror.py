@@ -1,3 +1,12 @@
+"""
+program that makes a silly horror movie effect when live-previewing a camera.
+
+this is a failed attempt to use background processes to process the live feed,
+but the images were coming back out-of-order, creating this strange effect.
+
+i liked it enough to keep it.
+"""
+
 import piggyphoto
 import pyglet
 import os

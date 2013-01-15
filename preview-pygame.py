@@ -1,3 +1,9 @@
+"""
+display the camera's live preview using pygame.
+
+suitable for any display that is compatable with SDL (framebuffers, etc)
+"""
+
 import piggyphoto, pygame
 from StringIO import StringIO
 import os
@@ -27,5 +33,8 @@ def update_preview(camera):
     main_surface.blit(picture, (0, 0))
     pygame.display.flip()
 
+
+clock = pygame.time.Clock()
 while not quit_pressed():
+    clock.tick(40)
     update_preview(camera)

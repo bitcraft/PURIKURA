@@ -1,3 +1,9 @@
+"""
+QR Code Reader.
+
+Experiment is reading QR codes.
+Require zbar.
+"""
 import piggyphoto
 import pyglet
 import os

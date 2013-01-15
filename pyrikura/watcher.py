@@ -1,51 +1,32 @@
 #!/usr/bin/env python
 
-import glob
-
-
-#!/usr/bin/env python
-
 import os, glob, subprocess, time
 import tempfile
 import argparse
 
 
-
-# give the script friendly argument procesing
-parser = argparse.ArgumentParser()
-parser.add_argument('event',
-                    help='name of event being managed',
-                    type=str)
-
-parser.add_argument("--iphoto", 
-                    help='specify to import photos directly into iphoto', 
-                    action='store_true',
-                    default=False)
-
-
-parser.add_argument('--prints',
-                    help='number of prints to be made',
-                    type=int,
-                    default=0)
-
-
-parser.add_argument('--keep',
-                    help='keep print images',
-                    action='store_true',
-                    default=False)
-
-settings = parser.parse_args()
-
-picturesPath = '/Volumes/Mac2/Users/Leif/Pictures/Eye-Fi/'
-gm_binary = '/usr/local/bin/gm'
-#picturesPath = os.path.join(root, 'events', settings.event)
+picturesPath = '/var/lib/iii/0018562a8795'
+gm_binary = '/usr/bin/gm'
 
 
 montageCommand = '{0} montage -geometry 1280x1280+0+-20 -tile 1x4 -borderwidth 40 -bordercolor black'
 styleCommand = '{0} convert {1} -modulate 120,75,105 -normalize {2}'
 stampCommand = '{0} composite -geometry +0+700 {1} {2} {3}'
 padleftCommand = '{0} convert {1} -extent 1550x5280-190 {2}'
-jpegifyCommand = '{0} convert {1} {2}'
+jpegifyCommand = 'convert {1} {2}'
+squarifyCommand = '{0} convert -gravity center -crop {1}x{1}+0+0 +repage -resize 1060x1060 {2} {3}'
+polaroidCommand = 'composite -compose Dst_Over -geometry +94+435 {1} {2} {3}'
+
+
+def polaroid(miff, size, template):
+    sq = 'square.tiff'
+    cmd = squarifyCommand.format(gm_binary, size, miff, sq).split()
+    subprocess.call(cmd)
+    filename = 'framed.miff'
+    cmd = polaroidCommand.format(gm_binary, sq, template, filename).split()
+    subprocess.call(cmd)
+    os.unlink(sq)
+    return filename
 
 
 # returns miffs
@@ -73,13 +54,6 @@ def preprocess(images):
         preprocess(failed)
 
     return new_names
-
-
-# return None
-def import_to_iphoto(images):
-    cmd = ['open', '-a', 'iPhoto']
-    cmd.extend(images)
-    subprocess.call(cmd)
 
 
 # return miff
@@ -123,6 +97,7 @@ def frame(image):
 def jpegify(image):
     new_filename = os.path.splitext(image)[0] + ".jpg"
     cmd = jpegifyCommand.format(gm_binary, image, new_filename)
+    print ' '.join(cmd)
     subprocess.call(cmd.split())
     return new_filename
 
@@ -143,32 +118,24 @@ def padleft(image):
 
 
 
-if __name__ == '__main__':
-    current = {}
+class Watcher(object):
+    """
+    Class to watch a folder and do photo related stuff to it.
+    """
 
-    print 'starting image processor...'
+    def __init__(self, options):
+        self._options = options
 
-    os.chdir(picturesPath)
-    os.chdir('events')
+    def __enter__(self):
+        pass
 
-    # check that the event folder exists and is writable
-    ok = False
-    if os.path.exists(settings.event):
-        os.chdir(settings.event)
-        if os.path.exists('title-left.png'):
-            ok = True
+    def __exit__(self):
+        pass
 
-    if not ok:
-        raise Exception, 'missing event directory or title stamp'
-
-
-    os.chdir(picturesPath)
-
-    print 'all systems go (hopefully)'
-
-    # template is ok, lets start watching for files
-    while 1:
-        time.sleep(0.5)
+    def tick(self, td=0.0):
+        current = {}
+        os.chdir(picturesPath)
+        polaroid_template = 'templates/polaroid0.png'
 
         # check for jpegs from the camera
         jpegs = glob.glob('*.JPG')
@@ -183,29 +150,14 @@ if __name__ == '__main__':
                 os.rename(filename, os.path.join(new_path, filename))
 
         # check for preprocessed images (miff)
-        miffs = glob.glob('*.miff')[:4]
-
-        # we have enough preprocessed images to make a photo strip
-        if len(miffs) == 4:
-            this_montage = montage(miffs, 'montage.miff')
-            [ os.unlink(i) for i in miffs ]
-
-            this_pad = padleft(this_montage)
-            os.unlink(this_montage)
-
-            stamp_name = os.path.join('events', settings.event, 'title-left.png')
-            this_stamped = stamp(this_pad, stamp_name, 'stamped.miff')
-            this_jpeg = jpegify(this_stamped)
-            os.unlink(this_stamped)
-            os.unlink(this_pad)
+        for miff in glob.glob('*.miff'):
+            print "miffs", miff
+            framed = polaroid(miff, 1504, polaroid_template)
+            this_jpeg = jpegify(framed)
+            os.unlink(framed)
+            os.unlink(miff)
 
             # make prints
             for i in range(settings.prints):
                 make_print(this_jpeg)
-
-            # iphoto?
-            if settings.iphoto:
-                print "waiting for iphoto to settle..."
-                import_to_iphoto(jpegs)
-                time.sleep(5)
 
