@@ -20,30 +20,16 @@
 *
 """
 
-import os
+import subprocess
 
 
-class Watcher(pubsub):
+class Printer(pubsub):
     """
-    Simple watcher that uses a glob to track new files
-    This class will publish paths to new images
+    When registered with a publisher, will send files to the printer
     """
 
-    def __init__(self, path, filter=None):
-        super(self, Watcher).__init__()
-        self._path = path
-        self._filter = filter
-        self.reset()
+    printCommand = "lpr {}"
 
-    def reset(self):
-        self._seen = set()
+    def process(self, msg, sender):
+        subprocess.call(self.printCommand.format(msg).split())
 
-    def tick(self, td=0.0):
-        if self._filter is None:
-            files = set(os.listdir(self._path))
-
-        # get files that have not been seen before and publish them
-        self.publish(files - self._seen)
-
-        # add the new items to the seen set
-        self._seen.update(files)

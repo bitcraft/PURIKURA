@@ -20,30 +20,25 @@
 *
 """
 
-import os
-
-
-class Watcher(pubsub):
-    """
-    Simple watcher that uses a glob to track new files
-    This class will publish paths to new images
-    """
+class pubsub(object):
 
     def __init__(self, path, filter=None):
-        super(self, Watcher).__init__()
-        self._path = path
-        self._filter = filter
-        self.reset()
+        self._subscribers = []
 
-    def reset(self):
-        self._seen = set()
+    def __enter__(self):
+        pass
 
-    def tick(self, td=0.0):
-        if self._filter is None:
-            files = set(os.listdir(self._path))
+    def __exit__(self):
+        pass
 
-        # get files that have not been seen before and publish them
-        self.publish(files - self._seen)
+    def process(self, msg):
+        pass
 
-        # add the new items to the seen set
-        self._seen.update(files)
+    def subscribe(self, other):
+        other._subscribers.append(self)
+
+    def publish(self, iterable):
+        for msg in iterable:
+            for sub in self._subscribers:
+                sub.process(msg, sender=self)
+
