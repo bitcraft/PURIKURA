@@ -23,6 +23,7 @@
 import subprocess
 
 
+
 class Printer(pubsub):
     """
     When registered with a publisher, will send files to the printer

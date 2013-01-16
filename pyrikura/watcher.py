@@ -23,6 +23,7 @@
 import os
 
 
+
 class Watcher(pubsub):
     """
     Simple watcher that uses a glob to track new files
