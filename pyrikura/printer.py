@@ -20,17 +20,14 @@
 *
 """
 
+from pubsub import pubsub
 import subprocess
 
 
 
 class Printer(pubsub):
-    """
-    When registered with a publisher, will send files to the printer
-    """
-
-    printCommand = "lpr {}"
-
     def process(self, msg, sender):
-        subprocess.call(self.printCommand.format(msg).split())
-
+        cmd = ['lpr', msg]
+        #subprocess.call(cmd)
+        print 'printing {0}'.format(msg)
+        self.publish([msg])

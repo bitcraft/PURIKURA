@@ -22,7 +22,7 @@
 
 class pubsub(object):
 
-    def __init__(self, path, filter=None):
+    def __init__(self):
         self._subscribers = []
 
     def __enter__(self):
@@ -31,7 +31,7 @@ class pubsub(object):
     def __exit__(self):
         pass
 
-    def process(self, msg):
+    def process(self, msg, sender=None):
         pass
 
     def subscribe(self, other):

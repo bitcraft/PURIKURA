@@ -29,6 +29,12 @@ from multiprocessing import Process, Queue
 target_size = (512,512)
 
 
+def init():
+    # disable screen blanking because it causes pyglet to lock
+    subprocess.call(['xset', '-dpms'])
+    subprocess.call(['xset', 's', 'off'])
+
+
 def load_resize_and_convert(queue, filename):
     image = Image.open(filename)
     image = image.transpose(Image.FLIP_TOP_BOTTOM)
@@ -138,10 +144,13 @@ def check_queue(dt):
                  batch=image_batch)
         images.append(sprite)
 
-#pyglet.clock.set_fps_limit(60)
-pyglet.clock.schedule(scroll)
-pyglet.clock.schedule_interval(new_photo, 4)
-pyglet.clock.schedule(check_queue)
+if __name__ == '__main__':
+    init()
 
-new_photo()
-pyglet.app.run()
+    #pyglet.clock.set_fps_limit(60)
+    pyglet.clock.schedule(scroll)
+    pyglet.clock.schedule_interval(new_photo, 4)
+    pyglet.clock.schedule(check_queue)
+
+    new_photo()
+    pyglet.app.run()
