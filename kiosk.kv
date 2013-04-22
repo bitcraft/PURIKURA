@@ -1,0 +1,128 @@
+#:kivy 1.4
+
+<StartScreen>:
+    ScrollView:
+        do_scroll_y: False
+        scroll_timeout: 1000
+        scroll_distance: 20
+        scroll_friction: .5
+        #auto_scroll: False
+
+        BoxLayout:
+            size_hint: 4,1
+            canvas:
+                Rectangle:
+                    source: 'images/curtains.png'
+                    size: self.size
+                    pos: self.pos
+
+            orientation: 'vertical'
+
+<EmailScreen>:
+    BoxLayout:
+        canvas:
+            Rectangle:
+                source: 'images/curtains.png'
+                size: self.size
+                pos: self.pos
+
+        orientation: 'vertical'
+
+        FloatLayout:
+            BoxLayout:
+                orientation: 'vertical'
+                size_hint: (.9, None)
+                height: 48*7
+                pos_hint: {'x': .05, 'top': .9}
+
+                canvas:
+                    Color:
+                        rgb: .2, .2, .2
+                    Rectangle:
+                        size: self.size
+                        pos: self.pos
+
+                BoxLayout:
+                    orientation: 'horizontal'
+                    size_hint: (1.0, None)
+                    height: 48
+
+                BoxLayout:
+                    orientation: 'horizontal'
+                    size_hint: (1.0, None)
+                    height: 48
+
+                    Label:
+                        size_hint: (.75, 1.0)
+                        font_size: 30
+                        text: 'Email Address'
+
+                    TextInput:
+                        size_hint: (1.0, 1.0)
+                        font_size: 30
+                        id: email_input
+                        multiline: False
+
+                    Button:
+                        size_hint: (None, None)
+                        height: 48
+                        width: 48
+                        color: 0, 0, 0
+                        font_size: 35
+                        font_name: 'data/fonts/DejaVuSans.ttf'
+                        text: "⊗"
+                        on_release: email_input.text = ''
+
+                BoxLayout:
+                    orientation: 'horizontal'
+                    size_hint: (1.0, None)
+                    height: 48
+
+                BoxLayout:
+                    orientation: 'horizontal'
+                    size_hint: (1.0, None)
+                    height: 48
+
+                    AnchorLayout:
+                        Label:
+                            size_hint: (.25, 1.0)
+                            font_size: 30
+                            color: 0,0,0
+                            text: 'Copies %s' % root.prints
+
+                    Button:
+                        size_hint: (None, None)
+                        height: 48
+                        width: 48
+                        font_size: 35
+                        font_name: 'data/fonts/DejaVuSans.ttf'
+                        text: '-'
+                        on_press: root.on_remove_print()
+
+                    Button:
+                        size_hint: (None, None)
+                        height: 48
+                        width: 48
+                        font_size: 35
+                        font_name: 'data/fonts/DejaVuSans.ttf'
+                        text: '+'
+                        on_press: root.on_add_print()
+
+                BoxLayout:
+                    orientation: 'horizontal'
+                    size_hint: (1.0, None)
+                    height: 48
+
+                Button:
+                    canvas:
+                        Color:
+                            rgb: .9, .9, .9
+                    color: 0,0,0
+                    font_size: 35
+                    text: 'Print and Email'
+
+                BoxLayout:
+                    orientation: 'horizontal'
+                    size_hint: (1.0, None)
+                    height: 48
+

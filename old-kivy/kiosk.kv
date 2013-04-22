@@ -1,0 +1,80 @@
+#:kivy 1.5
+#:import SlideTransition kivy.uix.screenmanager.SlideTransition
+
+[NavBar@BoxLayout]:
+    BoxLayout:
+        pos_hint: {'top': 1}
+        size_hint: 1, .08
+
+        Button:
+            size_hint: .25, 1
+            text: 'back'
+            on_press: root.parent.parent.parent.manager.transition = SlideTransition(duration=0.5, direction='right')
+            on_press: root.parent.parent.parent.manager.current = 'start'
+
+        Label:
+            text: ctx.title
+
+        Widget:
+            size_hint: .25, 1
+
+
+<DefaultLayout>:
+    FloatLayout:
+        canvas:
+            Color:
+                rgb: .5, .5, .5
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+    ScreenManager:
+        id: screen_manager
+        Screen:
+            name: 'Email'
+            EmailScreen:
+
+<StartScreen>:
+
+        Button:
+            text: 'Email'
+            on_press: root.manager.transition = SlideTransition(duration=0.5, direction='left')
+            on_press: root.manager.current = 'email' 
+
+
+        Button:
+            text: 'Print'
+            on_press: root.manager.transition = SlideTransition(duration=0.5, direction='left')
+            on_press: root.manager.current = 'print' 
+
+
+<EmailScreen>:
+    FloatLayout:
+        canvas:
+            Color:
+                rgb: .5, .5, .5
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        orientation: 'vertical'
+
+        NavBar:
+            title: 'Email'
+
+        FloatLayout:
+
+
+<PrintScreen>:
+    FloatLayout:
+        canvas:
+            Color:
+                rgb: .5, .5, .5
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        orientation: 'vertical'
+
+        NavBar:
+            title: 'Print'
+
+        FloatLayout:

@@ -20,11 +20,21 @@
 *
 """
 import pyglet
+
+
+platform = pyglet.window.get_platform()
+display = platform.get_display("")
+screens = display.get_screens()
+window = pyglet.window.Window(fullscreen=True, screen=screens[-1])
+
+
+
 from pyglet.image import *
 from PIL import Image, ImageOps
 import random, glob
 
 from multiprocessing import Process, Queue
+import subprocess
 
 target_size = (512,512)
 
@@ -95,10 +105,11 @@ def new_photo(dt=0):
     p = Process(target=load_resize_and_convert, args=(load_queue, filename))
     p.start()
 
-window = pyglet.window.Window(fullscreen=True)
+
+
 window_size = window.get_size()
 #window_size = (1024, 768)
-display = TableclothDisplay(window, 'background.jpg', '.')
+display = TableclothDisplay(window, 'images/background.jpg', '.')
 
 @window.event
 def on_draw():
