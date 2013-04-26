@@ -39,6 +39,10 @@ import subprocess
 target_size = (512,512)
 
 
+def get_files():
+    #return glob.glob('/var/lib/iii/0018562a8795/events/expo/originals/*.JPG')
+    return glob.glob("/home/mjolnir/events/kali-joshua/thumbnails/*JPG")
+
 def init():
     # disable screen blanking because it causes pyglet to lock
     subprocess.call(['xset', '-dpms'])
@@ -94,7 +98,7 @@ image_batch = pyglet.graphics.Batch()
 displayed = set()
 def new_photo(dt=0):
     filename = 'photo.jpg'
-    files = glob.glob('/var/lib/iii/0018562a8795/events/expo/originals/*.JPG')
+    files = get_files()
     if not files: return
     new = set(files) - displayed
     if new:
@@ -165,3 +169,4 @@ if __name__ == '__main__':
 
     new_photo()
     pyglet.app.run()
+

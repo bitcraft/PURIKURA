@@ -5,8 +5,7 @@
         do_scroll_y: False
         scroll_timeout: 1000
         scroll_distance: 20
-        scroll_friction: .5
-        #auto_scroll: False
+        scroll_friction: 3
 
         BoxLayout:
             size_hint: 4,1
@@ -17,6 +16,47 @@
                     pos: self.pos
 
             orientation: 'vertical'
+
+
+<PickerScreen>:
+    FloatLayout:
+        size: 1280, 1024
+        uniqueid: 'layout'
+
+        Image:
+            uniqueid: 'background'
+            source: 'images/galaxy.jpg'
+            allow_stretch: True
+            color: 1, 1, 1, .5
+            size_hint: 2.5, 1
+
+        ScrollView:
+            uniqueid: 'scrollview'
+
+            size_hint: 1, .6
+
+            pos: 0, 32
+
+            do_scroll_y: False
+            scroll_timeout: 1000
+            scroll_distance: 10
+            scroll_friction: 2
+            
+            bar_width: 6
+
+            orientation: 'vertical'
+
+            RelativeLayout:
+                uniqueid: 'rellayout'
+
+                GridLayout:
+                    uniqueid: 'grid'
+                    rows: 2
+                    spacing: 12
+
+                    col_default_width: 300
+                    row_default_height: 300
+
 
 <EmailScreen>:
     BoxLayout:

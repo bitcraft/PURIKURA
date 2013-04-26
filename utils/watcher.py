@@ -1,12 +1,10 @@
-from pyrikura.watcher import Watcher
-from pyrikura.template import Template
-from pyrikura.consoleprinter import ConsolePrinter
-from pyrikura.printer import Printer
-from pyrikura.deleter import Deleter
+from pyrikura import *
 import time, re
 
 
-eyefi_incoming = '/home/mjolnir/Downloads'
+eyefi_incoming = '/home/iiid/incoming/0018562a8795'
+printer_folder = '/home/mjolnir/smb-printsrv/'
+printer_folder = '/home/mjolnir/'
 
 
 if __name__ == '__main__':
@@ -18,24 +16,30 @@ if __name__ == '__main__':
 
     # create a simple stdout printer
     output = ConsolePrinter()
-   
+
+    # create file mover for printer
+    # ( another service is monitoring this folder and will print new files )
+    copier = Copier(output=printer_folder)
+
     # create printer
-    printer = Printer()
+    #printer = Printer()
 
     # create file eraser
-    deleter = Deleter()
+    #deleter = Deleter()
 
     # get output from the watchers
     output.subscribe(eyefi)
     template.subscribe(eyefi)
 
+    copier.subscribe(template)
+
     # make prints from the templater
-    printer.subscribe(template)
+    #printer.subscribe(template)
 
     # erase temporary images after the print is spooled
     #deleter.subscribe(printer)
 
     # loop forever
     while 1:
-        time.sleep(1)
+        time.sleep(.5)
         eyefi.tick()

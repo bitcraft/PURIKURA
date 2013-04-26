@@ -99,6 +99,7 @@ class Template(pubsub):
             try:
                 im = Image(fn)
             except RuntimeError:
+                raise
                 raise Exception, 'could not open file: {0}'.format(fn)
 
             scale = options.get('scale', None)

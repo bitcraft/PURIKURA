@@ -1,15 +1,11 @@
 [general]
-dpi = 1200
+dpi = 300
 units = inches
 size = 4,6
 
 [00portrait]
 filename = auto
 area = .31,1.44,3.74,4.98
-
-[01header]
-filename = kilbuck-header0.png
-area = 0,0,4,1.16
 
 [02frame]
 filename = polaroid0.png
