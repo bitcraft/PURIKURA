@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 *
 *   copyright: 2012 Leif Theden <leif.theden@gmail.com>
@@ -37,12 +38,22 @@ import subprocess
 import os
 import pygame
 import time
+import serial
+
+
+os.chdir('/home/mjolnir/git/PURIKURA')
+
+event_name = 'test'
 
 
 settings = {}
-settings['shutter_sound'] = os.path.join('sounds', 'beep.wav')
+settings['shutter_sound'] = os.path.join('sounds', 'bell.wav')
 settings['printsrv'] = os.path.join('/', 'home', 'mjolnir', 'smb-printsrv')
 settings['template'] = os.path.join('templates', 'polaroid0.template')
+settings['originals'] = os.path.join('/', 'home', 'mjolnir', 'events', \
+                        event_name, 'originals')
+
+settings['temp_image'] = 'capture.jpg'
 
 
 # protocol
@@ -51,9 +62,6 @@ shutter_command = 2         # command to cause camera shutter
 reset_command = 6           # when photos are out of sequence
 set_busy = 7                # when camera is actively taking photos
 set_not_busy = 8            # when camera is no longer taking pictures
-
-# arduino control
-arduinoPortNumber = 6
 
 # photo taking preferences
 total_pictures = 4
@@ -86,38 +94,84 @@ class Beeper(pubsub):
         self.sound.play()
 
 
+class Arduino(pubsub):
+    def __init__(self, *arg):
+        super(Arduino, self).__init__()
+        self.serial = serial.Serial(*arg, timeout=0)
+        time.sleep(2)
+        self.clear()
+
+    def clear(self):
+        # clear any buffered data
+        while self.serial.read():
+            pass
+
+    def tick(self):
+        byte = self.serial.read(1)
+        self.publish([byte])
+
+
+class Translate(pubsub):
+    def process(self, msg, sender):
+        if msg == chr(1): self.publish([settings['temp_image']])
+
+
 class Tether(pubsub):
     """
     waits for a message and publishes captured jpg images
     """
 
-    def __init__(self, camera):
+    def __init__(self, camera, arduino):
         super(Tether, self).__init__()
+        self.arduino = arduino
         self.camera = camera
+        self.sound = pygame.mixer.Sound(settings['shutter_sound'])
 
     def process(self, msg, sender):
+        self.sound.play()
+        time.sleep(2)
+        self.sound.play()
+        time.sleep(2)
+        self.sound.play()
+        time.sleep(2)
+        self.sound.play()
         camera.capture(msg)
         self.publish([msg])
+        self.arduino.clear()
 
 
 if __name__ == '__main__':
+    import re
+
     pygame.init()
     pygame.mixer.init()
 
     camera = PBCamera()
+    debug = ConsolePrinter()
+    eyefi_incoming = '/home/iiid/incoming/0018562a8795'
+
 
     # setup our processing workflow
-    tether = Tether(camera)
+    eyefi = Watcher(eyefi_incoming, re.compile('.*\.jpg$', re.I))
+    translate = Translate()
+    arduino = Arduino('/dev/ttyACM0', 9600)
+    tether = Tether(camera, arduino)
     beeper = Beeper(settings['shutter_sound'])
-    template = Template(settings['template'])
+    template0 = Template(settings['template'], filename='composite0.png')
+    template1 = Template(settings['template'], filename='composite1.png')
     print_copier = Copier(output=settings['printsrv'], overwrite=True)
+    original_copier = Copier(output=settings['originals'])
 
     # connect the dots
-    beeper.subscribe(tether)
-    template.subscribe(tether)
-    print_copier.subscribe(template)
+    translate.subscribe(arduino)
+    tether.subscribe(translate)
+    template0.subscribe(tether)
+    #template1.subscribe(eyefi)
+    original_copier.subscribe(tether)
+    #original_copier.subscribe(eyefi)
+    print_copier.subscribe(template0)
+    #print_copier.subscribe(template1)
 
     while(1):
-        tether.process('capture.jpg', None)
-        time.sleep(3)
-
+        arduino.tick()
+        #eyefi.tick()

@@ -54,6 +54,7 @@ def CameraFeed(camera, camera_lock, frame_queue, image_queue, size):
         #im.thumbnail(size)
         #im = im.crop(crop_dim)
         im = im.transpose(Image.FLIP_TOP_BOTTOM)
+        #im = im.transpose(Image.FLIP_LEFT_RIGHT)
         image_queue.put((my_frame, (im.size, im.mode, im.tostring())))
 
 class LiveView(object):

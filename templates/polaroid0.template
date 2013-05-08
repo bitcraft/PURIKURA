@@ -6,8 +6,9 @@ size = 4,6
 [00portrait]
 filename = auto
 area = .31,1.44,3.74,4.98
+autocrop = true
 
 [02frame]
 filename = polaroid0.png
 area = 0,0,4,6
-scale = false
+scale=true

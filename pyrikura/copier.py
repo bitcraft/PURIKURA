@@ -38,7 +38,7 @@ class Copier(pubsub):
 
         new_path = os.path.join(self.output, os.path.basename(msg))
 
-        if overwrite and  os.path.exists(new_path):
+        if not overwrite and os.path.exists(new_path):
             i = 1
             root, ext = os.path.splitext(new_path)
             new_path = "{0}-{1:04d}{2}".format(root, i, ext)

@@ -123,17 +123,9 @@ class Template(pubsub):
             del im
 
         try:
-            new_path = self.filename
+            new_fn = self.filename
         except AttributeError:
-            new_path = 'composite.png'
+            new_fn = 'composite.png'
 
-        if os.path.exists(new_path):
-            i = 1
-            root, ext = os.path.splitext(new_path)
-            new_path = "{0}-{1:04d}{2}".format(root, i, ext)
-            while os.path.exists(new_path):
-                i += 1
-                new_path = "{0}-{1:04d}{2}".format(root, i, ext)
-
-        base.write(new_path)
-        self.publish([new_path])
+        base.write(new_fn)
+        self.publish([new_fn])

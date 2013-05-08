@@ -31,17 +31,22 @@ window = pyglet.window.Window(fullscreen=True, screen=screens[-1])
 
 from pyglet.image import *
 from PIL import Image, ImageOps
-import random, glob
+import random, glob, os
 
 from multiprocessing import Process, Queue
 import subprocess
 
 target_size = (512,512)
+event_name = 'test'
+
+settings = {}
+settings['originals'] = os.path.join('/', 'home', 'mjolnir', 'events', \
+                        event_name, 'originals')
 
 
 def get_files():
-    #return glob.glob('/var/lib/iii/0018562a8795/events/expo/originals/*.JPG')
-    return glob.glob("/home/mjolnir/events/kali-joshua/thumbnails/*JPG")
+    return glob.glob("{}/*jpg".format(settings['originals']))
+
 
 def init():
     # disable screen blanking because it causes pyglet to lock
@@ -96,6 +101,7 @@ load_queue = Queue()
 images = []
 image_batch = pyglet.graphics.Batch()
 displayed = set()
+
 def new_photo(dt=0):
     filename = 'photo.jpg'
     files = get_files()
@@ -108,8 +114,6 @@ def new_photo(dt=0):
         filename = random.choice(files)
     p = Process(target=load_resize_and_convert, args=(load_queue, filename))
     p.start()
-
-
 
 window_size = window.get_size()
 #window_size = (1024, 768)
@@ -147,22 +151,20 @@ def check_queue(dt):
     else:
         if side:
             side = 0
-            print window_size, image.width, image.height
             x = random.randint(0, window_size[0]/2-image.width)
         else:
             side = 1
-            print window_size, image.width, image.height
             x = random.randint(window_size[0]/2, window_size[0]-image.width)
 
         y = -image.height
         sprite = pyglet.sprite.Sprite(image, x=x, y=y,
                  batch=image_batch)
+
         images.append(sprite)
 
 if __name__ == '__main__':
     init()
 
-    #pyglet.clock.set_fps_limit(60)
     pyglet.clock.schedule(scroll)
     pyglet.clock.schedule_interval(new_photo, 4)
     pyglet.clock.schedule(check_queue)
