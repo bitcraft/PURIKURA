@@ -20,12 +20,12 @@
 *
 """
 
-from pubsub import pubsub
+from pyrikura.plugin import Plugin
 import os
 
 
 
-class Watcher(pubsub):
+class Watcher(Plugin):
     """
     Simple watcher that uses a glob to track new files
     This class will publish paths to new images
@@ -35,6 +35,8 @@ class Watcher(pubsub):
         super(Watcher, self).__init__()
         self._path = path
         self._regex = regex
+
+    def OnActivate(self):
         self.reset()
 
     def reset(self):

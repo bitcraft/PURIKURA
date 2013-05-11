@@ -1,0 +1,9 @@
+[Core]
+Name = Camera
+Module = camera
+
+[Documentation]
+Description = Tethered camera using piggyphoto and libgphoto2
+Author = leif theden
+Version = 0.1
+Website = http://github.com/bitcraft/pyrikura

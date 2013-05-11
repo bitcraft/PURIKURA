@@ -20,12 +20,14 @@
 *
 """
 
-from pubsub import pubsub
-import os
+from pyrikura.plugin import Plugin
+import subprocess
 
 
 
-class Deleter(pubsub):
+class FileSpool(Plugin):
     def process(self, msg, sender):
-        os.unlink(msg)
+        cmd = ['lpr', msg]
+        subprocess.call(cmd)
+        print 'printing {0}'.format(msg)
         self.publish([msg])

@@ -1,9 +1,9 @@
-from pubsub import pubsub
+from pyrikura.plugin import Plugin
 import re, subprocess
 
 
 
-class Scripter(pubsub):
+class Scripter(Plugin):
     """
     given a list of strings, process them in order with the supplied argument
 

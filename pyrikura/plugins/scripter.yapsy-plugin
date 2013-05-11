@@ -1,0 +1,9 @@
+[Core]
+Name = Scripter
+Module = scripter
+
+[Documentation]
+Description = Run scripts or commands
+Author = leif theden
+Version = 0.1
+Website = http://github.com/bitcraft/pyrikura

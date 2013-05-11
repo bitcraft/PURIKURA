@@ -1,0 +1,14 @@
+[Core]
+Name = Composer
+Module = composer
+
+[Workflow]
+Required = 'image'
+Listen = 'camera-image'
+Public = 'template_name'
+
+[Documentation]
+Description = Produce images from a template and images
+Author = leif theden
+Version = 0.1
+Website = http://github.com/bitcraft/pyrikura

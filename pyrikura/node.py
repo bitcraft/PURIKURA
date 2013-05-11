@@ -19,32 +19,20 @@
 *   along with pyrikura.  If not, see <http://www.gnu.org/licenses/>.
 *
 """
-
-from pubsub import pubsub
-import os, shutil
+from queue import Queue
 
 
 
-class Copier(pubsub):
+class WorkflowNode(object):
+    """
+    WorkflowNode 
+    """
 
-    def _do_copy(self, path, dst):
-        shutil.copyfile(path, dst)
+    def put(self, msg):
+        pass
 
-    def process(self, msg, sender):
-        try:
-            overwrite = self.overwrite
-        except AttributeError:
-            overwrite = False
+    def get(self):
+        pass
 
-        new_path = os.path.join(self.output, os.path.basename(msg))
-
-        if not overwrite and os.path.exists(new_path):
-            i = 1
-            root, ext = os.path.splitext(new_path)
-            new_path = "{0}-{1:04d}{2}".format(root, i, ext)
-            while os.path.exists(new_path):
-                i += 1
-                new_path = "{0}-{1:04d}{2}".format(root, i, ext)
-
-        self._do_copy(msg, new_path)
-        self.publish([new_path])
+    def process(self):
+        pass

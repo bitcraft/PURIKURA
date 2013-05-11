@@ -20,14 +20,12 @@
 *
 """
 
-from pubsub import pubsub
-import subprocess
+from pyrikura.plugin import Plugin
+import os
 
 
 
-class Printer(pubsub):
+class Deleter(Plugin):
     def process(self, msg, sender):
-        cmd = ['lpr', msg]
-        #subprocess.call(cmd)
-        print 'printing {0}'.format(msg)
+        os.unlink(msg)
         self.publish([msg])

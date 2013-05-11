@@ -1,0 +1,9 @@
+[Core]
+Name = FileSpool
+Module = filespool
+
+[Documentation]
+Description = Use lpr to spool a document
+Author = leif theden
+Version = 0.1
+Website = http://github.com/bitcraft/pyrikura

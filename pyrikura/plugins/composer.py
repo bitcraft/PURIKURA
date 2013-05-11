@@ -1,14 +1,10 @@
-"""
-templating with pgmagick
-"""
-
-from pubsub import pubsub
+from pyrikura.plugin import Plugin
 import sys, os, subprocess, ConfigParser
 from pgmagick import Image, Color, Geometry, CompositeOperator as co
 
 
 
-class Template(pubsub):
+class Template(Plugin):
     """
     uses templates and images to create print layouts
     """
@@ -102,6 +98,7 @@ class Template(pubsub):
                 raise
                 raise Exception, 'could not open file: {0}'.format(fn)
 
+            # A U T O C R O P
             autocrop = options.get('autocrop', None)
             if autocrop:
                 r0 = float(w) / h
@@ -114,18 +111,34 @@ class Template(pubsub):
                     im.scale('{0}x{1}'.format(sw, h))
                     im.crop(Geometry(w, h, cx, 0))
 
+            # S C A L E
             scale = options.get('scale', None)
             if scale:
                 im.scale('{0}x{1}'.format(w, h))
 
             base.composite(im, x, y, co.OverCompositeOp)
 
+            # F I L T E R S
+            filters = options.get('filters', None)
+            if filters:
+                for fil in filters.split(','):
+                    pixel_filters[fil.strip()].filter(im)
+
             del im
 
         try:
-            new_fn = self.filename
+            new_path = self.filename
         except AttributeError:
-            new_fn = 'composite.png'
+            new_path = 'composite.png'
 
-        base.write(new_fn)
-        self.publish([new_fn])
+        # append a dash and numberal if there is a duplicate
+        if os.path.exists(new_path):
+            i = 1
+            root, ext = os.path.splitext(new_path)
+            new_path = "{0}-{1:04d}{2}".format(root, i, ext)
+            while os.path.exists(new_path):
+                i += 1
+                new_path = "{0}-{1:04d}{2}".format(root, i, ext)
+
+        base.write(new_path)
+        self.publish([new_path])

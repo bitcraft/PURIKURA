@@ -1,0 +1,9 @@
+[Core]
+Name = Translate
+Module = translate
+
+[Documentation]
+Description = translate arduino serial commands to something else
+Author = leif theden
+Version = 0.1
+Website = http://github.com/bitcraft/pyrikura

@@ -1,0 +1,9 @@
+[Core]
+Name = FileCopy
+Module = filecopy
+
+[Documentation]
+Description = copy files
+Author = leif theden
+Version = 0.1
+Website = http://github.com/bitcraft/pyrikura

@@ -20,27 +20,31 @@
 *
 """
 
-class pubsub(object):
+from pyrikura.plugin import Plugin
+import os, shutil
 
-    def __init__(self, **kwargs):
-        self._subscribers = []
-        for key, value in kwargs.items():
-            setattr(self, key, value)
 
-    def __enter__(self):
-        pass
 
-    def __exit__(self):
-        pass
+class Copier(Plugin):
 
-    def process(self, msg, sender=None):
-        pass
+    def _do_copy(self, path, dst):
+        shutil.copyfile(path, dst)
 
-    def subscribe(self, other):
-        other._subscribers.append(self)
+    def process(self, msg, sender):
+        try:
+            overwrite = self.overwrite
+        except AttributeError:
+            overwrite = False
 
-    def publish(self, iterable):
-        for msg in iterable:
-            for sub in self._subscribers:
-                sub.process(msg, sender=self)
+        new_path = os.path.join(self.output, os.path.basename(msg))
 
+        if not overwrite and os.path.exists(new_path):
+            i = 1
+            root, ext = os.path.splitext(new_path)
+            new_path = "{0}-{1:04d}{2}".format(root, i, ext)
+            while os.path.exists(new_path):
+                i += 1
+                new_path = "{0}-{1:04d}{2}".format(root, i, ext)
+
+        self._do_copy(msg, new_path)
+        self.publish([new_path])

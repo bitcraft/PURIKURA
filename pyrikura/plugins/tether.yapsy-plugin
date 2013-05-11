@@ -1,0 +1,9 @@
+[Core]
+Name = Tether
+Module = tether
+
+[Documentation]
+Description = Simple tethered camera plugin
+Author = leif theden
+Version = 0.1
+Website = http://github.com/bitcraft/pyrikura
