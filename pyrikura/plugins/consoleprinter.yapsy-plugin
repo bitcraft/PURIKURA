@@ -1,5 +1,5 @@
 [Core]
-Name = consoleprinter
+Name = ConsolePrinter
 Module = consoleprinter
 
 [Documentation]

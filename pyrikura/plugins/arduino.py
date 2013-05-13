@@ -6,19 +6,15 @@ import time
 
 
 class ArduinoBroker(Broker):
-    def __init__(self, *args, **kwargs):
-        super(ArduinoBroker, self).__init__(*args, **kwargs)
-        #self.serial = serial.Serial(*args, timeout=0)
-        #time.sleep(2)
-        #self.clear()
-        pass
+    def __init__(self, *arg, **kwarg):
+        super(ArduinoBroker, self).__init__(*arg, **kwarg)
+        self.serial = serial.Serial(*arg, timeout=0)
+        self.clear()
 
     def clear(self):
         while self.serial.read():
             pass
 
 
-class ArduinoPlugin(Plugin):
+class Arduino(Plugin):
     _decendant = ArduinoBroker
-
-

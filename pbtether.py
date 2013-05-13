@@ -33,9 +33,13 @@ collectively creates a seemless photo booth experience.
 
 from yapsy.PluginManager import PluginManager
 
+from pyrikura.workflow import Node
 import logging
 import argparse
 import os
+import itertools
+import re
+import pickle
 
 
 
@@ -45,35 +49,28 @@ settings = {}
 settings['shutter_sound'] = os.path.join('sounds', 'bell.wav')
 settings['printsrv'] = os.path.join('/', 'home', 'mjolnir', 'smb-printsrv')
 settings['template'] = os.path.join('templates', 'polaroid0.template')
-settings['originals'] = os.path.join('/', 'home', 'mjolnir', 'events', \
-                        event_name, 'originals')
-
+settings['originals'] = os.path.join('/', 'home', 'mjolnir', 'events', event_name, 'originals')
 settings['temp_image'] = 'capture.jpg'
-
-# protocol
-trigger_command = 1         # when button is pressed to start picture seq.
-shutter_command = 2         # command to cause camera shutter
-servo_command = 3
-servo_response = 4
-reset_command = 6           # when photos are out of sequence
 
 
 def build():
-    import pickle
-
-    arduino = Node('Arduino')
+    arduino = Node('Arduino', '/dev/ttyACM0', 9600)
     tether = Node('Tether')
-    composer = Node('Composer')
+    composer = Node('Composer', template=settings['template'])
+    stdout = Node('ConsolePrinter')
+    archiver = Node('FileCopy', dest=settings['originals'])
+    spooler = Node('FileCopy', dest=settings['printsrv'])
 
+    tether.subscribe(arduino)
+    stdout.subscribe(arduino)
     composer.subscribe(tether)
+    archiver.subscribe(tether)
     spooler.subscribe(composer)
 
-    return pickle.dump(arduino)
+    return [arduino, stdout, composer, spooler, archiver, tether]
 
 
 if __name__ == '__main__':
-    import re
-
     logging.basicConfig(level=logging.INFO)
 
     os.chdir('/home/mjolnir/git/PURIKURA')
@@ -87,10 +84,21 @@ if __name__ == '__main__':
         logging.info('loading plugin %s', pi.name)
         pm.activatePluginByName(pi.name)
 
-    arduino = pm.getPluginByName('Arduino').plugin_object.new()
-    #tether0 = pm.getPluginByName('tether').new()
-    #spooler = pm.getPluginByName('spooler').new()
-    #composer = pm.getPluginByName('composer').new(settings['template'])
+    brokers = {}
+    nodes = build()
+    head = nodes[0]
+
+    for node in nodes:
+        brokers[node] = node.load(pm)
+
+    for node, broker in brokers.items():
+        for other in node._listening:
+            broker.subscribe(brokers[other])
+
+    brokers[head].publish(['preview.jpg'])
+
+    for broker in itertools.cycle(brokers.values()):
+        broker.update()
 
     #eyefi = Watcher(eyefi_incoming, re.compile('.*\.jpg$', re.I))
     #arduino = Arduino('/dev/ttyACM0', 9600)

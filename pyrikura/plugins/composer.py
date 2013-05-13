@@ -1,17 +1,18 @@
 from pyrikura.plugin import Plugin
-import sys, os, subprocess, ConfigParser
+from pyrikura.broker import Broker
+import logging, sys, os, subprocess, ConfigParser
 from pgmagick import Image, Color, Geometry, CompositeOperator as co
 
 
 
-class Template(Plugin):
+class ComposerBroker(Broker):
     """
     uses templates and images to create print layouts
     """
 
-    def __init__(self, template, **kwargs):
-        super(Template, self).__init__(**kwargs)
-        self.template = template
+    def __init__(self, **kwargs):
+        super(ComposerBroker, self).__init__(**kwargs)
+        self.template = kwargs['template']
         self.reset()
 
     def reset(self):
@@ -95,7 +96,6 @@ class Template(Plugin):
             try:
                 im = Image(fn)
             except RuntimeError:
-                raise
                 raise Exception, 'could not open file: {0}'.format(fn)
 
             # A U T O C R O P
@@ -142,3 +142,7 @@ class Template(Plugin):
 
         base.write(new_path)
         self.publish([new_path])
+
+
+class Composer(Plugin):
+    _decendant = ComposerBroker

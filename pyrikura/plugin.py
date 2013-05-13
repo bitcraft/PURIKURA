@@ -47,7 +47,8 @@ class Plugin(IPlugin):
 
     @classmethod
     def new(cls, *arg, **kwarg):
-        print cls, cls._decendant
+        if not hasattr(cls, '_decendant'):
+            raise Exception, 'class {} does not have decendant set'.format(cls)
         return cls._decendant(*arg, **kwarg)
 
     def setvar(self, name, value):
