@@ -74,7 +74,7 @@ def build():
     return [arduino, stdout, composer, spooler, archiver, tether, twitter]
 
 
-if __name__ == '__main__':
+def run():
     logging.basicConfig(level=logging.INFO)
 
     os.chdir('/home/mjolnir/git/PURIKURA')
@@ -103,15 +103,34 @@ if __name__ == '__main__':
     shots = 0
     last_trigger = 0
     for broker in itertools.cycle(brokers.values()):
-        now = time.time()
-        if now - last_trigger >= 0:
-            last_trigger = now + 1
-            brokers[head].publish(['capture'])
-            shots +=1
-            if shots == 4: time.sleep(3)
+        #now = time.time()
+        #if now - last_trigger >= 0:
+        #    brokers[head].publish(['capture'])
+        #    last_trigger = now + .05
+        #    shots +=1
+        #    if shots == 4: time.sleep(2)
 
-
+        brokers[head].publish(['capture'])
         broker.update()
 
     #eyefi = Watcher(eyefi_incoming, re.compile('.*\.jpg$', re.I))
     #arduino = Arduino('/dev/ttyACM0', 9600)
+
+
+profile = False
+if __name__ == '__main__':
+    if profile:
+        import cProfile
+        import pstats
+
+        try:
+            cProfile.run('run()', 'results.prof')
+        except KeyboardInterrupt:
+            pass
+
+        p = pstats.Stats("results.prof")
+        p.strip_dirs()
+        p.sort_stats('time').print_stats(20)
+        
+    else:
+        run()

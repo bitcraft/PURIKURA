@@ -3,7 +3,99 @@ PYRIKURA
 
 PYRIKURA is a set of hardware and software plans for a DIY wedding/event photo booth.
 
-It is capable of producing excellent looking 2x6 inch color photo strips with 4 square photos or any other design if designed and coded into the script.
+
+Modes of Operation
+------------------
+
+PURIKURA supports many modes of operation and is very flexible.
+
+The workflow/broker system allows almost unlimited customization.
+Workflows can be saved and used at a later time.
+
+Many dSLR and comsumer cameras are supported.  Eye-fi cameras are supported
+with addition software, such as iii.
+
+The software supports multiple screens and cameras.  Both modes can be run at
+once.  In many events, I have operated a tethered Canon Rebel XS and a remote
+Panasonic Lumix GF-1.
+
+Multiple cameras can be made remote camera and be used together.
+
+
+Cameras
+-------
+
+Any camera supported by libgphoto2 is supported by this software.  An up-to-date
+list is available on their website.  Live-view is functional, but unused at
+this time.
+
+Webcams are not supported.
+
+
+Interaction
+-----------
+
+PURIKURA supports the arduino for interfacing with physical buttons over USB
+and also has a smartphone-inspired touch interface.
+
+The touch interface is always evolving.  Currently it only supports viewing
+photos.  Support for printing, email, twitter, etc will be added later.
+
+
+Plugins
+-------
+
+The core concept of pyrikura is the *workflow*.  A workflow describes how
+images are manipulated.  A workflow is comprised of many different 'brokers'.
+
+Plugins are used to create brokers.  Included broker plugins are:
+    - Composer (for templates)
+    - Folder Watcher (hot folders)
+    - File move and copy
+    - Tethered Camera
+    - Twitter
+    - Arduino
+    - Printer
+
+Brokers are connected to each other to create a workflow.  A simple workflow for
+a photobooth could be this:
+
+    arduino => camera =============> composer => twitter
+                      => file copy            => printer
+
+
+In words:
+    The arduino recieves a trigger to take the picture
+    The camera takes one photo sends it to the composer and file copier
+        the file copier copies the original file to archive it
+        the composer uses a template to add a background
+            this modified photo is posted to twitter, printed, and archived
+
+QR Codes and Social Media
+-------------------------
+
+I am experimenting with generating QR codes for images so users and simply scan
+the photo to get access to their photos.  From there they will be able to save
+the images and upload them to their favorite social media site.
+
+
+Modifications
+-------------
+
+The script is completely open to customization and a few variables can be changed right in the script.  I've chosen to have the photo booth activated with a rope, but you could make it a button, or anything else you desire.
+
+
+Getting Help
+------------
+
+If you encounter any errors, please issue a bug report.  Also, please note that
+while I am providing the software for free, my time is not free.  If you wish to
+use this software and need help getting you system going I will be accepting
+paypal donations in exchange for my time.
+
+I reserve all rights to determine what features will be added and how the
+interface is used.  You are welcome to fork this project at any time and
+customize it as you wish.
 
 
 Why is it free?
@@ -27,82 +119,13 @@ to concentrate on their clients and provide a more enjoyable experience for
 their clients.
 
 This will also make free operators from costly software licences and let them
-customize the experience for each user.
-
-
-Modes of Operation
-------------------
-
-PYRIKURA supports two modes of operation:
-    Tethered DSLR (any camera supported by libgphoto)
-    Remote Camera via eye-fi X2 SD Card
-
-Tethered mode requires a tripod and a trigger.  I use an arduino to provide a
-switch to activate the booth.
-
-Remote camera mode is any camera supporting an SD card.  The camera does not
-require any wired connections to the host computer.  All images from the camera
-will be automatically uploaded to the host computer.  The range is limited by
-the X2 card, about 25ft from experience.
-
-The software supports multiple screens and cameras.  Both modes can be run at
-once.  In many events, I have operated a tethered Canon Rebel XS and a remote
-Panasonic Lumix GF-1.
-
-Multiple cameras can be made remote camera and be used together.
-
-
-QR Codes and Social Media
--------------------------
-
-I am experimenting with generating QR codes for images so users and simply scan
-the photo to get access to their photos.  From there they will be able to save
-the images and upload them to their favorite social media site.
-
-
-Example Setup
--------------
-
-The arduino is connected to a button and the camera.  The button is a simple microswitch connected to a rope.  The arduino has a simple shield that mimicks a shutter release cable using two relays.
-
-Inside the camera is a Eye-Fi X2 4gb SD card with wifi.  As soon as the picture is taken, the photo is sent to the computer.  The python script continously monitors the incoming photo folder and once there are four new photos on the computer, the script uses GraphicsMagick to compose a print and the resulting image is sent to the printer.
-
-
-Modifications
--------------
-
-The script is completely open to customization and a few variables can be changed right in the script.  I've chosen to have the photo booth activated with a rope, but you could make it a button, or anything else you desire.
-
-
-Getting Help
-------------
-
-If you encounter any errors, please issue a bug report.  Also, please note that
-while I am providing the software for free, my time is not free.  If you wish to
-use this software and need help getting you system going I will be accepting
-paypal donations in exchange for my time.
-
-I reserve all rights to determine what features will be added and how the
-interface is used.  You are welcome to fork this project at any time and
-customize it as you wish.
+quickly customize the experience for each user.
 
 
 The Name
 --------
  
 'purukura' is a term used in Japan for their ubiquitous style of photo booths.
-
-
-Hardware
---------
-
--  Eye-Fi X2 card (any capacity)
--  Canon Rebel XS
--  Panasonic Lumix GF-1
--  Arduino Uno
--  Epson PictureMate Charm (PM 225)
--  Pentium-class PC
-
 
 
 Software

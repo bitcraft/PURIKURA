@@ -1,0 +1,9 @@
+[Core]
+Name = Twitter
+Module = twitter
+
+[Documentation]
+Description = tweet images
+Author = leif theden
+Version = 0.1
+Website = http://github.com/bitcraft/pyrikura
