@@ -40,6 +40,7 @@ import os
 import itertools
 import re
 import pickle
+import time
 
 
 
@@ -48,7 +49,8 @@ event_name = 'test'
 settings = {}
 settings['shutter_sound'] = os.path.join('sounds', 'bell.wav')
 settings['printsrv'] = os.path.join('/', 'home', 'mjolnir', 'smb-printsrv')
-settings['template'] = os.path.join('templates', 'polaroid0.template')
+#settings['template'] = os.path.join('templates', 'polaroid0.template')
+settings['template'] = os.path.join('templates', '2x6vintage.template')
 settings['originals'] = os.path.join('/', 'home', 'mjolnir', 'events', event_name, 'originals')
 settings['temp_image'] = 'capture.jpg'
 
@@ -60,14 +62,16 @@ def build():
     stdout = Node('ConsolePrinter')
     archiver = Node('FileCopy', dest=settings['originals'])
     spooler = Node('FileCopy', dest=settings['printsrv'])
+    twitter = Node('Twitter', 'twitter.secrets')
 
     tether.subscribe(arduino)
     stdout.subscribe(arduino)
     composer.subscribe(tether)
     archiver.subscribe(tether)
     spooler.subscribe(composer)
+    #twitter.subscribe(composer)
 
-    return [arduino, stdout, composer, spooler, archiver, tether]
+    return [arduino, stdout, composer, spooler, archiver, tether, twitter]
 
 
 if __name__ == '__main__':
@@ -95,9 +99,18 @@ if __name__ == '__main__':
         for other in node._listening:
             broker.subscribe(brokers[other])
 
-    brokers[head].publish(['preview.jpg'])
 
+    shots = 0
+    last_trigger = 0
     for broker in itertools.cycle(brokers.values()):
+        now = time.time()
+        if now - last_trigger >= 0:
+            last_trigger = now + 1
+            brokers[head].publish(['capture'])
+            shots +=1
+            if shots == 4: time.sleep(3)
+
+
         broker.update()
 
     #eyefi = Watcher(eyefi_incoming, re.compile('.*\.jpg$', re.I))

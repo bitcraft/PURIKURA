@@ -7,6 +7,7 @@ size = 4,6
 filename = auto
 area = .31,1.44,3.74,4.98
 autocrop = true
+filter = toaster
 
 [02frame]
 filename = polaroid0.png
