@@ -6,28 +6,24 @@ background = black
 
 [00portrait]
 filename = auto
-area = .37, .15, 1.27, 1.27
+area = .1, .1, 1.6, 1.5
 autocrop = true
 filter = toaster
 
 [01portrait]
 filename = auto
-area = .37, 1.6, 1.27, 1.27
+area = .1, 1.55, 1.6, 2.95
 autocrop = true
 filter = toaster
 
 [02portrait]
 filename = auto
-area = .37, 3.05, 1.27, 1.27
+area = .1, 3, 1.6, 4.4
 autocrop = true
 filter = toaster
 
-[05portrait]
+[03portrait]
 filename = auto
-area = .37, 4.5, 1.27, 1.27
+area = .1, 4.45, 1.6, 5.85
 autocrop = true
 filter = toaster
-
-[04label]
-filename=label.jpg
-position = 0,0

@@ -8,32 +8,31 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from filters import *
 
 
-def process_image(lock, raw_queue, ready_queue, global_config):
+def process_image(raw_queue, ready_queue, global_config):
     from wand.image import Image
 
     # get an image from the queue
     try:
-        image_blob, image_config = raw_queue.get(False, timeout=5)
+        image_config = raw_queue.get()
     except Queue.Empty:
         return
 
-    image = Image(blob=image_blob)
+    image = Image(filename=image_config['filename'])
 
     # attempt to get the area for the image for this section
     try:
         area = image_config['area'].split(',')
     except KeyError:
-        raise ValueError
+        x, y = [ int(i) for i in image_config['position'].split(',') ]
+        w, h = image.size
 
-
-    # calculate the pixel size of this image
-    if global_config['units'] == 'pixels':
-        x,y,x2,y2 = [ int(i) for i in area ] 
     else:
-        x,y,x2,y2 = [ int(float(i) * global_config['dpi']) for i in area ]
+        # calculate the pixel size of this image
+        if global_config['units'] == 'pixels':
+            x,y,w,h = [ int(i) for i in area ] 
+        else:
+            x,y,w,h = [ int(float(i) * global_config['dpi']) for i in area ]
 
-    w = abs(x2 - x)
-    h = abs(y2 - y)
 
     # A U T O C R O P
     autocrop = image_config.get('autocrop', None)
@@ -80,10 +79,11 @@ def process_image(lock, raw_queue, ready_queue, global_config):
         # delete our temporary image file
         os.unlink(scratch)
 
-    image_blob = image.make_blob()
-    del image
-
-    ready_queue.put((image_blob, x, y))
+    image.format = 'png'
+    image.save(filename=image_config['filename'])
+    image.close()
+    
+    ready_queue.put((image_config, x, y))
     ready_queue.close()
 
     raw_queue.task_done()

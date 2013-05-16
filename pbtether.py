@@ -57,6 +57,7 @@ settings['temp_image'] = 'capture.jpg'
 
 def build():
     arduino = Node('Arduino', '/dev/ttyACM0', 9600)
+    repeater = Node('Repeater', 4, 2)
     tether = Node('Tether')
     composer = Node('Composer', template=settings['template'])
     stdout = Node('ConsolePrinter')
@@ -64,14 +65,15 @@ def build():
     spooler = Node('FileCopy', dest=settings['printsrv'])
     twitter = Node('Twitter', 'twitter.secrets')
 
-    tether.subscribe(arduino)
-    stdout.subscribe(arduino)
+    repeater.subscribe(arduino)
+    tether.subscribe(repeater)
     composer.subscribe(tether)
     archiver.subscribe(tether)
     spooler.subscribe(composer)
     #twitter.subscribe(composer)
 
-    return [arduino, stdout, composer, spooler, archiver, tether, twitter]
+    return [arduino, stdout, composer, spooler, archiver, tether, twitter,
+            repeater]
 
 
 def run():
@@ -99,18 +101,21 @@ def run():
         for other in node._listening:
             broker.subscribe(brokers[other])
 
-
+    start = time.time()
+    last_time = 0
     shots = 0
     last_trigger = 0
     for broker in itertools.cycle(brokers.values()):
-        #now = time.time()
-        #if now - last_trigger >= 0:
-        #    brokers[head].publish(['capture'])
-        #    last_trigger = now + .05
-        #    shots +=1
-        #    if shots == 4: time.sleep(2)
+        now = time.time()
+        if now - last_trigger >= 10:
+            last_trigger = now
+            brokers[head].publish(['capture'])
+            print "TRIGGER"
 
-        brokers[head].publish(['capture'])
+        if last_time != int(now-start):
+            last_time = int(now - start)
+            print last_time
+
         broker.update()
 
     #eyefi = Watcher(eyefi_incoming, re.compile('.*\.jpg$', re.I))

@@ -29,7 +29,8 @@ def compose(conn, ready_queue, images, config):
     layers = []
     while len(layers) < images:
         try:
-            layers.append(ready_queue.get(False))
+            layer = ready_queue.get()
+            layers.append((layer[0]['name'], layer))
         except Queue.Empty:
             time.sleep(.1)
 
@@ -38,8 +39,10 @@ def compose(conn, ready_queue, images, config):
                  height=config['height'],
                  background=Color(config['background']))
 
-    for image_blob, left, top in layers:
-        base.composite(Image(blob=image_blob), left, top)
+    for name, (image_config, left, top) in sorted(layers):
+        with Image(filename=image_config['filename']) as temp_image:
+            base.composite(temp_image, left, top)
+        del temp_image
 
     # save it!
     new_path = 'composite.png'
@@ -74,7 +77,6 @@ class ComposerBroker(Broker):
         self.ready_queue = JoinableQueue()
         self.reset()
 
-        self.magick_lock = Lock()
 
     def reset(self):
         """
@@ -87,15 +89,24 @@ class ComposerBroker(Broker):
         cfg.read(self.template)
 
         # this will be passed to processors
-        self._section_config = []
+        self._config_queue = []
         config = {}
 
         # cache the sections for use by the preprocessor
+        self._required_images = 0
+        self._total_images = 0
+        static_images = []
         for section in reversed(sorted(cfg.sections())):
             if not section.lower() == 'general':
-                self._section_config.append(dict(cfg.items(section)))
+                this_config = dict(cfg.items(section))
+                this_config['name'] = section
+                self._total_images += 1
 
-        self._required_images = len(self._section_config)
+                if cfg.get(section, 'filename').lower() == 'auto':
+                    self._config_queue.append(this_config)
+                    self._required_images += 1
+                else:
+                    static_images.append(this_config)
 
         # determine if template is using pixels or inches (dpi)
         try:
@@ -124,67 +135,65 @@ class ComposerBroker(Broker):
 
         self.config = config
 
-    def process(self, msg, sender):
-        self.preprocess(msg)
-    
-        print len(multiprocessing.active_children())
+        for this_config in static_images:
+            self.preprocess(this_config)
 
-        # temporary mechanism...
-        if len(self._section_config) == 0:
-            p_conn, c_conn = Pipe()
-
-            p = Process(
+        self._p_conn, c_conn = Pipe()
+        self._composer_process =  Process(
                 target = compose,
-                args = (c_conn, self.ready_queue, self._required_images,
+                args = (c_conn, self.ready_queue, self._total_images,
                         self.config)
-            )
-            p.start()
-            filename = p_conn.recv()
-            p.join()
-            p_conn.close()
+        )
+        self._composer_process.start()
+
+
+    def process(self, msg, sender):
+        config = self._config_queue.pop()
+        config['filename'] = msg
+        self.preprocess(config)
+
+        if len(self._config_queue) == 0:
+            filename = self._p_conn.recv()
+            self._composer_process.join()
 
             # make sure are children are really dead
             for p in self._processes:
                 p.join()
 
             self._processes = []
+            self._composer_process = None
             self.reset()
             self.publish([filename])
 
-    def preprocess(self, filename):
-        from wand import image
-        image = reload(image)
-
+    def preprocess(self, config):
+        from wand.image import Image
         """
         start a subprocess to preformat the incoming image
         """
         # create a temporary filename in case the file needs to be written to
         # disk.  this is only the case if a filter is needed during processing
+      
+        filename = config['filename']
+
         root, ext = os.path.splitext(filename)
-        new_filename = 'temp-{}{}'.format(len(self._section_config), ext)
+        new_filename = 'temp-{}{}'.format(len(self._config_queue), ext)
+        config['filename'] = new_filename
 
-        # create an in-memory copy of the file
-        with image.Image(filename=filename) as temp_image:
-            image_blob = temp_image.make_blob()
-            
-        del temp_image, image
-
-        this_config = self._section_config.pop()
-        this_config['filename'] = new_filename
+        # create a copy of the file
+        shutil.copy(filename, new_filename)
 
         # add this image to the raw_queue
-        self.raw_queue.put((image_blob, this_config))
+        self.raw_queue.put(config)
 
         # spawn another process for processing the image
         # normally, there will be only one active, but may be more
         # if the system is slow or busy
         p = Process(
             target = process_image,
-            args = (self.magick_lock, self.raw_queue, self.ready_queue, self.config)
+            args = (self.raw_queue, self.ready_queue, self.config)
         )
-        self._processes.append(p)
         p.start()
-
+        self._processes.append(p)
 
 class Composer(Plugin):
     _decendant = ComposerBroker
