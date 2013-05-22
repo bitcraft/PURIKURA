@@ -29,23 +29,33 @@ def compose(conn, ready_queue, images, config):
     layers = []
     while len(layers) < images:
         try:
-            layer = ready_queue.get()
-            layers.append((layer[0]['name'], layer))
+            this_config = ready_queue.get()
+            layers.append((this_config['name'], this_config))
         except Queue.Empty:
-            time.sleep(.1)
+            pass
 
     # the base to the image we are producing
     base = Image(width=config['width'],
                  height=config['height'],
                  background=Color(config['background']))
 
-    for name, (image_config, left, top) in sorted(layers):
-        with Image(filename=image_config['filename']) as temp_image:
-            base.composite(temp_image, left, top)
-        del temp_image
+    cache = {}
+
+    for name, image_config in sorted(layers):
+        x, y, w, h = image_config['area']
+        print name, x, y, w, h
+        try:
+            temp_image = cache[image_config['filename']]
+        except KeyError:
+            temp_image = Image(filename=image_config['filename'])
+            cache[image_config['filename']] = temp_image
+        base.composite(temp_image, x, y)
 
     # save it!
     new_path = 'composite.png'
+
+    for image in cache.values():
+        image.close()
 
     # append a dash and numberal if there is a duplicate
     if os.path.exists(new_path):
@@ -93,18 +103,19 @@ class ComposerBroker(Broker):
         config = {}
 
         # cache the sections for use by the preprocessor
-        self._required_images = 0
         self._total_images = 0
         static_images = []
         for section in reversed(sorted(cfg.sections())):
             if not section.lower() == 'general':
                 this_config = dict(cfg.items(section))
                 this_config['name'] = section
-                self._total_images += 1
+                areas = [ i for i in this_config.keys() if i.lower()[:4] == 'area' ]
+                pos = [ i for i in this_config.keys() if i.lower()[:8] == 'position' ]
+                self._total_images += len(areas)
+                self._total_images += len(pos)
 
                 if cfg.get(section, 'filename').lower() == 'auto':
                     self._config_queue.append(this_config)
-                    self._required_images += 1
                 else:
                     static_images.append(this_config)
 
@@ -138,6 +149,7 @@ class ComposerBroker(Broker):
         for this_config in static_images:
             self.preprocess(this_config)
 
+        print self._total_images
         self._p_conn, c_conn = Pipe()
         self._composer_process =  Process(
                 target = compose,

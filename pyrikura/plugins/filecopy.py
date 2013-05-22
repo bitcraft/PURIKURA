@@ -28,8 +28,9 @@ import os, shutil
 
 class FileCopyBroker(Broker):
 
-    def _do_copy(self, path, dst):
-        shutil.copyfile(path, dst)
+    def _do_copy(self, path, dest):
+        shutil.copyfile(path, dest)
+        print "copy", path, dest
 
     def process(self, msg, sender=None):
         try:

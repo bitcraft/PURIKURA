@@ -45,6 +45,7 @@ settings['originals'] = os.path.join('/', 'home', 'mjolnir', 'events', \
 
 
 def get_files():
+    print glob.glob("{}/*jpg".format(settings['originals']))
     return glob.glob("{}/*jpg".format(settings['originals']))
 
 

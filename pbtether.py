@@ -57,14 +57,16 @@ settings['temp_image'] = 'capture.jpg'
 
 def build():
     arduino = Node('Arduino', '/dev/ttyACM0', 9600)
-    repeater = Node('Repeater', 4, 2)
+    repeater = Node('Repeater', 4, 5)
     tether = Node('Tether')
     composer = Node('Composer', template=settings['template'])
     stdout = Node('ConsolePrinter')
     archiver = Node('FileCopy', dest=settings['originals'])
     spooler = Node('FileCopy', dest=settings['printsrv'])
     twitter = Node('Twitter', 'twitter.secrets')
+    beep = Node('Beeper', settings['shutter_sound'])
 
+    beep.subscribe(repeater)
     repeater.subscribe(arduino)
     tether.subscribe(repeater)
     composer.subscribe(tether)
@@ -106,20 +108,9 @@ def run():
     shots = 0
     last_trigger = 0
     for broker in itertools.cycle(brokers.values()):
-        now = time.time()
-        if now - last_trigger >= 10:
-            last_trigger = now
-            brokers[head].publish(['capture'])
-            print "TRIGGER"
-
-        if last_time != int(now-start):
-            last_time = int(now - start)
-            print last_time
-
         broker.update()
 
     #eyefi = Watcher(eyefi_incoming, re.compile('.*\.jpg$', re.I))
-    #arduino = Arduino('/dev/ttyACM0', 9600)
 
 
 profile = False
