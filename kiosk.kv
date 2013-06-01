@@ -1,5 +1,37 @@
 #:kivy 1.4
 
+
+[AccordionItemTitle@Widget]:
+    text: ctx.title
+
+    canvas.before:
+        Color:
+            rgb: 1,1,1
+        #BorderImage:
+        #    source:
+        #        ctx.item.background_normal\
+        #        if ctx.item.collapse\
+        #        else ctx.item.background_selected
+            #pos: self.pos[0] + ctx.item.icon_size[0], self.pos[1]
+            #size: self.size[0] - ctx.item.icon_size[0], self.size[1]
+        #    pos: self.pos
+        #    size: self.size
+        Rectangle:
+            source: ctx.item.icon_source
+            pos: self.pos[0], -ctx.item.icon_size[1] + self.pos[1] + self.size[1] + 18
+            size: ctx.item.icon_size
+        PushMatrix
+        Translate:
+            xy: self.center_x, self.center_y
+        Rotate:
+            angle: 90 if ctx.item.orientation == 'horizontal' else 0
+            axis: 0,0,1
+        Translate:
+            xy: -self.center_x, -self.center_y
+    canvas.after:
+        PopMatrix
+
+
 <StartScreen>:
     ScrollView:
         do_scroll_y: False
@@ -18,9 +50,191 @@
             orientation: 'vertical'
 
 
+<SharingControls>:
+    opacity: 0.0
+
+    Accordion:
+        orientation: 'vertical'
+        size_hint: .40, 1
+        pos: 48,0
+        min_space: 232
+
+        AccordionItem:
+            title: 'Print Copies'
+
+            icon_source: 'images/icons/print.png'
+            icon_size: 256, 256
+
+            BoxLayout:
+                orientation: 'vertical'
+                pos_hint: {'top': 1}
+
+                Label:
+                    text: 'Number of copies:'
+                    font_size: 45
+
+                BoxLayout:
+                    orientation: 'horizontal'
+                    pos_hint: {'x': .25}
+
+                    Button:
+                        pos_hint: {'top': 1}
+                        size_hint: None, None
+                        height: 64
+                        width: 64
+                        font_size: 45
+                        font_name: 'data/fonts/DejaVuSans.ttf'
+                        text: '-'
+                        on_press: root.remove_print()
+
+                    Label:
+                        pos_hint: {'top': 1}
+                        size_hint: None, None
+                        height: 64
+                        width: 256
+                        text: '%s' % root.prints
+                        font_size: 64
+
+                    Button:
+                        pos_hint: {'top': 1}
+                        size_hint: None, None
+                        height: 64
+                        width: 64
+                        font_size: 45
+                        font_name: 'data/fonts/DejaVuSans.ttf'
+                        text: '+'
+                        on_press: root.add_print()
+
+                Button:
+                    text: 'Print!'
+                    font_size: 50
+                    on_press: root.spool_print()
+
+                Widget:
+                    size_hint: 1, None
+                    height: 48
+
+        AccordionItem:
+            icon_source: 'images/icons/stamps/mail.png'
+            icon_size: 256, 256
+
+            uniqueid: 'emailitem'
+
+            BoxLayout:
+                orientation: 'vertical'
+
+                # email address input box
+                BoxLayout:
+                    orientation: 'horizontal'
+                    size_hint: 1, None
+                    height: 48
+
+                    Label:
+                        size_hint: (.75, 1.0)
+                        font_size: 30
+                        text: 'Email Address'
+
+                    TextInput:
+                        size_hint: (1.0, 1.0)
+                        font_size: 30
+                        id: email_input
+                        multiline: False
+                        on_focus: root.check_email_focus(self)
+
+                    Button:
+                        size_hint: (None, None)
+                        height: 48
+                        width: 48
+                        color: 0, 0, 0
+                        font_size: 35
+                        font_name: 'data/fonts/DejaVuSans.ttf'
+                        text: "⊗"
+                        on_release: email_input.text = ''
+
+                Widget:
+                    size_hint: 1, None
+                    height: 48
+
+                Button:
+                    text: 'Send!'
+                    font_size: 40
+
+                Label:
+                    text: 'Emails can take up to 10 minutes to deliver'
+                    font_size: 25
+
+
+        IconAccordionItem:
+            icon_source: 'images/icons/stamps/twitter.png'
+            icon_size: 256, 256
+
+            BoxLayout:
+                orientation: 'vertical'
+
+                Button:
+                    text: 'Tweet!  %s' % root.twitter_acct
+                    font_size: 40
+
+                Label:
+                    text: 'All tweets will be sent to %s' % root.twitter_acct
+                    font_size: 25
+
+
+<SharingControls-0>:
+    opacity: 0.0
+
+    GridLayout:
+        spacing: 32
+        rows: 3
+        pos: 128, -128
+        size_hint: None, 1
+        row_default_height: 256
+        row_force_default: True
+        col_default_width: 256
+
+
+        Button:
+            canvas:
+                Rectangle:
+                    source: 'images/icons/stamps/twitter.png'
+                    size: self.size
+                    pos: self.pos
+
+            size_hint: None, None
+            size: 256, 256
+
+        Label:
+            text: 'tweet?'
+           
+
+        Button:
+            canvas:
+                Rectangle:
+                    source: 'images/icons/print.png'
+                    size: self.size
+                    pos: self.pos
+
+            size_hint: None, None
+            size: 256, 256
+        Label:
+            text: 'print?'
+
+
+        Button:
+            canvas:
+                Rectangle:
+                    source: 'images/icons/stamps/mail.png'
+                    size: self.size
+                    pos: self.pos
+
+            size_hint: None, None
+            size: 256, 256
+        Label:
+            text: 'email?'
+
+
 <PickerScreen>:
     FloatLayout:
-        size: 1280, 1024
         uniqueid: 'layout'
 
         Image:
@@ -28,13 +242,17 @@
             source: 'images/galaxy.jpg'
             allow_stretch: True
             color: 1, 1, 1, .5
-            size_hint: 2.5, 1
+            size_hint: 2.5, 1.5
+            pos: 0,0
+
+        SharingControls:
+            uniqueid: 'controls'
+            pos_hint: {'x': 2}
 
         ScrollView:
             uniqueid: 'scrollview'
 
             size_hint: 1, .6
-
             pos: 0, 32
 
             do_scroll_y: False
@@ -56,113 +274,4 @@
 
                     col_default_width: 300
                     row_default_height: 300
-
-
-<EmailScreen>:
-    BoxLayout:
-        canvas:
-            Rectangle:
-                source: 'images/curtains.png'
-                size: self.size
-                pos: self.pos
-
-        orientation: 'vertical'
-
-        FloatLayout:
-            BoxLayout:
-                orientation: 'vertical'
-                size_hint: (.9, None)
-                height: 48*7
-                pos_hint: {'x': .05, 'top': .9}
-
-                canvas:
-                    Color:
-                        rgb: .2, .2, .2
-                    Rectangle:
-                        size: self.size
-                        pos: self.pos
-
-                BoxLayout:
-                    orientation: 'horizontal'
-                    size_hint: (1.0, None)
-                    height: 48
-
-                BoxLayout:
-                    orientation: 'horizontal'
-                    size_hint: (1.0, None)
-                    height: 48
-
-                    Label:
-                        size_hint: (.75, 1.0)
-                        font_size: 30
-                        text: 'Email Address'
-
-                    TextInput:
-                        size_hint: (1.0, 1.0)
-                        font_size: 30
-                        id: email_input
-                        multiline: False
-
-                    Button:
-                        size_hint: (None, None)
-                        height: 48
-                        width: 48
-                        color: 0, 0, 0
-                        font_size: 35
-                        font_name: 'data/fonts/DejaVuSans.ttf'
-                        text: "⊗"
-                        on_release: email_input.text = ''
-
-                BoxLayout:
-                    orientation: 'horizontal'
-                    size_hint: (1.0, None)
-                    height: 48
-
-                BoxLayout:
-                    orientation: 'horizontal'
-                    size_hint: (1.0, None)
-                    height: 48
-
-                    AnchorLayout:
-                        Label:
-                            size_hint: (.25, 1.0)
-                            font_size: 30
-                            color: 0,0,0
-                            text: 'Copies %s' % root.prints
-
-                    Button:
-                        size_hint: (None, None)
-                        height: 48
-                        width: 48
-                        font_size: 35
-                        font_name: 'data/fonts/DejaVuSans.ttf'
-                        text: '-'
-                        on_press: root.on_remove_print()
-
-                    Button:
-                        size_hint: (None, None)
-                        height: 48
-                        width: 48
-                        font_size: 35
-                        font_name: 'data/fonts/DejaVuSans.ttf'
-                        text: '+'
-                        on_press: root.on_add_print()
-
-                BoxLayout:
-                    orientation: 'horizontal'
-                    size_hint: (1.0, None)
-                    height: 48
-
-                Button:
-                    canvas:
-                        Color:
-                            rgb: .9, .9, .9
-                    color: 0,0,0
-                    font_size: 35
-                    text: 'Print and Email'
-
-                BoxLayout:
-                    orientation: 'horizontal'
-                    size_hint: (1.0, None)
-                    height: 48
 
