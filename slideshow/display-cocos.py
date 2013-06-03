@@ -45,8 +45,8 @@ image_queue = Queue(3)
 
 window = None
 
-#event_name = 'gunnar-dolly'
-event_name = 'kali-joshua'
+event_name = 'gunnar-dolly'
+#event_name = 'kali-joshua'
 
 settings = {}
 settings['folder'] = os.path.join('/', 'home', 'mjolnir', 'events', \
