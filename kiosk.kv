@@ -7,15 +7,6 @@
     canvas.before:
         Color:
             rgb: 1,1,1
-        #BorderImage:
-        #    source:
-        #        ctx.item.background_normal\
-        #        if ctx.item.collapse\
-        #        else ctx.item.background_selected
-            #pos: self.pos[0] + ctx.item.icon_size[0], self.pos[1]
-            #size: self.size[0] - ctx.item.icon_size[0], self.size[1]
-        #    pos: self.pos
-        #    size: self.size
         Rectangle:
             source: ctx.item.icon_source
             pos: self.pos[0], -ctx.item.icon_size[1] + self.pos[1] + self.size[1] + 18
@@ -30,24 +21,6 @@
             xy: -self.center_x, -self.center_y
     canvas.after:
         PopMatrix
-
-
-<StartScreen>:
-    ScrollView:
-        do_scroll_y: False
-        scroll_timeout: 1000
-        scroll_distance: 20
-        scroll_friction: 3
-
-        BoxLayout:
-            size_hint: 4,1
-            canvas:
-                Rectangle:
-                    source: 'images/curtains.png'
-                    size: self.size
-                    pos: self.pos
-
-            orientation: 'vertical'
 
 
 <SharingControls>:
@@ -178,59 +151,6 @@
                 Label:
                     text: 'All tweets will be sent to %s' % root.twitter_acct
                     font_size: 25
-
-
-<SharingControls-0>:
-    opacity: 0.0
-
-    GridLayout:
-        spacing: 32
-        rows: 3
-        pos: 128, -128
-        size_hint: None, 1
-        row_default_height: 256
-        row_force_default: True
-        col_default_width: 256
-
-
-        Button:
-            canvas:
-                Rectangle:
-                    source: 'images/icons/stamps/twitter.png'
-                    size: self.size
-                    pos: self.pos
-
-            size_hint: None, None
-            size: 256, 256
-
-        Label:
-            text: 'tweet?'
-           
-
-        Button:
-            canvas:
-                Rectangle:
-                    source: 'images/icons/print.png'
-                    size: self.size
-                    pos: self.pos
-
-            size_hint: None, None
-            size: 256, 256
-        Label:
-            text: 'print?'
-
-
-        Button:
-            canvas:
-                Rectangle:
-                    source: 'images/icons/stamps/mail.png'
-                    size: self.size
-                    pos: self.pos
-
-            size_hint: None, None
-            size: 256, 256
-        Label:
-            text: 'email?'
 
 
 <PickerScreen>:

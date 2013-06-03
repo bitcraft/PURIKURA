@@ -72,10 +72,6 @@ def handle_print_number_error(value):
         return MAXIMUM_PRINTS
 
 
-def get_images():
-    return glob.glob('{0}/*.JPG'.format(thumbnails))
-
-
 Builder.load_file('kiosk.kv')
 
 # hack search method because one is not included with kivy
@@ -112,6 +108,9 @@ class IconAccordionItem(AccordionItem):
 
 class PickerScreen(Screen):
 
+    def get_images(self):
+        return glob.glob('{0}/*.JPG'.format(thumbnails))
+
     def on_pre_enter(self):
 
         self.layout = search(self, 'layout')
@@ -128,8 +127,20 @@ class PickerScreen(Screen):
 
         self.background.y = -200
 
-        images = get_images()
-        width = math.ceil((len(images) / 2.0 * 312) / float(screen_width)) 
+        Loader.loading_image = CoreImage('images/loading.gif')
+        Loader.num_workers = 4
+        Loader.max_upload_per_frame = 4
+
+        grid = search(self, 'grid')
+        for image in self.get_images():
+            widget = Factory.AsyncImage(
+                source=image, 
+                allow_stretch=True)
+            widget.bind(on_touch_down=self.on_image_touch)
+            grid.add_widget(widget)
+
+        
+        width = (math.ceil(len(grid.children) / 2.0) * 312) / float(screen_width)
         self.max_width = int(width) * int(screen_width)
 
         # set the background to the correct position
@@ -139,17 +150,6 @@ class PickerScreen(Screen):
         # somewhat proportionally to the number of images
         rellayout = search(self, 'rellayout')
         rellayout.size_hint = (width,1)
-
-        grid = search(self, 'grid')
-
-        Loader.loading_image = CoreImage('images/loading.gif')
-        Loader.num_workers = 4
-        Loader.max_upload_per_frame = 4
-
-        for image in get_images():
-            widget = Factory.AsyncImage(source=image, allow_stretch=True)
-            widget.bind(on_touch_down=self.on_image_touch)
-            grid.add_widget(widget)
 
         self.scrollview_hidden = False
         self._scrollview_pos_hint = self.scrollview.pos_hint
@@ -337,13 +337,6 @@ class PickerScreen(Screen):
             
                 ani.start(self._focus_widget)
                 self._focus_show_ani = ani
-
-    def on_picker_move(self, widget, arg):
-        return
-        # this is the shift up/down animation
-        if widget is self.scrollview:
-            x, y = self.background.pos
-            self.background.pos = (x, -arg[1] / 50)
 
     def on_picker_scroll(self, value1, value2):
         # this is the left/right parallax animation

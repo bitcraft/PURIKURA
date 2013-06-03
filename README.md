@@ -81,6 +81,16 @@ In words:
             this modified photo is posted to twitter, printed, and archived
 
 
+Running the touch interface
+---------------------------
+
+Teh interface is developed using the excellent kivy library.  Unfortunatly,
+this repo cannot run the interface directly since some artwork used in the
+project cannot be hosted here.
+
+< update this later >
+
+
 Slideshow
 ---------
 
