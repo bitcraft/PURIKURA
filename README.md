@@ -1,7 +1,16 @@
 PYRIKURA
 ========
 
-PYRIKURA is a set of hardware and software plans for a DIY wedding/event photo booth.
+PYRIKURA is a set of hardware and software plans for a wedding/event photo booth.
+
+It includes image processing, camera control, live slideshow, and touch based
+image broswer for kiosk operation.
+
+A subset of this project called pyrikura is included in this repository.
+Pyrikura automates image processing, camera control, printing, internet
+uploading and more.
+
+I use PURIKURA for my professional photobooth service.
 
 
 Modes of Operation
@@ -71,6 +80,15 @@ In words:
         the composer uses a template to add a background
             this modified photo is posted to twitter, printed, and archived
 
+
+Slideshow
+---------
+
+A simple slideshow is included that will automatically add new images from a
+hot folder.  There are currently 3 formats that rotate: a ken burns effect, a
+staccked photos effect, and simple scrolling photos effect.
+
+
 QR Codes and Social Media
 -------------------------
 
@@ -101,25 +119,7 @@ customize it as you wish.
 Why is it free?
 ---------------
 
-I've used and worked with photo booth owners in the past and what bothers me the
-most about all of it is the lack of time spent on customer interaction and
-friendliness.  I understand that photo booths are always changing and oners are
-faced with new software and hardware upgrades every year.
-
-All of these changes adds to the bottom line, and sometimes, and operator is
-faced with making a decision between providing a fun experience and maintaining
-their equipment.
-
-I'm releasing the software that I develop for my own photo booth business free
-and open source.  I hope that my project will encourage others to use and
-develop on my platform.
-
-With a free software base, I hope that photo booth operators will have more time
-to concentrate on their clients and provide a more enjoyable experience for
-their clients.
-
-This will also make free operators from costly software licences and let them
-quickly customize the experience for each user.
+Information wants to be free.  Donations are accepted and appreciated.
 
 
 The Name
@@ -143,7 +143,3 @@ Software
 -  zbar
 
 
-Future
-------
-
-I would like to organize a collection of photos of my version of the project.
