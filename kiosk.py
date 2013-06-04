@@ -25,15 +25,16 @@ Config.set('graphics', 'show_cursor', False)
 Config.set('graphics', 'show_mousecursor', False)
 
 
-#thumbnails = '/home/mjolnir/events/kali-joshua/small'
-#detail     = '/home/mjolnir/events/kali-joshua/medium'
-#originals  = '/home/mjolnir/events/kali-joshua/originals'
+event = 'gunnar-dolly'
+event = 'kali-joshua'
 
+thumbnails = '/home/mjolnir/events/{}/small'.format(event)
+detail     = '/home/mjolnir/events/{}/medium'.format(event)
+originals  = '/home/mjolnir/events/{}/originals'.format(event)
+composites = '/home/mjolnir/events/{}/composites/'.format(event)
 
-thumbnails = '/home/mjolnir/events/hunnar-dolly/small'
-detail     = '/home/mjolnir/events/gunnar-dolly/medium'
-originals  = '/home/mjolnir/events/gunnar-dolly/originals'
 composites = '/home/mjolnir/events/gunnar-dolly/composites/'
+
 
 
 module = 'pyrikura'
@@ -73,7 +74,7 @@ if __name__ == '__main__':
     pygame.mouse.set_cursor(*cursor)
 
     app = KioskApp()
-    #app.manager.add_widget(SinglePicker(name='singlepicker'))
+    app.manager.add_widget(SinglePicker(name='singlepicker'))
     app.manager.add_widget(CompositePicker(name='compositepicker'))
 
     app.run()

@@ -94,7 +94,7 @@ class PanScanLayer(cocos.layer.Layer):
 
         self._z = 0
         self.bkg = 0
-        self.scale = 1.6
+        self.scale = 1.5
         self.interval = 5
 
         self.check_queue()

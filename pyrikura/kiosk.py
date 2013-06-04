@@ -152,8 +152,6 @@ class PickerScreen(Screen):
         self.locked = False
 
     def on_image_touch(self, widget, mouse_point):
-
-        print self.large_preview_size
         if self.locked:
             return
 
@@ -178,6 +176,9 @@ class PickerScreen(Screen):
                 # close the keyboard
                 from kivy.core.window import Window
                 Window.release_all_keyboards()
+
+                # disable the controls (workaround until 1.8.0)
+                self.controls.disable()
 
                 # hide the controls
                 ani = Animation(
@@ -316,9 +317,10 @@ class PickerScreen(Screen):
 
 import smtplib
 import threading
-
+import pickle
 
 sender = 'leif@kilbuckcreek.com'
+auth_file = '/home/mjolnir/git/PURIKURA/secrets'
 
 class SenderThread(threading.Thread):
 
@@ -347,8 +349,15 @@ class SenderThread(threading.Thread):
             'attachment;filname=photo.jpg')
         msg.attach(file_msg)
 
-        smtpout = smtplib.SMTP('smtpout.secureserver.net')
-        smtpout.login('leif@kilbuckcreek.com', 'Striker85')
+        with open(auth_file) as fh:
+            auth = pickle.load(fh)
+            auth = auth['smtp']
+
+        smtpout = smtplib.SMTP(auth['host'])
+        smtpout.login(auth['username'], auth['password'])
+
+        auth = None
+
         smtpout.sendmail(sender, [self.address], msg.as_string())
         smtpout.quit()
         
@@ -361,9 +370,14 @@ class SharingControls(FloatLayout):
     twitter_acct = StringProperty('@kilbuckcreekphoto')
     filename = StringProperty()
 
-    def __init__(self, **kwarg):
-        self.register_event_type('on_reset_controls')
-        super(SharingControls, self).__init__(**kwarg)
+    def disable(self):
+        def derp(*arg):
+            return False
+
+        for widget in self.children:
+            widget.on_touch_down = derp
+            widget.on_touch_up = derp
+            widget.on_touch_motion = derp
 
     def do_print(self, popup, widget):
         popup.dismiss()
@@ -374,7 +388,8 @@ class SharingControls(FloatLayout):
             font_size=30)
         button = Button(
             text='Awesome!',
-            font_size=30)
+            font_size=30,
+            background_color=(0,1,0,1))
         layout.add_widget(label)
         layout.add_widget(button)
 
@@ -395,11 +410,12 @@ class SharingControls(FloatLayout):
 
         layout = BoxLayout(orientation='vertical')
         label = Label(
-            text='Just sent this image to:\n{}'.format(address),
+            text='Just sent this image to:\n\n{}'.format(address),
             font_size=30)
         button = Button(
             text='Awesome!',
-            font_size=30)
+            font_size=30,
+            background_color=(0,1,0,1))
         layout.add_widget(label)
         layout.add_widget(button)
 
@@ -426,10 +442,12 @@ class SharingControls(FloatLayout):
             font_size=30)
         button0 = Button(
             text='Just do it!',
-            font_size=30)
+            font_size=30,
+            background_color=(0,1,0,1))
         button1 = Button(
             text='No',
-            font_size=30)
+            font_size=30,
+            background_color=(1,0,0,1))
         layout1.add_widget(button1)
         layout1.add_widget(button0)
         layout0.add_widget(label)
@@ -457,7 +475,8 @@ class SharingControls(FloatLayout):
                 font_size=30)
             button = Button(
                 text='ok!',
-                font_size=30)
+                font_size=30,
+                background_color=(0,1,0,1))
             layout.add_widget(label)
             layout.add_widget(button)
 
@@ -472,14 +491,16 @@ class SharingControls(FloatLayout):
             layout0 = BoxLayout(orientation='vertical')
             layout1 = BoxLayout(orientation='horizontal')
             label = Label(
-                text='Is this email address correct?\n{}'.format(self.email_addressee),
+                text='Is this email address correct?\n\n{}'.format(self.email_addressee),
                 font_size=30)
             button0 = Button(
                 text='Yes',
-                font_size=30)
+                font_size=30,
+                background_color=(0,1,0,1))
             button1 = Button(
                 text='No',
-                font_size=30)
+                font_size=30,
+                background_color=(1,0,0,1))
             layout1.add_widget(button1)
             layout1.add_widget(button0)
             layout0.add_widget(label)
@@ -497,9 +518,6 @@ class SharingControls(FloatLayout):
             button1.bind(on_release=popup.dismiss)
 
         popup.open()
-
-    def on_reset_controls(self):
-        pass
 
     def check_email_text(self, widget):
         self.email_addressee = widget.text
