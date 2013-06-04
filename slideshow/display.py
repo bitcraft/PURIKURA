@@ -29,7 +29,6 @@ screens = display.get_screens()
 window = pyglet.window.Window(fullscreen=True, screen=screens[-1], vsync=0)
 
 
-
 from pyglet.image import *
 from pyglet.sprite import Sprite
 from PIL import Image, ImageOps
@@ -37,6 +36,8 @@ import random, glob, os
 
 from multiprocessing import Process, Queue
 import subprocess
+
+os.chdir('/home/mjolnir/git/PURIKURA/slideshow/')
 
 target_size = 800, 800
 event_name = 'gunnar-dolly'
@@ -169,7 +170,7 @@ window_size = window.get_size()
 if __name__ == '__main__':
     init()
 
-    display = TableclothDisplay(window, 'images/seamless-montage.png', '.')
+    display = TableclothDisplay(window, '../images/seamless-montage.png', '.')
 
     pyglet.clock.set_fps_limit(120)
     pyglet.clock.schedule(scroll)

@@ -36,6 +36,7 @@ import os, sys, subprocess, random
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from worker import *
 
+os.chdir('/home/mjolnir/git/PURIKURA/slideshow')
 
 pyglet.resource.reindex()
 
@@ -365,7 +366,13 @@ if __name__ == '__main__':
     start_workers()
     
     init()
-    cocos.director.director.init(fullscreen=True)
+
+    platform = pyglet.window.get_platform()
+    display = platform.get_display("")
+    screens = display.get_screens()
+    #window = pyglet.window.Window(fullscreen=True, screen=screens[-1], vsync=0)
+
+    cocos.director.director.init(fullscreen=True, screen=screens[-1])
 
     def run():
         try:

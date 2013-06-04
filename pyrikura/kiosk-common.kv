@@ -27,8 +27,7 @@
 
     Accordion:
         orientation: 'vertical'
-        size_hint: .40, 1
-        pos: 48,0
+        pos: 16,0
         min_space: 232
 
         AccordionItem:
@@ -43,7 +42,7 @@
 
                 Label:
                     text: 'Number of copies:'
-                    font_size: 45
+                    font_size: 40
 
                 BoxLayout:
                     orientation: 'horizontal'
@@ -63,7 +62,7 @@
                         pos_hint: {'top': 1}
                         size_hint: None, None
                         height: 64
-                        width: 256
+                        width: 128
                         text: '%s' % root.prints
                         font_size: 64
 
@@ -80,7 +79,7 @@
                 Button:
                     text: 'Print!'
                     font_size: 50
-                    on_press: root.spool_print()
+                    on_press: root.confirm_print()
 
                 Widget:
                     size_hint: 1, None
@@ -94,6 +93,12 @@
 
             BoxLayout:
                 orientation: 'vertical'
+                spacing: 16
+
+                Label:
+                    size_hint: (.5, .25)
+                    font_size: 30
+                    text: 'Email Address'
 
                 # email address input box
                 BoxLayout:
@@ -101,17 +106,13 @@
                     size_hint: 1, None
                     height: 48
 
-                    Label:
-                        size_hint: (.5, 1.0)
-                        font_size: 30
-                        text: 'Email Address'
-
                     TextInput:
-                        size_hint: (1.0, 1.0)
+                        pos_hint: {'x': 0}
+                        size_hint: 1.0, 1.0
                         font_size: 30
                         id: email_input
                         multiline: False
-                        on_focus: root.check_email_focus(self)
+                        on_text: root.check_email_text(self)
 
                     Button:
                         size_hint: (None, None)
@@ -123,16 +124,13 @@
                         text: "⊗"
                         on_release: email_input.text = ''
 
-                Widget:
-                    size_hint: 1, None
-                    height: 48
-
                 Button:
                     text: 'Send!'
-                    font_size: 40
+                    font_size: 50
+                    on_press: root.confirm_address()
 
                 Label:
-                    text: 'Emails can take up to 10 minutes to deliver'
+                    text: 'Emails can take up\nto 10 minutes to deliver'
                     font_size: 25
 
 
@@ -144,7 +142,7 @@
                 orientation: 'vertical'
 
                 Button:
-                    text: 'Tweet!  %s' % root.twitter_acct
+                    text: 'Tweet!\n%s' % root.twitter_acct
                     font_size: 40
 
                 Label:
@@ -153,8 +151,9 @@
 
 
 <PickerScreen>:
-    small_preview_size: 900, 900
-    large_preview_size: 1000, 1000
+    small_preview_size: 300, 300
+    large_preview_size: 600, 600
+    grid_rows: 2
 
     FloatLayout:
         uniqueid: 'layout'
@@ -164,12 +163,8 @@
             source: 'images/galaxy.jpg'
             allow_stretch: True
             color: 1, 1, 1, .5
-            size_hint: 2.5, 1.5
+            size_hint: 3, 1.5
             pos: 0,0
-
-        SharingControls:
-            uniqueid: 'controls'
-            pos_hint: {'x': 2}
 
         ScrollView:
             uniqueid: 'scrollview'
@@ -180,14 +175,14 @@
 
             scroll_timeout: 500
             scroll_distance: 200
-            scroll_friction: 2
+            scroll_friction: 1
             
             bar_width: 6
 
             GridLayout:
                 uniqueid: 'grid'
                 size_hint: None, 1
-                rows: 4
-                col_default_width: root.small_preview_size[0] / 3
+                rows: root.grid_rows
+                col_default_width: root.small_preview_size[0]
                 #row_default_height: root.small_preview_size[1]
 
