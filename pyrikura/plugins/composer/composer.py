@@ -43,7 +43,6 @@ def compose(conn, ready_queue, images, config):
 
     for name, image_config in sorted(layers):
         x, y, w, h = image_config['area']
-        print name, x, y, w, h
         try:
             temp_image = cache[image_config['filename']]
         except KeyError:
@@ -51,20 +50,23 @@ def compose(conn, ready_queue, images, config):
             cache[image_config['filename']] = temp_image
         base.composite(temp_image, x, y)
 
+
     # save it!
     new_path = 'composite.png'
 
-    for image in cache.values():
-        image.close()
+    overwrite = True
+    if not overwrite:
+        for image in cache.values():
+            image.close()
 
-    # append a dash and numberal if there is a duplicate
-    if os.path.exists(new_path):
-        i = 1
-        root, ext = os.path.splitext(new_path)
-        new_path = "{0}-{1:04d}{2}".format(root, i, ext)
-        while os.path.exists(new_path):
-            i += 1
+        # append a dash and numberal if there is a duplicate
+        if os.path.exists(new_path):
+            i = 1
+            root, ext = os.path.splitext(new_path)
             new_path = "{0}-{1:04d}{2}".format(root, i, ext)
+            while os.path.exists(new_path):
+                i += 1
+                new_path = "{0}-{1:04d}{2}".format(root, i, ext)
 
     base.format = 'png'
     base.save(filename=new_path)
@@ -149,7 +151,6 @@ class ComposerBroker(Broker):
         for this_config in static_images:
             self.preprocess(this_config)
 
-        print self._total_images
         self._p_conn, c_conn = Pipe()
         self._composer_process =  Process(
                 target = compose,

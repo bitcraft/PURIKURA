@@ -78,6 +78,10 @@ class PickerScreen(Screen):
     images = ListProperty()
 
     def on_pre_enter(self):
+
+        # schedule a callback to check for new images
+        Clock.schedule_interval(self.scan, 1)
+
         self.layout = search(self, 'layout')
         self.background = search(self, 'background')
         self.scrollview = search(self, 'scrollview')
@@ -122,17 +126,24 @@ class PickerScreen(Screen):
         self.scrollview.y = self.scrollview.original_y
         self.scrollview.bind(scroll_x=self.on_picker_scroll)
 
-        # load images from disk
-        for filename in self.get_images():
-            widget = self._create_preview_widget(filename)
-            self.grid.add_widget(widget)
-      
         # the background has a parallax effect, so position is manually now
         self.background.y = -400
         self.background.pos = self._calc_bg_pos()
 
         self.locked = False
+        self.loaded = set()
 
+    def scan(self, dt):
+
+        # load images from disk
+        for filename in self.get_images():
+            if filename not in self.loaded:
+                self.loaded.add(filename)
+                widget = self._create_preview_widget(filename)
+                self.grid.add_widget(widget)
+                if not self.scrollview_hidden:
+                    self.background.pos = self._calc_bg_pos()
+      
     def _create_preview_widget(self, source):
         widget = Factory.AsyncImage(
             source=source,
@@ -314,53 +325,6 @@ class PickerScreen(Screen):
         return (-self.scrollview.scroll_x * bkg_w - self.width / 2,
                 self.background.pos[1])
 
-
-import smtplib
-import threading
-import pickle
-
-sender = 'leif@kilbuckcreek.com'
-auth_file = '/home/mjolnir/git/PURIKURA/secrets'
-
-class SenderThread(threading.Thread):
-
-    def __init__(self, address, filename):
-        threading.Thread.__init__(self)
-        self.address = address
-        self.filename = filename
-
-    def run(self):
-        import email
-        from email.mime.text import MIMEText
-
-        msg = email.MIMEMultipart.MIMEMultipart('mixed')
-        msg['subject'] = 'Your photo from Kilbuck Creek Photo Booth'
-        msg['from'] = sender
-        msg['to'] = self.address
-
-        body = email.mime.Text.MIMEText('Here\'s your photo!\n\nThank you!\n\n')
-        msg.attach(body)
-
-        file_msg = email.mime.base.MIMEBase('image', 'jpeg')
-        file_msg.set_payload(open(self.filename).read())
-        email.encoders.encode_base64(file_msg)
-        file_msg.add_header(
-            'Content-Disposition',
-            'attachment;filname=photo.jpg')
-        msg.attach(file_msg)
-
-        with open(auth_file) as fh:
-            auth = pickle.load(fh)
-            auth = auth['smtp']
-
-        smtpout = smtplib.SMTP(auth['host'])
-        smtpout.login(auth['username'], auth['password'])
-
-        auth = None
-
-        smtpout.sendmail(sender, [self.address], msg.as_string())
-        smtpout.quit()
-        
 
 class SharingControls(FloatLayout):
     prints = BoundedNumericProperty(1, min=1, max=MAXIMUM_PRINTS,

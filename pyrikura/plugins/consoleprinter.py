@@ -6,7 +6,7 @@ import sys
 
 class ConsolePrinterBroker(Broker):
     def process(self, msg, sender):
-        sys.stdout.write(msg + '\n')
+        sys.stdout.write(str(msg) + '\n')
         sys.stdout.flush()
 
 

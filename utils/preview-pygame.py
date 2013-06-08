@@ -23,24 +23,53 @@
 """
 display the camera's live preview using pygame.
 
+uses threads and stuff for speed
+
 suitable for any display that is compatable with SDL (framebuffers, etc)
 """
 
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(os.path.join(os.path.abspath(__file__))),
+'..'))
+
 import piggyphoto, pygame
+import threading, Queue, time
 from StringIO import StringIO
-import os
-import time
 
-camera = piggyphoto.camera()
-camera.leave_locked()
-camera.capture_preview('preview.jpg')
 
-picture = pygame.image.load("preview.jpg")
-preview_size = picture.get_size()
+class CaptureThread(threading.Thread):
+    def __init__(self, queue, camera, lock):
+        super(CaptureThread, self).__init__()
+        self.queue = queue
+        self.camera = camera
+        self.lock = lock
+    
+    def run(self):
+        preview = self.camera.capture_preview
+        put = self.queue.put
+        lock = self.lock
+        while 1:
+            with lock:
+                data = preview().get_data()
+            put(data)
 
-pygame.display.set_mode(preview_size)
-main_surface = pygame.display.get_surface()
 
+class BlitThread(threading.Thread):
+    def __init__(self, queue, surface, lock):
+        super(BlitThread, self).__init__()
+        self.queue = queue
+        self.surface = surface
+        self.lock = lock
+
+    def run(self):
+        get = self.queue.get
+        blit = self.surface.blit
+        load = pygame.image.load
+        lock = self.lock
+        while 1:
+            picture = load(StringIO(get()))
+            with lock:
+                blit(picture, (0, 0))
 
 
 def quit_pressed():
@@ -49,14 +78,39 @@ def quit_pressed():
             return True
     return False
 
-def update_preview(camera):
-    data = camera.capture_preview().get_data()
-    picture = pygame.image.load(StringIO(data))
-    main_surface.blit(picture, (0, 0))
-    pygame.display.flip()
-
 
 clock = pygame.time.Clock()
+queue = Queue.Queue(30)
+
+camera_lock = threading.Lock()
+camera = piggyphoto.camera()
+camera.leave_locked()
+camera.capture_preview('preview.jpg')
+
+thread0 = CaptureThread(queue, camera, camera_lock)
+thread0.daemon = True
+thread0.start()
+
+display_lock = threading.Lock()
+picture = pygame.image.load(StringIO(queue.get()))
+pygame.display.set_mode(picture.get_size())
+main_surface = pygame.display.get_surface()
+
+thread1 = BlitThread(queue, main_surface, display_lock)
+thread1.daemon = True
+thread1.start()
+
+last_shot = time.time()
+
+print 'running'
+flip = pygame.display.flip
 while not quit_pressed():
-    clock.tick(40)
-    update_preview(camera)
+    with display_lock:
+        flip()
+
+    if time.time() > last_shot + 10:
+        with camera_lock:
+            last_shot = time.time()
+            camera.capture_image() 
+
+    clock.tick(30)

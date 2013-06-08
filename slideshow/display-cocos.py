@@ -40,21 +40,28 @@ os.chdir('/home/mjolnir/git/PURIKURA/slideshow')
 
 pyglet.resource.reindex()
 
-workers = []
-thumbnail_queue = Queue(6)
-image_queue = Queue(3)
-
 window = None
 
-event_name = 'gunnar-dolly'
+event = 'test'
 #event_name = 'kali-joshua'
 
-settings = {}
-settings['folder'] = os.path.join('/', 'home', 'mjolnir', 'events', \
-                        event_name, 'originals')
-settings['thumbnail_size'] = 200, 200
-settings['thumbnail_size'] = 800, 800
 
+settings = {}
+settings['shutter_sound'] = os.path.join('sounds', 'bell.wav')
+settings['printsrv']   = '/home/mjolnir/smb-printsrv'
+settings['template']   = 'templates/2x6vintage.template'
+settings['thumbnails'] = '/home/mjolnir/events/{}/small'.format(event)
+settings['detail']     = '/home/mjolnir/events/{}/medium'.format(event)
+settings['originals']  = '/home/mjolnir/events/{}/originals'.format(event)
+settings['composites'] = '/home/mjolnir/events/{}/composites/'.format(event)
+settings['thumbnail_size'] = 768, 768
+settings['large_size'] = 1024, 1024 
+settings['s_queue_size'] = 6
+settings['l_queue_size'] = 3
+
+workers = []
+thumbnail_queue = Queue(settings['s_queue_size'])
+image_queue = Queue(settings['l_queue_size'])
 
 
 # worker just serves up images to use
@@ -370,24 +377,20 @@ if __name__ == '__main__':
     platform = pyglet.window.get_platform()
     display = platform.get_display("")
     screens = display.get_screens()
-    #window = pyglet.window.Window(fullscreen=True, screen=screens[-1], vsync=0)
+
+    pyglet.clock.set_fps_limit(60)
 
     cocos.director.director.init(fullscreen=True, screen=screens[-1])
+    #cocos.director.director.init(fullscreen=True)
 
-    def run():
-        try:
-            cocos.director.director.run(next(all_scenes)())
-        except KeyboardInterrupt:
-            [ p.terminate() for p in workers ]
-            cocos.director.director.terminate_app = True
-        except:
-            [ p.terminate() for p in workers ]
-            raise
-        finally:
-            [ p.terminate() for p in workers ]
+    try:
+        cocos.director.director.run(next(all_scenes)())
+    except KeyboardInterrupt:
+        [ p.terminate() for p in workers ]
+        cocos.director.director.terminate_app = True
+    except:
+        [ p.terminate() for p in workers ]
+        raise
+    finally:
+        [ p.terminate() for p in workers ]
 
-    cProfile.run('run()', 'results.prof')
-
-    p = pstats.Stats('results.prof')
-    p.strip_dirs()
-    p.sort_stats('time').print_stats(20)

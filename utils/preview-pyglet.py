@@ -27,10 +27,13 @@ somewhat faster performace that the pygame version, uses a background process
 to format the live feed.
 """
 
+import os, sys
+sys.path.append(os.path.join(os.path.dirname(os.path.join(os.path.abspath(__file__))),
+'..'))
+
+import time
 import piggyphoto
 import pyglet
-import os
-import time
 import ctypes
 from PIL import Image
 from StringIO import StringIO

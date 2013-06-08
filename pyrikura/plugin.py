@@ -40,7 +40,6 @@ class Plugin(IPlugin):
     allow commands to be invoked from the shell
 
     """
-    __decendant = None
 
     def __init__(self):
         self.is_activated = False
@@ -48,7 +47,7 @@ class Plugin(IPlugin):
     @classmethod
     def new(cls, *arg, **kwarg):
         if not hasattr(cls, '_decendant'):
-            raise Exception, 'class {} does not have decendant set'.format(cls)
+            raise Exception, 'class {} does not have decendant set'.format(cls.__name__)
         return cls._decendant(*arg, **kwarg)
 
     def setvar(self, name, value):

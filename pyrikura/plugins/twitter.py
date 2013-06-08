@@ -9,7 +9,7 @@ class PBTwitterBroker(Broker):
     def __init__(self, auth_file, *arg, **kwarg):
         super(PBTwitterBroker, self).__init__(*arg, **kwarg)
         with open(auth_file) as fh:
-            self._auth = pickle.load(fh)
+            self._auth = pickle.load(fh)['twitter']
         self.connect()
 
     def process(self, msg, sender=None):

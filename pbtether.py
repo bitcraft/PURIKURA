@@ -43,39 +43,74 @@ import pickle
 import time
 
 
-
-event_name = 'test'
+event = 'test'
 
 settings = {}
 settings['shutter_sound'] = os.path.join('sounds', 'bell.wav')
-settings['printsrv'] = os.path.join('/', 'home', 'mjolnir', 'smb-printsrv')
-#settings['template'] = os.path.join('templates', 'polaroid0.template')
-settings['template'] = os.path.join('templates', '2x6vintage.template')
-settings['originals'] = os.path.join('/', 'home', 'mjolnir', 'events', event_name, 'originals')
+settings['reprint_sound'] = os.path.join('sounds', 'long_bell.wav')
+settings['printsrv']   = '/home/mjolnir/smb-printsrv'
+settings['template']   = 'templates/2x6vintage.template'
+settings['thumbnails'] = '/home/mjolnir/events/{}/small'.format(event)
+settings['detail']     = '/home/mjolnir/events/{}/medium'.format(event)
+settings['originals']  = '/home/mjolnir/events/{}/originals'.format(event)
+settings['composites'] = '/home/mjolnir/events/{}/composites/'.format(event)
 settings['temp_image'] = 'capture.jpg'
 
 
+paths = ('thumbnails', 'detail', 'originals', 'composites')
+
+
+for path in [ settings[i] for i in paths ]:
+    if not os.path.exists(path):
+        os.makedirs(path)
+
 def build():
     arduino = Node('Arduino', '/dev/ttyACM0', 9600)
-    repeater = Node('Repeater', 4, 5)
+
+    beacon1 = Node('Repeater', 1000, 60)
+    beacon2 = Node('Repeater', 4, delay=10)
+
+    ringer = Node('Repeater', 4, delay=3)
+    shutter = Node('Repeater', 1, interval=4)
+
     tether = Node('Tether')
     composer = Node('Composer', template=settings['template'])
     stdout = Node('ConsolePrinter')
-    archiver = Node('FileCopy', dest=settings['originals'])
+    archiver1 = Node('FileCopy', dest=settings['originals'])
+    archiver2 = Node('FileCopy', dest=settings['composites'])
+    thumbnailer1 = Node('Thumbnailer', size='300x300', dest=settings['thumbnails'])
+    thumbnailer2 = Node('Thumbnailer', size='768x768', dest=settings['detail'])
     spooler = Node('FileCopy', dest=settings['printsrv'])
-    twitter = Node('Twitter', 'twitter.secrets')
-    beep = Node('Beeper', settings['shutter_sound'])
+    twitter = Node('Twitter', 'secrets')
+    sound1 = Node('Sound', settings['shutter_sound'], 2)
+    sound2 = Node('Sound', settings['reprint_sound'], 3)
 
-    beep.subscribe(repeater)
-    repeater.subscribe(arduino)
-    tether.subscribe(repeater)
+    beacon2.subscribe(arduino)
+    sound2.subscribe(arduino)
+
+    ringer.subscribe(beacon2)
+
+    sound1.subscribe(ringer)
+    shutter.subscribe(ringer)
+   
+    tether.subscribe(shutter)
+
+    #repeater.subscribe(arduino)
+
     composer.subscribe(tether)
-    archiver.subscribe(tether)
-    spooler.subscribe(composer)
+    archiver1.subscribe(tether)
+
+    thumbnailer1.subscribe(archiver1)
+    thumbnailer2.subscribe(archiver1)
+
+    archiver2.subscribe(composer)
+    #spooler.subscribe(composer)
     #twitter.subscribe(composer)
 
-    return [arduino, stdout, composer, spooler, archiver, tether, twitter,
-            repeater]
+    # the order of this list determines priority of updates
+    return [ beacon1, beacon2, ringer, sound1, sound2, arduino,
+             stdout, composer, spooler, archiver1, archiver2,
+             tether, shutter, twitter, thumbnailer1, thumbnailer2 ]
 
 
 def run():
@@ -103,14 +138,12 @@ def run():
         for other in node._listening:
             broker.subscribe(brokers[other])
 
-    start = time.time()
-    last_time = 0
-    shots = 0
-    last_trigger = 0
+    # testing!
+    #brokers[nodes[0]].process(['hello!'])
+
     for broker in itertools.cycle(brokers.values()):
         broker.update()
-
-    #eyefi = Watcher(eyefi_incoming, re.compile('.*\.jpg$', re.I))
+        time.sleep(.05)
 
 
 profile = False

@@ -1,1 +1,1 @@
-import kiosk
+#import kiosk

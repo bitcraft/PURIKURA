@@ -61,38 +61,3 @@ class ThreadedBroker(threading.Thread):
     def process(self, task):
         pass
 
-
-class BadBroker(object):
-
-    def __init__(self, **kwargs):
-        self.queue = Queue.Queue()
-        self._listening = []
-
-    def __enter__(self):
-        pass
-
-    def __exit__(self):
-        pass
-
-    def process(self, msg, sender=None):
-        pass
-
-    def subscribe(self, other):
-        self._listening.append(other)
-
-    def publish(self, iterable):
-        [ self.queue.put(i) for i in iterable ]
-
-    def update(self, delta=0):
-        pass
-
-    def step(self, delta=0):
-        for other in self._listening:
-            try:
-                task = other.queue.get(False)
-            except Queue.Empty:
-                continue
-            else:
-                self.process(task)
-                other.queue.task_done()
-        self.update()

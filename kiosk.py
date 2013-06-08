@@ -3,7 +3,7 @@
 import os
 import glob
 import pygame
-import pyrikura
+from pyrikura import kiosk
 
 import kivy
 from kivy.app import App
@@ -21,26 +21,17 @@ Config.set('graphics', 'fullscreen', True)
 Config.set('graphics', 'width', '1280')
 Config.set('graphics', 'height', '1024')
 
-Config.set('graphics', 'show_cursor', False)
-Config.set('graphics', 'show_mousecursor', False)
 
-
-event = 'gunnar-dolly'
-event = 'kali-joshua'
-
+event = 'test'
 thumbnails = '/home/mjolnir/events/{}/small'.format(event)
 detail     = '/home/mjolnir/events/{}/medium'.format(event)
 originals  = '/home/mjolnir/events/{}/originals'.format(event)
 composites = '/home/mjolnir/events/{}/composites/'.format(event)
 
-composites = '/home/mjolnir/events/gunnar-dolly/composites/'
-
-
-
 module = 'pyrikura'
 Builder.load_file(os.path.join(module, 'kiosk-composite.kv'))
 
-class CompositePicker(pyrikura.kiosk.PickerScreen):
+class CompositePicker(kiosk.PickerScreen):
     def get_paths(self):
         return composites, composites, composites, composites
 
@@ -48,7 +39,7 @@ class CompositePicker(pyrikura.kiosk.PickerScreen):
         return sorted(glob.glob('{0}/*.png'.format(composites)))
 
 
-class SinglePicker(pyrikura.kiosk.PickerScreen):
+class SinglePicker(kiosk.PickerScreen):
     def get_paths(self):
         return thumbnails, detail, originals, composites
 
@@ -69,12 +60,12 @@ class KioskApp(App):
 
 if __name__ == '__main__':
     cursor = pygame.cursors.load_xbm(
-        os.path.join('images', 'hand.xbm'),
-        os.path.join('images', 'hand-mask.xbm'))
+        os.path.join('images', 'blank-cursor.xbm'),
+        os.path.join('images', 'blank-cursor-mask.xbm'))
     pygame.mouse.set_cursor(*cursor)
 
     app = KioskApp()
-    app.manager.add_widget(SinglePicker(name='singlepicker'))
+    #app.manager.add_widget(SinglePicker(name='singlepicker'))
     app.manager.add_widget(CompositePicker(name='compositepicker'))
 
     app.run()
