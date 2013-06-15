@@ -3,8 +3,9 @@
 import kivy
 kivy.require('1.5.0')
 
+import dbus
 import os, math
-
+import shutil
 from functools import partial
 
 from kivy.config import Config
@@ -37,6 +38,13 @@ del module
 
 
 MAXIMUM_PRINTS = 3
+
+from dbus.mainloop.glib import DBusGMainLoop
+DBusGMainLoop(set_as_default=True)
+
+bus = dbus.SessionBus()
+pb_obj = bus.get_object('com.kilbuckcreek.photobooth', '/com/kilbuckcreek/photobooth')
+pb_iface = dbus.Interface(pb_obj, dbus_interface='com.kilbuckcreek.photobooth')
 
 
 def handle_print_number_error(value):
@@ -114,6 +122,23 @@ class PickerScreen(Screen):
         self.focus_widget.size = self.small_preview_size
         self.focus_widget.bind(on_touch_down=self.on_image_touch)
         self.layout.add_widget(self.focus_widget)
+
+        self.preview_widget = Image(source='preview.jpg', nocache=True)
+        self.preview_widget.allow_stretch = True
+        self.preview_widget.x = center_x - OFFSET 
+        self.preview_widget.y = 0
+        self.preview_widget.size_hint = None, None
+        self.preview_widget.size = (100,100)
+        self.preview_widget.bind(on_touch_down=self.on_image_touch)
+        self.layout.add_widget(self.preview_widget)
+
+        def update_preview(delta=0):
+            if pb_iface.preview_safe:
+                self.preview_widget.reload()
+   
+
+        Clock.schedule_interval(update_preview, .20)
+        pb_iface.connect_to_signal('preview_updated', update_preview)
 
         self.preview_label = Label(
             text='Touch preview to close',
@@ -346,6 +371,10 @@ class SharingControls(FloatLayout):
     def do_print(self, popup, widget):
         popup.dismiss()
 
+        for i in range(self.prints):
+            filename = '/home/mjolnir/smb-printsrv/temp-preint-{}.png'.format(i)
+            shutil.copyfile(self.filename, filename)
+
         layout = BoxLayout(orientation='vertical')
         label = Label(
             text='Your prints will be ready soon!',
@@ -365,6 +394,7 @@ class SharingControls(FloatLayout):
         button.bind(on_release=popup.dismiss)
 
         popup.open()
+
 
     def do_email(self, popup, address, filename, widget):
         thread = SenderThread(address, filename)

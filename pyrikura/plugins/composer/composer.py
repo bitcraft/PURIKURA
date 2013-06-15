@@ -160,7 +160,7 @@ class ComposerBroker(Broker):
         self._composer_process.start()
 
 
-    def process(self, msg, sender):
+    def process(self, msg, sender=None):
         config = self._config_queue.pop()
         config['filename'] = msg
         self.preprocess(config)

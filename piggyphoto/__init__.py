@@ -215,18 +215,14 @@ class camera(object):
             self.init()
 
     def init(self):
-        if self.initialized:
-            print "Camera is already initialized."
         ans = 0
         for i in range(1 + retries):
             ans = gp.gp_camera_init(self._cam, context)
             if ans == 0:
                 break
             elif ans == -60:
-                print "***", unmount_cmd
                 os.system(unmount_cmd)
                 time.sleep(1)
-                print "camera.init() retry #%d..." % (i)
         check(ans)
         self.initialized = True
 
@@ -300,7 +296,6 @@ class camera(object):
         for i in range(1 + retries):
             ans = gp.gp_camera_capture(self._cam, GP_CAPTURE_IMAGE, PTR(path), context)
             if ans == 0: break
-            else: print "capture_image(%s) retry #%d..." % (destpath, i)
         check(ans)
 
         if destpath:
@@ -316,7 +311,6 @@ class camera(object):
         for i in range(1 + retries):
             ans = gp.gp_camera_capture_preview(self._cam, cfile._cf, context)
             if ans == 0: break
-            else: print "capture_preview(%s) retry #%d..." % (destpath, i)
 
         if destpath:
             cfile.save(destpath)
@@ -350,7 +344,6 @@ class camera(object):
             for c in children:
                 self._list_config(c, cfglist, path + "." + c.name)
         else:
-            print path, "=", widget.value
             cfglist.append(path)
 
     def list_config(self):
@@ -593,7 +586,6 @@ class cameraWidget(object):
 
     def __del__(self):
         # TODO fix this or find a good reason not to
-        #print "widget(%s) __del__" % self.name
         #check(gp.gp_widget_unref(self._w))
         pass
 
@@ -766,7 +758,6 @@ class cameraWidget(object):
             return label + "\n" + info + "\n" + type
 
     def _pop(widget, simplewidget):
-        #print widget
         for c in widget.children:
             simplechild = cameraWidgetSimple()
             if c.count_children():
@@ -775,9 +766,6 @@ class cameraWidget(object):
                 c._pop(simplechild)
             else:
                 setattr(simplewidget, c.name, c)
-
-            #print c.name, simplewidget.__doc__
-        #print dir(simplewidget)
 
     def populate_children(self):
         simplewidget = cameraWidgetSimple()

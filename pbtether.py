@@ -48,6 +48,8 @@ event = 'test'
 settings = {}
 settings['shutter_sound'] = os.path.join('sounds', 'bell.wav')
 settings['reprint_sound'] = os.path.join('sounds', 'long_bell.wav')
+settings['error_sound'] = os.path.join('sounds', 'error.wav')
+settings['next_sound'] = os.path.join('sounds', 'whistle.wav')
 settings['printsrv']   = '/home/mjolnir/smb-printsrv'
 settings['template']   = 'templates/2x6vintage.template'
 settings['thumbnails'] = '/home/mjolnir/events/{}/small'.format(event)
@@ -65,13 +67,14 @@ for path in [ settings[i] for i in paths ]:
         os.makedirs(path)
 
 def build():
-    arduino = Node('Arduino', '/dev/ttyACM0', 9600)
+    arduino = Node('Arduino', '/dev/ttyACM1', 9600)
 
     beacon1 = Node('Repeater', 1000, 60)
-    beacon2 = Node('Repeater', 4, delay=10)
+    beacon2 = Node('Repeater', 4, delay=8)
 
-    ringer = Node('Repeater', 4, delay=3)
+    ringer = Node('Repeater', 4, delay=1)
     shutter = Node('Repeater', 1, interval=4)
+    final = Node('Repeater', 1, interval=4)
 
     tether = Node('Tether')
     composer = Node('Composer', template=settings['template'])
@@ -84,18 +87,27 @@ def build():
     twitter = Node('Twitter', 'secrets')
     sound1 = Node('Sound', settings['shutter_sound'], 2)
     sound2 = Node('Sound', settings['reprint_sound'], 3)
+    sound3 = Node('Sound', settings['error_sound'], 3)
+    sound4 = Node('Sound', settings['next_sound'], 3)
 
     beacon2.subscribe(arduino)
-    sound2.subscribe(arduino)
+
+    arduino.subscribe(final)
+    sound2.subscribe(final)
 
     ringer.subscribe(beacon2)
 
     sound1.subscribe(ringer)
     shutter.subscribe(ringer)
+
+    final.subscribe(shutter)
    
     tether.subscribe(shutter)
+    sound4.subscribe(shutter)
 
-    #repeater.subscribe(arduino)
+    # trigger one image to allow camera to focus
+    tether.subscribe(arduino)
+    #sound3.subscribe_error(tether)
 
     composer.subscribe(tether)
     archiver1.subscribe(tether)
@@ -104,13 +116,13 @@ def build():
     thumbnailer2.subscribe(archiver1)
 
     archiver2.subscribe(composer)
-    #spooler.subscribe(composer)
-    #twitter.subscribe(composer)
+    spooler.subscribe(composer)
 
     # the order of this list determines priority of updates
-    return [ beacon1, beacon2, ringer, sound1, sound2, arduino,
+    return [ arduino, beacon1, ringer, beacon2, sound1, sound2,
              stdout, composer, spooler, archiver1, archiver2,
-             tether, shutter, twitter, thumbnailer1, thumbnailer2 ]
+             tether, shutter, twitter, thumbnailer1, thumbnailer2,
+             final, sound3, sound4]
 
 
 def run():
@@ -133,6 +145,11 @@ def run():
 
     for node in nodes:
         brokers[node] = node.load(pm)
+        try:
+            brokers[node].sound.play()
+            time.sleep(1)
+        except AttributeError:
+            pass
 
     for node, broker in brokers.items():
         for other in node._listening:
@@ -143,7 +160,7 @@ def run():
 
     for broker in itertools.cycle(brokers.values()):
         broker.update()
-        time.sleep(.05)
+        time.sleep(.01)
 
 
 profile = False

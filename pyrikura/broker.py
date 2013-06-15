@@ -8,6 +8,7 @@ class Broker(object):
     def __init__(self, *arg, **kwarg):
         self.queue = Queue.Queue()
         self._subscribers = []
+        self._error_subscribers = []
         for key, value in kwarg.items():
             setattr(self, key, value)
 
@@ -22,6 +23,14 @@ class Broker(object):
 
     def subscribe(self, other):
         other._subscribers.append(self)
+
+    def subscribe_error(self, other):
+        other._error_subscribers.append(self)
+
+    def error(self):
+        for i in iterable:
+            for other in self._error_subscribers:
+                other.process(i, self)
 
     def publish(self, iterable):
         for i in iterable:

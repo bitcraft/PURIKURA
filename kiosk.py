@@ -62,7 +62,7 @@ if __name__ == '__main__':
     cursor = pygame.cursors.load_xbm(
         os.path.join('images', 'blank-cursor.xbm'),
         os.path.join('images', 'blank-cursor-mask.xbm'))
-    pygame.mouse.set_cursor(*cursor)
+    #pygame.mouse.set_cursor(*cursor)
 
     app = KioskApp()
     #app.manager.add_widget(SinglePicker(name='singlepicker'))

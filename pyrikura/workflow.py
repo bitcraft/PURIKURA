@@ -2,6 +2,7 @@ class Node(object):
     def __init__(self, plugin_name, *arg, **kwarg):
         self.plugin_name = plugin_name
         self._listening = []
+        self._err_listening = []
         self._arg = arg
         self._kwarg = kwarg
 
@@ -14,6 +15,9 @@ class Node(object):
 
     def subscribe(self, other):
         self._listening.append(other)
+
+    def subscribe_error(self, other):
+        self._err_listening.append(other)
 
     def get_children(self):
         open_list = [self]

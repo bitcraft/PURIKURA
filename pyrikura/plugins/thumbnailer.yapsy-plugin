@@ -1,0 +1,9 @@
+[Core]
+Name = Thumbnailer
+Module = thumbnailer
+
+[Documentation]
+Description = thumbnail images
+Author = leif theden
+Version = 0.1
+Website = http://github.com/bitcraft/pyrikura

@@ -51,10 +51,11 @@ def toaster(filename, w, h, output=None):
     scratch = filename + 'scratch.miff'
 
     # colortone
-    scratch = colortone(filename, '#330000', 100, 0, output=scratch)
+    #scratch = colortone(filename, '#330000', 100, 0, output=scratch)
+    scratch = colortone(filename, '#220000', 100, 0, output=scratch)
 
     # contrast
-    cmd = 'convert {} -modulate 160,80,100 -gamma .95 -contrast -contrast {}'.format(
+    cmd = 'convert {} -modulate 150,110,100 -gamma 1.10 -contrast {}'.format(
           scratch, scratch
     )
 
@@ -62,7 +63,8 @@ def toaster(filename, w, h, output=None):
 
     # vignette kungfu
     scratch = vignette(scratch, w, h, 'none', 'LavenderBlush3')
-    scratch = vignette(scratch, w, h, '#FFD6C2', 'none')
+    #scratch = vignette(scratch, w, h, '#FFD6C2', 'none')
+    scratch = vignette(scratch, w, h, '#E3C2B8', 'none')
 
     execute('convert {} {}'.format(scratch, output))
     os.unlink(scratch)
