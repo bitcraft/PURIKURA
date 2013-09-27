@@ -3,6 +3,7 @@
 import kivy
 kivy.require('1.5.0')
 
+import time
 import dbus
 import os, math
 import shutil
@@ -123,7 +124,7 @@ class PickerScreen(Screen):
         self.focus_widget.bind(on_touch_down=self.on_image_touch)
         self.layout.add_widget(self.focus_widget)
 
-        self.preview_widget = Image(source='preview.jpg', nocache=True)
+        self.preview_widget = Image(source='capture.jpg', nocache=False)
         self.preview_widget.allow_stretch = True
         self.preview_widget.x = center_x - OFFSET 
         self.preview_widget.y = 0
@@ -132,13 +133,16 @@ class PickerScreen(Screen):
         self.preview_widget.bind(on_touch_down=self.on_image_touch)
         self.layout.add_widget(self.preview_widget)
 
-        def update_preview(delta=0):
-            if pb_iface.preview_safe:
-                self.preview_widget.reload()
-   
+        def update_preview(widget, mouse_point):
+            if widget.collide_point(mouse_point.x, mouse_point.y):
+                #pb_iface.capture_preview()
+                if os.path.exists('preview.jpg'):
+                    widget.source = 'preview.jpg'
+                    widget.reload()
 
-        Clock.schedule_interval(update_preview, .20)
-        pb_iface.connect_to_signal('preview_updated', update_preview)
+        self.preview_widget.bind(on_touch_down=update_preview)
+
+        #pb_iface.connect_to_signal('preview_updated', update_preview)
 
         self.preview_label = Label(
             text='Touch preview to close',
@@ -262,6 +266,9 @@ class PickerScreen(Screen):
 
             # show the focus widget
             elif self.focus_widget is not widget:
+                if widget is self.preview_widget:
+                    return False
+
                 self.scrollview_hidden = True
                 self.locked = True
 
@@ -350,6 +357,56 @@ class PickerScreen(Screen):
         return (-self.scrollview.scroll_x * bkg_w - self.width / 2,
                 self.background.pos[1])
 
+import smtplib
+import threading
+import pickle
+
+sender = 'leif@kilbuckcreek.com'
+auth_file = '/home/mjolnir/git/PURIKURA/secrets'
+
+class SenderThread(threading.Thread):
+
+    def __init__(self, address, filename):
+        threading.Thread.__init__(self)
+        self.address = address
+        self.filename = filename
+
+    def run(self):
+        import email
+        from email.mime.text import MIMEText
+
+        msg = email.MIMEMultipart.MIMEMultipart('mixed')
+        msg['subject'] = 'Your photo from Kilbuck Creek Photo Booth'
+        msg['from'] = sender
+        msg['to'] = self.address
+
+        body = email.mime.Text.MIMEText('Here\'s your photo!\n\nThank you!\n\n')
+        msg.attach(body)
+
+        file_msg = email.mime.base.MIMEBase('image', 'jpeg')
+        file_msg.set_payload(open(self.filename).read())
+        email.encoders.encode_base64(file_msg)
+        file_msg.add_header(
+            'Content-Disposition',
+            'attachment;filname=photo.jpg')
+        msg.attach(file_msg)
+
+        with open(auth_file) as fh:
+            auth = pickle.load(fh)
+            print auth
+            auth = auth['smtp']
+            print auth
+
+        with open('email.log', 'a') as fh:
+            fh.write('{}\t{}\n'.format(self.address, self.filename))
+
+        smtpout = smtplib.SMTP(auth['host'])
+        smtpout.login(auth['username'], auth['password'])
+
+        auth = None
+
+        smtpout.sendmail(sender, [self.address], msg.as_string())
+        smtpout.quit()
 
 class SharingControls(FloatLayout):
     prints = BoundedNumericProperty(1, min=1, max=MAXIMUM_PRINTS,

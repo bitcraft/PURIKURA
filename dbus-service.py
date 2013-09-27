@@ -24,6 +24,24 @@ class PhotoboothService(dbus.service.Object):
         self.camera = None
         self.reset()
         self.do_preview = False
+        self_key = None
+
+    @dbus.service.method('com.kilbuckcreek.photobooth', out_signature='b')
+    def capture_preview(self):
+        if self._locked:
+            try:
+                self.camera.capture_image('preview.jpg')
+                return True
+            except piggyphoto.libgphoto2error as e:
+                # couldn't focus
+                if e.result == -1:
+                    pass
+                else:
+                    self.reset()
+                    self.camera.capture_image('preview.jpg')
+                return False
+
+        return False
 
     @dbus.service.method('com.kilbuckcreek.photobooth', out_signature='b')
     def capture_image(self):
@@ -40,6 +58,12 @@ class PhotoboothService(dbus.service.Object):
                     self.camera.capture_image(self._filename)
                 return False
 
+        return False
+
+    @dbus.service.method('com.kilbuckcreek.photobooth', out_signature='b')
+    def preview_running(self):
+        return self.do_preview
+
     @dbus.service.method('com.kilbuckcreek.photobooth', out_signature='b')
     def preview_safe(self):
         return not self.preview_lock
@@ -49,14 +73,17 @@ class PhotoboothService(dbus.service.Object):
         pass
 
     @dbus.service.method('com.kilbuckcreek.photobooth')
-    def stop_preview(self):
-        self.do_preview = False
-        gobject.source_remove(self.timer)
+    def stop_preview(self, key=None):
+        if self._key == key:
+            self.do_preview = False
+            gobject.source_remove(self.timer)
 
     @dbus.service.method('com.kilbuckcreek.photobooth')
-    def start_preview(self):
+    def start_preview(self, key=None):
+        self._key = key
         self.do_preview = True
-        self.timer = gobject.timeout_add(500, self.download_preview)
+        self.download_preview()
+        self.timer = gobject.timeout_add(300, self.download_preview)
 
     @dbus.service.method('com.kilbuckcreek.photobooth', out_signature='ay')
     def get_preview(self):
@@ -67,16 +94,17 @@ class PhotoboothService(dbus.service.Object):
             except piggyphoto.libgphoto2error as e:
                 self.reset()
 
+    @dbus.service.method('com.kilbuckcreek.photobooth', out_signature='b')
     def download_preview(self):
-        if self._locked and self.do_preview:
+        if self._locked:
             try:
-                self.preview_lock = True
                 self.camera.capture_preview('preview.jpg')
-                self.preview_lock = False
                 return True
             except piggyphoto.libgphoto2error as e:
-                print e
                 self.reset()
+                return False
+
+        return True
 
     def open_and_lock_camera(self):
         if self._locked:
@@ -85,18 +113,24 @@ class PhotoboothService(dbus.service.Object):
         self.camera = piggyphoto.camera()
         self.camera.leave_locked()
         g_camera = self.camera
-        time.sleep(.5)
 
     def release_camera(self):
         self._locked = False
         self.camera = None
 
     def reset(self):
+        if self.camera:
+            self.camera.reinit()
         self.release_camera()
         self.open_and_lock_camera()
 
+
+    @dbus.service.method('com.kilbuckcreek.photobooth')
+    def do_reset(self):
+        self.reset()
+
+
 service = PhotoboothService()
-service.start_preview()
 
 
 loop = gobject.MainLoop()
