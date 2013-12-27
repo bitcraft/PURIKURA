@@ -38,6 +38,8 @@ Any camera supported by libgphoto2 is supported by this software.  An up-to-date
 list is available on their website.  Live-view is functional, but unused at
 this time.
 
+http://www.gphoto.org/proj/libgphoto2/support.php
+
 Webcams are not supported.
 
 
@@ -47,12 +49,27 @@ Interaction
 PURIKURA supports the arduino for interfacing with physical buttons over USB
 and also has a smartphone-inspired touch interface.
 
-The touch interface is always evolving.  Currently it only supports viewing
-photos.  Support for printing, email, twitter, etc will be added later.
+The touch interface offers print/reprint controls, viewing, and email.
 
 
-Plugins
--------
+Running the touch interface
+---------------------------
+
+Check out the software and hardware requirements first.  You can use the
+supplied script 'run.sh' to get started.  Please let me know if you have any
+issues!
+
+
+Slideshow
+---------
+
+A simple slideshow is included that will automatically add new images from a
+hot folder.  There are currently 3 formats that rotate: a ken burns effect, a
+stacked photos effect, and simple scrolling photos effect.
+
+
+Boring Technical Details
+------------------------
 
 The core concept of pyrikura is the *workflow*.  A workflow describes how
 images are manipulated.  A workflow is comprised of many different 'brokers'.
@@ -81,37 +98,6 @@ In words:
             this modified photo is posted to twitter, printed, and archived
 
 
-Running the touch interface
----------------------------
-
-Teh interface is developed using the excellent kivy library.  Unfortunatly,
-this repo cannot run the interface directly since some artwork used in the
-project cannot be hosted here.
-
-< update this later >
-
-
-Slideshow
----------
-
-A simple slideshow is included that will automatically add new images from a
-hot folder.  There are currently 3 formats that rotate: a ken burns effect, a
-staccked photos effect, and simple scrolling photos effect.
-
-
-QR Codes and Social Media
--------------------------
-
-I am experimenting with generating QR codes for images so users and simply scan
-the photo to get access to their photos.  From there they will be able to save
-the images and upload them to their favorite social media site.
-
-
-Modifications
--------------
-
-The script is completely open to customization and a few variables can be changed right in the script.  I've chosen to have the photo booth activated with a rope, but you could make it a button, or anything else you desire.
-
 
 Getting Help
 ------------
@@ -138,18 +124,20 @@ The Name
 'purukura' is a term used in Japan for their ubiquitous style of photo booths.
 
 
-Software
---------
+Software and Hardware Requirements
+----------------------------------
 
--  Debian Linux (Wheezy/Testing)
--  libgphoto
--  piggyphoto
--  Arduino
+-  Debian Linux (Wheezy/Testing just a guideline)
 -  Python 2.7
+-  libgphoto
+-  piggyphoto (included)
 -  Pygame (for sound)
--  Pyglet
 -  GraphicsMagick
--  pyinotify
--  zbar
+-  Imagemagick (possibly required...)
+-  Twisted
 
+Optional Software/Hardware
+--------------------------
 
+-  Pyglet
+-  Arduino
