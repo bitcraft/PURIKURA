@@ -1,0 +1,9 @@
+[Core]
+Name = Sound
+Module = sound
+
+[Documentation]
+Description = pygame sound 
+Author = leif theden
+Version = 0.1
+Website = http://github.com/bitcraft/pyrikura
