@@ -25,7 +25,7 @@ display the camera's live preview using pygame.
 
 uses threads and stuff for speed
 
-suitable for any display that is compatable with SDL (framebuffers, etc)
+suitable for any display that is compatible with SDL (framebuffers, etc)
 """
 
 import sys, os
@@ -44,7 +44,7 @@ class CaptureThread(threading.Thread):
         self.camera = camera
         self.lock = lock
         self._running = False
-    
+
     def stop(self):
         self._running = False
 

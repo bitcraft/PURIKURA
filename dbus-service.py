@@ -1,5 +1,5 @@
 """
-DBus service to share the camera object!
+DBus service to share the camera object
 """
 import dbus
 import threading

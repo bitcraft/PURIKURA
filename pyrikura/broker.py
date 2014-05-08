@@ -43,7 +43,7 @@ class Broker(object):
 
 class ThreadedBroker(threading.Thread):
     def __init__(self, *args, **kwargs):
-        super(Broker, self).__init__()
+        super(ThreadedBroker, self).__init__()
         self.queue = Queue.Queue()
         self._listening = []
         self._running = False

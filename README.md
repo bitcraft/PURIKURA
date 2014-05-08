@@ -120,7 +120,7 @@ Information wants to be free.  Donations are accepted and appreciated.
 
 The Name
 --------
- 
+
 'purukura' is a term used in Japan for their ubiquitous style of photo booths.
 
 
@@ -141,3 +141,9 @@ Optional Software/Hardware
 
 -  Pyglet
 -  Arduino
+
+
+All files under the 'pyrikura' directory are copyright Leif Theden, 2012-2014
+and licensed under the GPLv3.
+
+All other code may or not be GPLv3, please check the source of each file.

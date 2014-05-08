@@ -1,0 +1,12 @@
+# this is a draft
+# pyrikura currently includes a ton of unused/unrelated code
+dbus
+kivy
+pygame
+pyglet
+twisted
+pil
+pyserial
+libgphoto2
+wand
+imagemagick

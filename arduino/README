@@ -1,2 +1,4 @@
-i've included some simple arduino sketches that i use when testing, debugging
-and operating my photobooth.
+the sketch included here is for the arduino, which in my use handles two
+functions:
+    give the guests a physical button to press
+    tilt the camera up and down

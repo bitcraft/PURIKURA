@@ -314,6 +314,7 @@ class camera(object):
 
         if destpath:
             cfile.save(destpath)
+            cfile.__dealoc__(destpath)
         else:
             return cfile
 
@@ -365,6 +366,8 @@ class cameraFile(object):
         if cam:
             check_unref(gp.gp_camera_file_get(cam, srcfolder, srcfilename, GP_FILE_TYPE_NORMAL, self._cf, context), self)
 
+    def __del__(self):
+        self.__dealoc__(None)
 
     def get_data(self):
         data = ctypes.c_char_p()
