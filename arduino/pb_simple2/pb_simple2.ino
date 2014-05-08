@@ -22,7 +22,7 @@
 byte pSwitchTrigger = 0x01;
 byte pSetTilt       = 0x80;
 
-// configuration
+// pin configuration
 int tiltServoPin = 10;
 int ledPin = 13;
 
@@ -31,7 +31,8 @@ Servo tiltServo;
 int tiltPosNegativeLimit = 20;
 int tiltPosPositiveLimit = 160;
 int tiltPos = tiltPosNegativeLimit;
-
+int servoResetFreq = 500;
+long lastServoResetTime = 0;
 
 // incoming protocol buffer
 byte serBufferData[2];
@@ -72,8 +73,8 @@ void readPin(int pin) {
   if (triggerState[index] == LOW) {
     if (triggerHeld[index] == 0) {
       triggerHeld[index] = 1;
-      Serial.write(pSwitchTrigger);
-      Serial.write(pin);
+      byte out[] = {pSwitchTrigger, pin};
+      Serial.write(out, 2);
     }
   } 
   else {
@@ -95,8 +96,11 @@ void loop() {
   readPin(2);
   readPin(3);
 
-  // set our position each loop; causes the servo to resist movement
-  tiltServo.write(tiltPos);
+  long now = millis();
+  if ((now - lastServoResetTime) > servoResetFreq) {
+    lastServoResetTime = now;
+    tiltServo.write(tiltPos);
+  }
 }
 
 void serialEvent() {

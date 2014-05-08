@@ -37,7 +37,7 @@ class CameraTrigger:
     if_name = 'com.kilbuckcreek.photobooth'
     if_url = '/com/kilbuckcreek/photobooth'
 
-    def __init__(self, iface):
+    def __init__(self):
         bus = dbus.SessionBus()
         pb_obj = bus.get_object(self.if_name, self.if_url)
         pb_iface = dbus.Interface(pb_obj, dbus_interface=self.if_name)
@@ -133,7 +133,7 @@ class Session:
             self.running = False
 
     def do_session(self, result=None):
-        cam = CameraTrigger(self._iface)
+        cam = CameraTrigger()
 
         d = self.countdown()
         d = d.addCallback(cam.trigger)
@@ -151,19 +151,35 @@ class Session:
 
 
 class Arduino(LineReceiver):
-    def __init__(self):
+    """
+    protocol:
+
+    0x01: trigger
+    0x80: set servo
+
+    """
+    def __init__(self, session):
         self.setRawMode()
-        self.clearLineBuffer()
-        self._buffer = ''
+        self.session = session
+        self._buf = []
+
+    def process(self, cmd, arg):
+        if cmd == 1:
+            self.session.start()
+
 
     def rawDataReceived(self, data):
-        self._buffer += data
+        for i in data:
+            self._buf.append(i)
 
-        if len(self._buffer) >= 2:
-            for i in self._buffer:
-                print ord(i)
-            self._buffer = ''
+        if len(self._buf) == 2:
+            cmd, arg = [ord(i) for i in self._buf]
+            self.process(cmd, arg)
+            self._buf = []
 
+        # if somehow we are out of sync, then just drop all data
+        elif len(self._buf) > 2:
+            self._buf = []
         #session.start()
 
 
@@ -172,7 +188,7 @@ if __name__ == '__main__':
     port, baudrate = '/dev/ttyACM0', 9600
         
     try:
-        s = SerialPort(Arduino(), port, reactor, baudrate=baudrate)
+        s = SerialPort(Arduino(session), port, reactor, baudrate=baudrate)
     except serial.serialutil.SerialException:
         raise
 
