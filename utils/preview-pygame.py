@@ -43,12 +43,17 @@ class CaptureThread(threading.Thread):
         self.queue = queue
         self.camera = camera
         self.lock = lock
+        self._running = False
     
+    def stop(self):
+        self._running = False
+
     def run(self):
+        self._running = True
         preview = self.camera.capture_preview
         put = self.queue.put
         lock = self.lock
-        while 1:
+        while self._running:
             with lock:
                 data = preview().get_data()
             put(data)
@@ -60,57 +65,68 @@ class BlitThread(threading.Thread):
         self.queue = queue
         self.surface = surface
         self.lock = lock
+        self._running = False
+
+    def stop(self):
+        self._running = False
 
     def run(self):
+        self._running = True
         get = self.queue.get
         blit = self.surface.blit
         load = pygame.image.load
+        scale = pygame.transform.scale
+        screen = self.surface
+        size = self.surface.get_size()
         lock = self.lock
-        while 1:
-            picture = load(StringIO(get()))
+        while self._running:
+            image = load(StringIO(get())).convert()
             with lock:
-                blit(picture, (0, 0))
+                scale(image, size, screen)
 
 
 def quit_pressed():
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             return True
+        elif event.type == pygame.KEYDOWN:
+            return True
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            return True
     return False
 
 
-clock = pygame.time.Clock()
-queue = Queue.Queue(30)
+if __name__ == '__main__':
+    pygame.display.set_mode((0,0), pygame.FULLSCREEN |
+                                   pygame.DOUBLEBUF |
+                                   pygame.HWSURFACE)
 
-camera_lock = threading.Lock()
-camera = piggyphoto.camera()
-camera.leave_locked()
-camera.capture_preview('preview.jpg')
+    main_surface = pygame.display.get_surface()
 
-thread0 = CaptureThread(queue, camera, camera_lock)
-thread0.daemon = True
-thread0.start()
+    pygame.mouse.set_visible(False)
 
-display_lock = threading.Lock()
-picture = pygame.image.load(StringIO(queue.get()))
-pygame.display.set_mode(picture.get_size())
-main_surface = pygame.display.get_surface()
+    display_lock = threading.Lock()
+    camera_lock = threading.Lock()
+    queue = Queue.Queue(10)
+    camera = piggyphoto.camera()
 
-thread1 = BlitThread(queue, main_surface, display_lock)
-thread1.daemon = True
-thread1.start()
+    thread0 = CaptureThread(queue, camera, camera_lock)
+    thread0.daemon = True
+    thread0.start()
 
-last_shot = time.time()
+    thread1 = BlitThread(queue, main_surface, display_lock)
+    thread1.daemon = True
+    thread1.start()
 
-print 'running'
-flip = pygame.display.flip
-while not quit_pressed():
-    with display_lock:
-        flip()
-
-    if time.time() > last_shot + 10:
-        with camera_lock:
-            last_shot = time.time()
-            camera.capture_image() 
-
-    clock.tick(30)
+    clock = pygame.time.Clock()
+    flip = pygame.display.flip
+    try:
+        while not quit_pressed():
+            with display_lock:
+                flip()
+            clock.tick(30)
+    finally:
+        thread0.stop()
+        thread1.stop()
+        time.sleep(1)
+        camera.exit()

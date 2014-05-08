@@ -3,6 +3,7 @@
 import os
 import glob
 import pygame
+import logging
 from pyrikura import kiosk
 
 import kivy
@@ -23,10 +24,22 @@ Config.set('graphics', 'height', '1024')
 
 
 event = 'test'
-thumbnails = '/home/mjolnir/events/{}/small'.format(event)
-detail     = '/home/mjolnir/events/{}/medium'.format(event)
-originals  = '/home/mjolnir/events/{}/originals'.format(event)
-composites = '/home/mjolnir/events/{}/composites/'.format(event)
+root       = '/home/mjolnir/events/{}'.format(event)
+thumbnails = '{}/small'.format(root)
+detail     = '{}/medium'.format(root)
+originals  = '{}/originals'.format(root)
+composites = '{}/composites/'.format(root)
+
+# make sure directory structure is usuable
+for d in (root, thumbnails, detail, originals, composites):
+    try:
+        isdir = os.path.isdir(d) 
+    except:
+        raise
+
+    if not isdir:
+        os.makedirs(d, 0755)
+
 
 module = 'pyrikura'
 Builder.load_file(os.path.join(module, 'kiosk-composite.kv'))

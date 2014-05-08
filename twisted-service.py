@@ -1,12 +1,12 @@
 from twisted.internet import reactor, base, defer, threads, task
 from twisted.protocols.basic import LineReceiver
 from twisted.internet.serialport import SerialPort
-
 from yapsy.PluginManager import PluginManager 
 import os
 import dbus
 import pygame
 import serial
+
 
 event = 'test'
 
@@ -23,7 +23,6 @@ settings['originals']  = '/home/mjolnir/events/{}/originals'.format(event)
 settings['composites'] = '/home/mjolnir/events/{}/composites/'.format(event)
 settings['temp_image'] = 'capture.jpg'
 
-
 paths = ('thumbnails', 'detail', 'originals', 'composites')
 
 pygame.mixer.init()
@@ -33,20 +32,24 @@ bell1 = pygame.mixer.Sound(settings['bell1_sound'])
 error = pygame.mixer.Sound(settings['error_sound'])
 whistle = pygame.mixer.Sound(settings['next_sound'])
 
-bus = dbus.SessionBus()
-pb_obj = bus.get_object('com.kilbuckcreek.photobooth', '/com/kilbuckcreek/photobooth')
-pb_iface = dbus.Interface(pb_obj, dbus_interface='com.kilbuckcreek.photobooth')
-
 
 class CameraTrigger:
+    if_name = 'com.kilbuckcreek.photobooth'
+    if_url = '/com/kilbuckcreek/photobooth'
+
+    def __init__(self, iface):
+        bus = dbus.SessionBus()
+        pb_obj = bus.get_object(self.if_name, self.if_url)
+        pb_iface = dbus.Interface(pb_obj, dbus_interface=self.if_name)
+        self._iface = pb_iface
+
     def __call__(self):
         if self.d is None:
-            print 'nowhere'
             return
 
         d = self.d
         self.d = None
-        result = pb_iface.capture_image() 
+        result = self._iface.capture_image() 
         if result:
             d.callback(result)
         else:
@@ -56,6 +59,7 @@ class CameraTrigger:
         self.d = defer.Deferred()
         reactor.callLater(1, self)
         return self.d
+
 
 class Session:
     running = False
@@ -81,7 +85,7 @@ class Session:
         arch2 = p('FileCopy', dest=settings['composites'])
         spool = p('FileCopy', dest=settings['printsrv'])
 
-        thumb1 = p('Thumbnailer', size='300x300', dest=settings['thumbnails'])
+        thumb1 = p('Thumbnailer', size='256x256', dest=settings['thumbnails'])
         thumb2 = p('Thumbnailer', size='1024x1024', dest=settings['detail'])
 
         comp = p('Composer', template=settings['template'])
@@ -129,7 +133,7 @@ class Session:
             self.running = False
 
     def do_session(self, result=None):
-        cam = CameraTrigger()
+        cam = CameraTrigger(self._iface)
 
         d = self.countdown()
         d = d.addCallback(cam.trigger)
@@ -145,13 +149,31 @@ class Session:
         self.captures = 0
         self.do_session()
 
-session = Session()
 
 class Arduino(LineReceiver):
-    def lineReceived(self, line):
-        session.start()
+    def __init__(self):
+        self.setRawMode()
+        self.clearLineBuffer()
+        self._buffer = ''
 
-port, baudrate = '/dev/ttyACM0', 9600
-s = SerialPort(Arduino(), port, reactor, baudrate=baudrate)
+    def rawDataReceived(self, data):
+        self._buffer += data
 
-reactor.run()
+        if len(self._buffer) >= 2:
+            for i in self._buffer:
+                print ord(i)
+            self._buffer = ''
+
+        #session.start()
+
+
+if __name__ == '__main__':
+    session = Session()
+    port, baudrate = '/dev/ttyACM0', 9600
+        
+    try:
+        s = SerialPort(Arduino(), port, reactor, baudrate=baudrate)
+    except serial.serialutil.SerialException:
+        raise
+
+    reactor.run()

@@ -2,6 +2,7 @@
 DBus service to share the camera object!
 """
 import dbus
+import threading
 import gobject
 import piggyphoto
 import time
@@ -111,7 +112,6 @@ class PhotoboothService(dbus.service.Object):
             raise Exception
         self._locked = True
         self.camera = piggyphoto.camera()
-        self.camera.leave_locked()
         g_camera = self.camera
 
     def release_camera(self):
@@ -120,23 +120,21 @@ class PhotoboothService(dbus.service.Object):
 
     def reset(self):
         if self.camera:
-            self.camera.reinit()
+            self.camera.exit()
         self.release_camera()
         self.open_and_lock_camera()
-
 
     @dbus.service.method('com.kilbuckcreek.photobooth')
     def do_reset(self):
         self.reset()
 
 
-service = PhotoboothService()
+if __name__ == '__main__':
+    service = PhotoboothService()
+    loop = gobject.MainLoop()
 
-
-loop = gobject.MainLoop()
-
-try:
-    loop.run()
-except:
-    service.camera = None
-    raise
+    try:
+        loop.run()
+    except:
+        service.camera = None
+        raise

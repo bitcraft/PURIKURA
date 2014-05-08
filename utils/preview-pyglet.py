@@ -66,8 +66,8 @@ class LiveView(object):
         self.size = size
         self.sprite = None
         self.prev_sprite = None
-        self.texture_width = 512
-        self.texture_height = 512
+        self.texture_width = 1024
+        self.texture_height = 1024
         self.frame_index = 0
 
         self.frame_heap = []
