@@ -19,12 +19,11 @@
 *   along with pyrikura.  If not, see <http://www.gnu.org/licenses/>.
 *
 """
-from yapsy.PluginManager import PluginManager as IPluginManager 
+from yapsy.PluginManager import PluginManager as IPluginManager
 from yapsy.IPlugin import IPlugin
 
 from types import StringType, ListType
 import sys
-
 
 
 class Plugin(IPlugin):
@@ -47,7 +46,8 @@ class Plugin(IPlugin):
     @classmethod
     def new(cls, *arg, **kwarg):
         if not hasattr(cls, '_decendant'):
-            raise Exception, 'class {} does not have decendant set'.format(cls.__name__)
+            raise Exception, 'class {} does not have decendant set'.format(
+                cls.__name__)
         return cls._decendant(*arg, **kwarg)
 
     def setvar(self, name, value):
@@ -75,7 +75,8 @@ class Plugin(IPlugin):
             return None
         else:
             d = {}
-            d.update([(x[0], x[1]) for x in zip(self.public, map(getter, self.public)) ])
+            d.update([(x[0], x[1]) for x in
+                      zip(self.public, map(getter, self.public))])
             return d
 
     def check_requirements(self):
@@ -91,33 +92,37 @@ class Plugin(IPlugin):
         elif isinstance(self.required, ListType):
             req = self.required
 
-        for plugin in req: 
-            l = [p.plugin_object for p in plugin_manager.getAllPlugins() if p.name == plugin]
+        for plugin in req:
+            l = [p.plugin_object for p in plugin_manager.getAllPlugins() if
+                 p.name == plugin]
             if l == []:
                 missing.append(plugin)
                 continue
 
-            for p in l: 
+            for p in l:
                 if p.is_activated == False:
                     not_activated.append(plugin)
 
         if missing != []:
             ok = False
             for plugin in missing:
-                print "Cannot load %s.  Required plugin %s is not loaded." % \
-                    (self.__class__.__name__, plugin)
-            
+                print
+                "Cannot load %s.  Required plugin %s is not loaded." % \
+                (self.__class__.__name__, plugin)
+
         if not_activated != []:
             ok = False
             for plugin in not_activated:
-                print "Cannot load %s.  Required plugin %s is not activated." % \
-                    (self.__class__.__name__, plugin)
-           
+                print
+                "Cannot load %s.  Required plugin %s is not activated." % \
+                (self.__class__.__name__, plugin)
+
         return ok
- 
+
     def activate(self):
         if self.check_requirements() == False:
-            print "cannotload", self
+            print
+            "cannotload", self
             return
 
         if hasattr(self, "public"):
@@ -157,8 +162,9 @@ class PluginManager(IPluginManager):
         try:
             self.listeners[t].append(plugin)
         except KeyError:
-            print "Cannot set %s to listen for %s.  Data type is not known." % \
-                (plugin, t)
+            print
+            "Cannot set %s to listen for %s.  Data type is not known." % \
+            (plugin, t)
 
     def unregister_listener(self, plugin, t):
         try:
@@ -170,16 +176,18 @@ class PluginManager(IPluginManager):
         if isinstance(name, StringType):
             self.resources[name] = value
         else:
-            print "Cannot register resource %s: must be a string" % name
+            print
+            "Cannot register resource %s: must be a string" % name
 
     def get_resources(self, *l):
-        return [ self.get_resource(i) for i in l ]
+        return [self.get_resource(i) for i in l]
 
     def get_resource(self, name):
         try:
             return self.resources[name]
         except KeyError:
-            print "Cannot find resource: %s\n" % name
+            print
+            "Cannot find resource: %s\n" % name
 
     def publish(self, t, *args, **kwargs):
         """
@@ -188,6 +196,7 @@ class PluginManager(IPluginManager):
         if len(self.listeners[t]) == 0:
             return args
 
-        return [ p.publish(*args, **kwargs) for p in self.listeners[t] ]
+        return [p.publish(*args, **kwargs) for p in self.listeners[t]]
+
 
 plugin_manager = PluginManager()

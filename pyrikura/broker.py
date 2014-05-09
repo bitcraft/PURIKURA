@@ -3,7 +3,6 @@ import itertools
 import Queue
 
 
-
 class Broker(object):
     def __init__(self, *arg, **kwarg):
         self.queue = Queue.Queue()
@@ -51,7 +50,7 @@ class ThreadedBroker(threading.Thread):
             setattr(self, key, value)
 
     def publish(self, iterable):
-        [ self.queue.put(i) for i in iterable ]
+        [self.queue.put(i) for i in iterable]
 
     def subscribe(self, other):
         self._listening.append(other)

@@ -5,6 +5,7 @@ import pygame
 
 pygame.mixer.init()
 
+
 class CSoundBroker(Broker):
     def __init__(self, filename, trigger, *arg, **kwarg):
         super(CSoundBroker, self).__init__(*arg, **kwarg)

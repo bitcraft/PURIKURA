@@ -3,7 +3,6 @@ from pyrikura.broker import Broker
 import dbus
 
 
-
 class CTetherBroker(Broker):
     def __init__(self, filename='capture.jpg', test=False):
         super(CTetherBroker, self).__init__()
@@ -14,7 +13,7 @@ class CTetherBroker(Broker):
                                 '/com/kilbuckcreek/photobooth')
 
         self.pb_iface = dbus.Interface(pb_obj,
-            dbus_interface='com.kilbuckcreek.photobooth')
+                                       dbus_interface='com.kilbuckcreek.photobooth')
 
 
     def process(self, msg, sender=None):
@@ -23,6 +22,7 @@ class CTetherBroker(Broker):
             self.publish([self._filename])
         else:
             self.error()
+
 
 class CTether(Plugin):
     _decendant = CTetherBroker

@@ -39,13 +39,14 @@ class CRepeaterBroker(Broker):
 
     def update(self):
         if self._busy and self._delay:
-            if  self._last_publish + self._delay <= time.time():
+            if self._last_publish + self._delay <= time.time():
                 self._last_publish = time.time()
                 self._current_count += 1
                 self.publish([self._msg])
 
                 if self._current_count == self._count:
                     self._busy = False
+
 
 class CRepeater(Plugin):
     _decendant = CRepeaterBroker

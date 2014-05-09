@@ -5,7 +5,6 @@ spawns a thread that launches a childprocess that resizes the image.
 creates a square crop to the size passed
 '''
 
-
 from pyrikura.broker import Broker
 from pyrikura.plugin import Plugin as pl
 import subprocess, os, threading, shlex
@@ -26,14 +25,16 @@ class ExecutionThread(threading.Thread):
         hint = '600x600'
 
         subprocess.call(
-            shlex.split(thumbnail_cmd.format(hint, original, size, size, new_path)))
+            shlex.split(
+                thumbnail_cmd.format(hint, original, size, size, new_path)))
+
 
 class ThumbnailerBroker(Broker):
-
     def process(self, msg, sender=None):
         thread = ExecutionThread(msg, self.dest, self.size)
         thread.daemon = True
         thread.start()
+
 
 class Thumbnailer(pl):
     _decendant = ThumbnailerBroker

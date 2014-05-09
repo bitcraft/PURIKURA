@@ -3,9 +3,7 @@ from pyrikura.plugin import Plugin
 import os, shutil
 
 
-
 class FileCopyBroker(Broker):
-
     def _do_copy(self, path, dest):
         shutil.copyfile(path, dest)
 
@@ -27,6 +25,7 @@ class FileCopyBroker(Broker):
 
         self._do_copy(msg, new_path)
         self.publish([new_path])
+
 
 class FileCopy(Plugin):
     _decendant = FileCopyBroker

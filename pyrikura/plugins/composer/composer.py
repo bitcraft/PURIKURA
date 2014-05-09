@@ -111,8 +111,10 @@ class ComposerBroker(Broker):
             if not section.lower() == 'general':
                 this_config = dict(cfg.items(section))
                 this_config['name'] = section
-                areas = [ i for i in this_config.keys() if i.lower()[:4] == 'area' ]
-                pos = [ i for i in this_config.keys() if i.lower()[:8] == 'position' ]
+                areas = [i for i in this_config.keys() if
+                         i.lower()[:4] == 'area']
+                pos = [i for i in this_config.keys() if
+                       i.lower()[:8] == 'position']
                 self._total_images += len(areas)
                 self._total_images += len(pos)
 
@@ -133,13 +135,14 @@ class ComposerBroker(Broker):
             config['dpi'] = 1.0
 
         # get size of final image
-        s = cfg.get('general', 'size').split(',') 
+        s = cfg.get('general', 'size').split(',')
 
         if config['units'] == 'pixels':
-            config['width'], config['height'] = [ int(i) for i in s ]
+            config['width'], config['height'] = [int(i) for i in s]
         elif config['units'] == 'inches':
-            config['width'], config['height'] = [ int(float(i) * config['dpi']) for i in s ]
-      
+            config['width'], config['height'] = [int(float(i) * config['dpi'])
+                                                 for i in s]
+
         # get the background color
         try:
             config['background'] = cfg.get('general', 'background')
@@ -152,10 +155,10 @@ class ComposerBroker(Broker):
             self.preprocess(this_config)
 
         self._p_conn, c_conn = Pipe()
-        self._composer_process =  Process(
-                target = compose,
-                args = (c_conn, self.ready_queue, self._total_images,
-                        self.config)
+        self._composer_process = Process(
+            target=compose,
+            args=(c_conn, self.ready_queue, self._total_images,
+                  self.config)
         )
         self._composer_process.start()
 
@@ -180,12 +183,13 @@ class ComposerBroker(Broker):
 
     def preprocess(self, config):
         from wand.image import Image
+
         """
         start a subprocess to preformat the incoming image
         """
         # create a temporary filename in case the file needs to be written to
         # disk.  this is only the case if a filter is needed during processing
-      
+
         filename = config['filename']
 
         root, ext = os.path.splitext(filename)
@@ -202,11 +206,12 @@ class ComposerBroker(Broker):
         # normally, there will be only one active, but may be more
         # if the system is slow or busy
         p = Process(
-            target = process_image,
-            args = (self.raw_queue, self.ready_queue, self.config)
+            target=process_image,
+            args=(self.raw_queue, self.ready_queue, self.config)
         )
         p.start()
         self._processes.append(p)
+
 
 class Composer(Plugin):
     _decendant = ComposerBroker

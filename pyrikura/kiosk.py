@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import kivy
+
 kivy.require('1.5.0')
 
 import time
@@ -37,14 +38,15 @@ Builder.load_file(os.path.join(module, 'kiosk-composite.kv'))
 Builder.load_file(os.path.join(module, 'kiosk-single.kv'))
 del module
 
-
 MAXIMUM_PRINTS = 3
 
 from dbus.mainloop.glib import DBusGMainLoop
+
 DBusGMainLoop(set_as_default=True)
 
 bus = dbus.SessionBus()
-pb_obj = bus.get_object('com.kilbuckcreek.photobooth', '/com/kilbuckcreek/photobooth')
+pb_obj = bus.get_object('com.kilbuckcreek.photobooth',
+                        '/com/kilbuckcreek/photobooth')
 pb_iface = dbus.Interface(pb_obj, dbus_interface='com.kilbuckcreek.photobooth')
 
 
@@ -79,6 +81,7 @@ class IconAccordionItem(AccordionItem):
 
 
 OFFSET = 172
+
 
 class PickerScreen(Screen):
     large_preview_size = ListProperty()
@@ -117,7 +120,7 @@ class PickerScreen(Screen):
         # defaults to the hidden state
         self.focus_widget = Image(source='images/loading.gif')
         self.focus_widget.allow_stretch = True
-        self.focus_widget.x = center_x - OFFSET 
+        self.focus_widget.x = center_x - OFFSET
         self.focus_widget.y = -1000
         self.focus_widget.size_hint = None, None
         self.focus_widget.size = self.small_preview_size
@@ -126,10 +129,10 @@ class PickerScreen(Screen):
 
         self.preview_widget = Image(source='capture.jpg', nocache=False)
         self.preview_widget.allow_stretch = True
-        self.preview_widget.x = center_x - OFFSET 
+        self.preview_widget.x = center_x - OFFSET
         self.preview_widget.y = 0
         self.preview_widget.size_hint = None, None
-        self.preview_widget.size = (100,100)
+        self.preview_widget.size = (100, 100)
         self.preview_widget.bind(on_touch_down=self.on_image_touch)
         self.layout.add_widget(self.preview_widget)
 
@@ -146,9 +149,9 @@ class PickerScreen(Screen):
 
         self.preview_label = Label(
             text='Touch preview to close',
-            text_size=(500,100),
+            text_size=(500, 100),
             font_size=30,
-            pos=(-1000,-1000))
+            pos=(-1000, -1000))
         self.layout.add_widget(self.preview_label)
 
         self.scrollview.original_y = 100
@@ -172,12 +175,12 @@ class PickerScreen(Screen):
                 self.grid.add_widget(widget)
                 if not self.scrollview_hidden:
                     self.background.pos = self._calc_bg_pos()
-      
+
     def _create_preview_widget(self, source):
         widget = Factory.AsyncImage(
             source=source,
             allow_stretch=True,
-            pos_hint={'top':1})
+            pos_hint={'top': 1})
         widget.bind(on_touch_down=self.on_image_touch)
         return widget
 
@@ -185,7 +188,7 @@ class PickerScreen(Screen):
         self.remove_widget(widget)
 
     def show_controls(self, widget, arg):
-        widget.pos_hint = {'x', 0} 
+        widget.pos_hint = {'x', 0}
         return False
 
     def unlock(self, dt=None):
@@ -198,7 +201,7 @@ class PickerScreen(Screen):
         if widget.collide_point(mouse_point.x, mouse_point.y):
             screen_width = int(Config.get('graphics', 'width'))
             screen_height = int(Config.get('graphics', 'height'))
-       
+
             # hide the focus widget
             if self.scrollview_hidden:
                 self.scrollview_hidden = False
@@ -215,6 +218,7 @@ class PickerScreen(Screen):
 
                 # close the keyboard
                 from kivy.core.window import Window
+
                 Window.release_all_keyboards()
 
                 # disable the controls (workaround until 1.8.0)
@@ -222,8 +226,8 @@ class PickerScreen(Screen):
 
                 # hide the controls
                 ani = Animation(
-                        opacity=0.0,
-                        duration=.3)
+                    opacity=0.0,
+                    duration=.3)
 
                 ani.bind(on_complete=self._remove_widget_after_ani)
                 ani.start(self.preview_label)
@@ -232,8 +236,8 @@ class PickerScreen(Screen):
                 # set the background to normal
                 x, y = self._calc_bg_pos()
                 ani = Animation(
-                    y= y + 100, 
-                    x = x,
+                    y=y + 100,
+                    x=x,
                     t='in_out_quad',
                     duration=.5)
 
@@ -261,7 +265,7 @@ class PickerScreen(Screen):
                 ani &= Animation(
                     opacity=0.0,
                     duration=.5)
-                
+
                 ani.start(self.focus_widget)
 
             # show the focus widget
@@ -284,7 +288,8 @@ class PickerScreen(Screen):
                 # do a bit of mangling to get a more detailed image
                 thumb, detail, original, comp = self.get_paths()
                 filename = os.path.join(detail, os.path.basename(widget.source))
-                original = os.path.join(original, os.path.basename(widget.source))
+                original = os.path.join(original,
+                                        os.path.basename(widget.source))
 
                 # get a medium resolution image for the preview
                 self.focus_widget.source = filename
@@ -296,9 +301,9 @@ class PickerScreen(Screen):
                 self.controls.opacity = 0
 
                 ani = Animation(
-                        opacity=1.0,
-                        duration=.3)
-        
+                    opacity=1.0,
+                    duration=.3)
+
                 self.preview_label.pos_hint = {'x': .25, 'y': .47}
 
                 ani.start(self.preview_label)
@@ -319,8 +324,8 @@ class PickerScreen(Screen):
 
                 # start a simple animation on the background
                 ani = Animation(
-                    y= self.background.y - 100, 
-                    x=-self.background.width/2.5,
+                    y=self.background.y - 100,
+                    x=-self.background.width / 2.5,
                     t='in_out_quad',
                     duration=.5)
 
@@ -334,7 +339,7 @@ class PickerScreen(Screen):
                 # show the focus widget
                 ani = Animation(
                     opacity=1.0,
-                    y=screen_height-self.large_preview_size[1]-hh,
+                    y=screen_height - self.large_preview_size[1] - hh,
                     x=self.focus_widget.x - OFFSET,
                     size=self.large_preview_size,
                     t='in_out_quad',
@@ -343,7 +348,7 @@ class PickerScreen(Screen):
                 ani &= Animation(
                     opacity=1.0,
                     duration=.5)
-            
+
                 ani.start(self.focus_widget)
 
     def on_picker_scroll(self, *arg):
@@ -357,6 +362,7 @@ class PickerScreen(Screen):
         return (-self.scrollview.scroll_x * bkg_w - self.width / 2,
                 self.background.pos[1])
 
+
 import smtplib
 import threading
 import pickle
@@ -364,8 +370,8 @@ import pickle
 sender = 'leif@kilbuckcreek.com'
 auth_file = '/home/mjolnir/git/PURIKURA/secrets'
 
-class SenderThread(threading.Thread):
 
+class SenderThread(threading.Thread):
     def __init__(self, address, filename):
         threading.Thread.__init__(self)
         self.address = address
@@ -393,9 +399,11 @@ class SenderThread(threading.Thread):
 
         with open(auth_file) as fh:
             auth = pickle.load(fh)
-            print auth
+            print
+            auth
             auth = auth['smtp']
-            print auth
+            print
+            auth
 
         with open('email.log', 'a') as fh:
             fh.write('{}\t{}\n'.format(self.address, self.filename))
@@ -408,9 +416,10 @@ class SenderThread(threading.Thread):
         smtpout.sendmail(sender, [self.address], msg.as_string())
         smtpout.quit()
 
+
 class SharingControls(FloatLayout):
     prints = BoundedNumericProperty(1, min=1, max=MAXIMUM_PRINTS,
-        errorhandler = handle_print_number_error)
+                                    errorhandler=handle_print_number_error)
 
     email_addressee = StringProperty('')
     twitter_acct = StringProperty('@kilbuckcreekphoto')
@@ -439,7 +448,7 @@ class SharingControls(FloatLayout):
         button = Button(
             text='Awesome!',
             font_size=30,
-            background_color=(0,1,0,1))
+            background_color=(0, 1, 0, 1))
         layout.add_widget(label)
         layout.add_widget(button)
 
@@ -466,7 +475,7 @@ class SharingControls(FloatLayout):
         button = Button(
             text='Awesome!',
             font_size=30,
-            background_color=(0,1,0,1))
+            background_color=(0, 1, 0, 1))
         layout.add_widget(label)
         layout.add_widget(button)
 
@@ -478,6 +487,7 @@ class SharingControls(FloatLayout):
         button.bind(on_release=popup.dismiss)
 
         from kivy.core.window import Window
+
         Window.release_all_keyboards()
 
         self.reset_email_textinput()
@@ -494,11 +504,11 @@ class SharingControls(FloatLayout):
         button0 = Button(
             text='Just do it!',
             font_size=30,
-            background_color=(0,1,0,1))
+            background_color=(0, 1, 0, 1))
         button1 = Button(
             text='No',
             font_size=30,
-            background_color=(1,0,0,1))
+            background_color=(1, 0, 0, 1))
         layout1.add_widget(button1)
         layout1.add_widget(button0)
         layout0.add_widget(label)
@@ -527,7 +537,7 @@ class SharingControls(FloatLayout):
             button = Button(
                 text='ok!',
                 font_size=30,
-                background_color=(0,1,0,1))
+                background_color=(0, 1, 0, 1))
             layout.add_widget(label)
             layout.add_widget(button)
 
@@ -542,16 +552,17 @@ class SharingControls(FloatLayout):
             layout0 = BoxLayout(orientation='vertical')
             layout1 = BoxLayout(orientation='horizontal')
             label = Label(
-                text='Is this email address correct?\n\n{}'.format(self.email_addressee),
+                text='Is this email address correct?\n\n{}'.format(
+                    self.email_addressee),
                 font_size=30)
             button0 = Button(
                 text='Yes',
                 font_size=30,
-                background_color=(0,1,0,1))
+                background_color=(0, 1, 0, 1))
             button1 = Button(
                 text='No',
                 font_size=30,
-                background_color=(1,0,0,1))
+                background_color=(1, 0, 0, 1))
             layout1.add_widget(button1)
             layout1.add_widget(button0)
             layout0.add_widget(label)
@@ -564,7 +575,8 @@ class SharingControls(FloatLayout):
                 auto_dismiss=False)
 
             button0.bind(on_release=partial(
-                self.do_email, popup, str(self.email_addressee), str(self.filename)))
+                self.do_email, popup, str(self.email_addressee),
+                str(self.filename)))
 
             button1.bind(on_release=popup.dismiss)
 
@@ -575,7 +587,7 @@ class SharingControls(FloatLayout):
 
     def add_print(self):
         self.prints += 1
-        
+
     def remove_print(self):
         self.prints -= 1
 
@@ -585,7 +597,7 @@ class SharingControls(FloatLayout):
 
     def reset_email_textinput(self):
         self.email_textinput = ''
-    
+
     def change_vkeyboard_normal(self):
         Config.set('kivy', 'keyboard_layout', DEFAULT_VKEYBOARD_LAYOUT)
 

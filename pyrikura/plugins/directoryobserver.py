@@ -2,7 +2,6 @@ from pyrikura.plugin import Plugin
 import os
 
 
-
 class Watcher(Plugin):
     """
     Simple watcher that uses a glob to track new files
@@ -31,7 +30,7 @@ class Watcher(Plugin):
                     files.add(fn)
 
         # get files that have not been seen before and publish them
-        pub = [ os.path.join(self._path, i) for i in files - self._seen ]
+        pub = [os.path.join(self._path, i) for i in files - self._seen]
         self.publish(pub)
 
         # add the new items to the seen set

@@ -22,23 +22,24 @@ def process_image(raw_queue, ready_queue, global_config):
     all_areas = []
     done = []
 
-    temp_areas = [ i for i in image_config.keys() if i[:4].lower() == 'area' ]
+    temp_areas = [i for i in image_config.keys() if i[:4].lower() == 'area']
     for area in temp_areas:
         area = image_config[area]
-        raw_areas.append(tuple([ float(i) for i in area.split(',') ] ))
-        
-    temp_positions = [ i for i in image_config.keys() if i[:8].lower() == 'position' ]
+        raw_areas.append(tuple([float(i) for i in area.split(',')]))
+
+    temp_positions = [i for i in image_config.keys() if
+                      i[:8].lower() == 'position']
     for pos in temp_positions:
         pos = image_config[pos]
         if global_config['units'] == 'pixels':
-            x, y = [ int(i) for i in pos.split(',') ]
+            x, y = [int(i) for i in pos.split(',')]
             w, h = image.size
         else:
-            x, y = [ int(int(i) * global_config['dpi']) for i in pos.split(',') ]
-            w, h = [ int(int(i) / global_config['dpi']) for i in image.size ]
+            x, y = [int(int(i) * global_config['dpi']) for i in pos.split(',')]
+            w, h = [int(int(i) / global_config['dpi']) for i in image.size]
 
         this_config = dict(image_config)
-        this_config['area'] = (x,y,w,h) 
+        this_config['area'] = (x, y, w, h)
         ready_queue.put(this_config)
 
         #raw_areas.append((x,y,w,h))
@@ -46,14 +47,14 @@ def process_image(raw_queue, ready_queue, global_config):
     # REWRITE THIS!
     for area in raw_areas:
         if global_config['units'] == 'pixels':
-            x,y,w,h = [ int(i) for i in area ]
+            x, y, w, h = [int(i) for i in area]
         else:
-            x,y,w,h = [ int(float((i)) * global_config['dpi']) for i in area ]
-        all_areas.append((x,y,w,h))
+            x, y, w, h = [int(float((i)) * global_config['dpi']) for i in area]
+        all_areas.append((x, y, w, h))
 
     # process each image
-    for x,y,w,h in all_areas:
-        if (w,h) not in done:
+    for x, y, w, h in all_areas:
+        if (w, h) not in done:
             # A U T O C R O P
             autocrop = image_config.get('autocrop', None)
             if autocrop:
@@ -63,7 +64,7 @@ def process_image(raw_queue, ready_queue, global_config):
                 if r1 > r0:
                     scale = float(h) / image.height
                     sw = int(image.width * scale)
-                    cx = int((sw - w)  / 2)
+                    cx = int((sw - w) / 2)
                     image.resize(sw, h)
                     image.crop(left=cx, width=sw, height=h)
 
@@ -102,10 +103,10 @@ def process_image(raw_queue, ready_queue, global_config):
             image.format = 'png'
             image.save(filename=image_config['filename'])
             image.close()
-    
+
         done.append((w, h))
         this_config = dict(image_config)
-        this_config['area'] = (x,y,w,h) 
+        this_config['area'] = (x, y, w, h)
         ready_queue.put(this_config)
 
     ready_queue.close()

@@ -4,7 +4,6 @@ import piggyphoto
 import time
 
 
-
 class CTetherBroker(Broker):
     def __init__(self, name='capture.jpg', test=False):
         super(CTetherBroker, self).__init__()
@@ -15,7 +14,8 @@ class CTetherBroker(Broker):
         self.reset()
 
     def process(self, msg, sender=None):
-        print "trying..."
+        print
+        "trying..."
         if self._locked:
             try:
                 self.camera.capture_image(self._name)
@@ -51,6 +51,7 @@ class CTetherBroker(Broker):
         if not self._test:
             self.release_camera()
             self.open_and_lock_camera()
+
 
 class CTether(Plugin):
     _decendant = CTetherBroker

@@ -5,8 +5,8 @@ import pickle
 sender = 'leif@kilbuckcreek.com'
 auth_file = '/home/mjolnir/git/PURIKURA/secrets'
 
-class SenderThread(threading.Thread):
 
+class SenderThread(threading.Thread):
     def __init__(self, queue):
         threading.Thread.__init__(self)
         self.address = address

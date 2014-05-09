@@ -4,7 +4,6 @@ import twython
 import pickle
 
 
-
 class PBTwitterBroker(Broker):
     def __init__(self, auth_file, *arg, **kwarg):
         super(PBTwitterBroker, self).__init__(*arg, **kwarg)

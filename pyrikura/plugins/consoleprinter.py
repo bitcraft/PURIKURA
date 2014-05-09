@@ -3,7 +3,6 @@ from pyrikura.broker import Broker
 import sys
 
 
-
 class ConsolePrinterBroker(Broker):
     def process(self, msg, sender):
         sys.stdout.write(str(msg) + '\n')
