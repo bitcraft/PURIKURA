@@ -1,11 +1,11 @@
 """
 DBus service to share the camera object
 """
-import dbus
 import threading
-import gobject
-import piggyphoto
 import time
+import gobject
+import dbus
+import shutter
 from StringIO import StringIO
 from dbus.service import Object
 from dbus.mainloop.glib import DBusGMainLoop
@@ -33,7 +33,7 @@ class PhotoboothService(dbus.service.Object):
             try:
                 self.camera.capture_image('preview.jpg')
                 return True
-            except piggyphoto.libgphoto2error as e:
+            except shutter.ShutterError as e:
                 # couldn't focus
                 if e.result == -1:
                     pass
@@ -50,7 +50,7 @@ class PhotoboothService(dbus.service.Object):
             try:
                 self.camera.capture_image(self._filename)
                 return True
-            except piggyphoto.libgphoto2error as e:
+            except shutter.ShutterError as e:
                 # couldn't focus
                 if e.result == -1:
                     pass
@@ -92,7 +92,7 @@ class PhotoboothService(dbus.service.Object):
             try:
                data = self.camera.capture_preview().get_data()
                return ByteArray(data)
-            except piggyphoto.libgphoto2error as e:
+            except shutter.ShutterError as e:
                 self.reset()
 
     @dbus.service.method('com.kilbuckcreek.photobooth', out_signature='b')
@@ -101,7 +101,7 @@ class PhotoboothService(dbus.service.Object):
             try:
                 self.camera.capture_preview('preview.jpg')
                 return True
-            except piggyphoto.libgphoto2error as e:
+            except shutter.ShutterError as e:
                 self.reset()
                 return False
 
@@ -111,7 +111,7 @@ class PhotoboothService(dbus.service.Object):
         if self._locked:
             raise Exception
         self._locked = True
-        self.camera = piggyphoto.camera()
+        self.camera = shutter.camera()
         g_camera = self.camera
 
     def release_camera(self):
