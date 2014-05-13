@@ -37,17 +37,16 @@ def load_sound(filename):
     return pygame.mixer.Sound(path)
 
 
-def load_config():
+def load_config(name):
     home = os.path.expanduser("~")
-    name = 'service.ini'
     path = jpath(home, '/git/PURIKURA/config', name)
     cfg = ConfigParser.ConfigParser()
-    msg = 'loading service configuration from {}...'
-    logger.info(msg.format(path))
+    msg = 'loading {} configuration from {}...'
+    logger.info(msg.format(__name__, path))
     cfg.read(path)
     return cfg
 
-cfg = load_config()
+cfg = load_config('service.ini')
 
 # paths
 app_root_path = cfg.get('paths', 'root')

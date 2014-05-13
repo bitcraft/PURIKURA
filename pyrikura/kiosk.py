@@ -7,7 +7,10 @@ kivy.require('1.8.0')
 import dbus
 import os
 import shutil
+import ConfigParser
 from functools import partial
+
+from dbus.mainloop.glib import DBusGMainLoop
 
 from kivy.config import Config
 from kivy.animation import Animation
@@ -38,16 +41,35 @@ Builder.load_file(os.path.join(module, 'kiosk-composite.kv'))
 Builder.load_file(os.path.join(module, 'kiosk-single.kv'))
 del module
 
-MAXIMUM_PRINTS = 3
+# because i hate typing
+jpath = os.path.join
 
-from dbus.mainloop.glib import DBusGMainLoop
 
+def load_config(name):
+    home = os.path.expanduser("~")
+    path = jpath(home, '/git/PURIKURA/config', name)
+    cfg = ConfigParser.ConfigParser()
+    msg = 'loading {} configuration from {}...'
+    logger.info(msg.format(__name__, path))
+    cfg.read(path)
+    return cfg
+
+cfg = load_config('kiosk.ini')
+
+MAXIMUM_PRINTS = cfg.getint('kiosk', 'max-prints')
+
+# load the config from the service to get path info
+# this is mostly copypasta from service.py
+cfg = load_config('service.ini')
+dbus_name = cfg.get('camera', 'dbus-name')
+dbus_path = cfg.get('camera', 'dbus-path')
+
+
+# dbus  :D
 DBusGMainLoop(set_as_default=True)
-
 bus = dbus.SessionBus()
-pb_obj = bus.get_object('com.kilbuckcreek.photobooth',
-                        '/com/kilbuckcreek/photobooth')
-pb_iface = dbus.Interface(pb_obj, dbus_interface='com.kilbuckcreek.photobooth')
+pb_obj = bus.get_object(dbus_name, dbus_path)
+pb_iface = dbus.Interface(pb_obj, dbus_interface=dbus_name)
 
 
 def handle_print_number_error(value):

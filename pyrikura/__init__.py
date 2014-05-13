@@ -1,2 +1,2 @@
-#import kiosk
+import kiosk
 import smtp
