@@ -8,35 +8,42 @@ You must be using the new PyUSB 1.0 branch and not the 0.x branch.
 Copyright (c) 2010 - Micah Carrick
 """
 import sys
+import time
+
 import usb.core
 import usb.util
-import time
-import threading
+
 
 
 
 # keycode mapping
 key_pages = [
-'', '', '', '',
-'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-'1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '\n', '^]', '^H',
-'^I', ' ', '-', '=', '[', ']', '\\', '>', ';', "'", '`', ',', '.',
-'/', 'CapsLock', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12',
-'PS', 'SL', 'Pause', 'Ins', 'Home', 'PU', '^D', 'End', 'PD', '->', '<-', '-v', '-^', 'NL',
-'KP/', 'KP*', 'KP-', 'KP+', 'KPE', 'KP1', 'KP2', 'KP3', 'KP4', 'KP5', 'KP6', 'KP7', 'KP8',
-'KP9', 'KP0', '\\', 'App', 'Pow', 'KP=', 'F13', 'F14' ]
+    '', '', '', '',
+    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+    'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+    '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '\n', '^]', '^H',
+    '^I', ' ', '-', '=', '[', ']', '\\', '>', ';', "'", '`', ',', '.',
+    '/', 'CapsLock', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9',
+    'F10', 'F11', 'F12',
+    'PS', 'SL', 'Pause', 'Ins', 'Home', 'PU', '^D', 'End', 'PD', '->', '<-',
+    '-v', '-^', 'NL',
+    'KP/', 'KP*', 'KP-', 'KP+', 'KPE', 'KP1', 'KP2', 'KP3', 'KP4', 'KP5', 'KP6',
+    'KP7', 'KP8',
+    'KP9', 'KP0', '\\', 'App', 'Pow', 'KP=', 'F13', 'F14']
 
 key_pages_shift = [
-'', '', '', '',
-'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-'!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '\n', '^]', '^H',
-'^I', ' ', '_', '+', '{', '}', '|', '<', ':', '"', '~', '<', '>',
-'?', 'CapsLock', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12',
-'PS', 'SL', 'Pause', 'Ins', 'Home', 'PU', '^D', 'End', 'PD', '->', '<-', '-v', '-^', 'NL',
-'KP/', 'KP*', 'KP-', 'KP+', 'KPE', 'KP1', 'KP2', 'KP3', 'KP4', 'KP5', 'KP6', 'KP7', 'KP8',
-'KP9', 'KP0', '|', 'App', 'Pow', 'KP=', 'F13', 'F14' ]
+    '', '', '', '',
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+    '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '\n', '^]', '^H',
+    '^I', ' ', '_', '+', '{', '}', '|', '<', ':', '"', '~', '<', '>',
+    '?', 'CapsLock', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9',
+    'F10', 'F11', 'F12',
+    'PS', 'SL', 'Pause', 'Ins', 'Home', 'PU', '^D', 'End', 'PD', '->', '<-',
+    '-v', '-^', 'NL',
+    'KP/', 'KP*', 'KP-', 'KP+', 'KPE', 'KP1', 'KP2', 'KP3', 'KP4', 'KP5', 'KP6',
+    'KP7', 'KP8',
+    'KP9', 'KP0', '|', 'App', 'Pow', 'KP=', 'F13', 'F14']
 
 map_keys = lambda c: key_pages_shift[c[1]] if c[0] is 2 else key_pages[c[1]]
 
@@ -48,11 +55,11 @@ def chunks(l, n):
     """ Yield successive n-sized chunks from l.
     """
     for i in xrange(0, len(l), n):
-        yield l[i:i+n]
+        yield l[i:i + n]
+
 
 def map_character(c):
     return key_pages[c]
-
 
 
 class GigaTekReader(object):
@@ -85,18 +92,18 @@ class GigaTekReader(object):
             device.reset()
         except usb.core.USBError as e:
             sys.exit("Could not set configuration: %s" % str(e))
-           
+
         self._device = device
-        self._endpoint = self._device[0][(0,0)][0]
+        self._endpoint = self._device[0][(0, 0)][0]
 
     def _read_device(self):
         while 1:
             packet = self._device.read(
                 self._endpoint.bEndpointAddress,
                 self._endpoint.wMaxPacketSize)
-            if list(packet) == [0,0,0,0,0,0,0,0]:
+            if list(packet) == [0, 0, 0, 0, 0, 0, 0, 0]:
                 continue
-            yield packet 
+            yield packet
 
     def _clear(self):
         time.sleep(1)
@@ -122,9 +129,11 @@ class GigaTekReader(object):
             if len(data) / 8 == self._expected_length:
                 break
 
-        this_data = "".join(map(map_keys, [(d[0], d[2]) for d in chunks(data, 8)]))
+        this_data = "".join(
+            map(map_keys, [(d[0], d[2]) for d in chunks(data, 8)]))
 
         return this_data
+
 
 if __name__ == '__main__':
     r = GigaTekReader('starbucks')

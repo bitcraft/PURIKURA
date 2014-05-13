@@ -1,5 +1,6 @@
-from pyrikura.plugin import Plugin
 import os
+
+from pyrikura.plugin import Plugin
 
 
 class Deleter(Plugin):

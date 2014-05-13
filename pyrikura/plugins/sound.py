@@ -1,6 +1,7 @@
+import pygame
+
 from pyrikura.broker import Broker
 from pyrikura.plugin import Plugin
-import pygame
 
 
 pygame.mixer.init()

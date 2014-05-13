@@ -4,7 +4,7 @@ PYRIKURA
 PYRIKURA is a set of hardware and software plans for a wedding/event photo booth.
 
 It includes image processing, camera control, live slideshow, and touch based
-image broswer for kiosk operation.
+image browser for kiosk operation.
 
 A subset of this project called pyrikura is included in this repository.
 Pyrikura automates image processing, camera control, printing, internet
@@ -21,7 +21,7 @@ PURIKURA supports many modes of operation and is very flexible.
 The workflow/broker system allows almost unlimited customization.
 Workflows can be saved and used at a later time.
 
-Many dSLR and comsumer cameras are supported.  Eye-fi cameras are supported
+Many dSLR and consumer cameras are supported.  Eye-fi cameras are supported
 with addition software, such as iii.
 
 The software supports multiple screens and cameras.  Both modes can be run at
@@ -135,12 +135,6 @@ Software and Hardware Requirements
 -  GraphicsMagick
 -  Imagemagick (possibly required...)
 -  Twisted
-
-Optional Software/Hardware
---------------------------
-
--  Pyglet
--  Arduino
 
 
 All files under the 'pyrikura' directory are copyright Leif Theden, 2012-2014

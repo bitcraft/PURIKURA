@@ -1,6 +1,7 @@
+import time
+
 from pyrikura.plugin import Plugin
 from pyrikura.broker import Broker
-import time
 
 
 class CRepeaterBroker(Broker):

@@ -11,3 +11,4 @@ libgphoto2
 wand
 imagemagick
 shutter
+yapsy

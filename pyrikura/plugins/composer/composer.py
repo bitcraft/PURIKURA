@@ -1,20 +1,14 @@
+from multiprocessing import JoinableQueue, Process, Pipe
+import ConfigParser
+import shutil
+
 from pyrikura.plugin import Plugin
 from pyrikura.broker import Broker
-from multiprocessing import Queue, JoinableQueue, Process, Lock, Pipe
-import multiprocessing
-import logging
-import sys
-import os
-import ConfigParser
-import math
-import shutil
-import time
-import subprocess
+
 
 
 # mangle import paths to enable this sweet hack
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from filters import *
 from imageprocessor import *
 
 
@@ -182,7 +176,6 @@ class ComposerBroker(Broker):
             self.publish([filename])
 
     def preprocess(self, config):
-        from wand.image import Image
 
         """
         start a subprocess to preformat the incoming image

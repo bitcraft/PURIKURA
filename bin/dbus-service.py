@@ -1,33 +1,37 @@
 """
 DBus service to share the camera object
 """
-import threading
-import time
+import logging
+
 import gobject
 import dbus
 import shutter
-from StringIO import StringIO
-from dbus.service import Object
 from dbus.mainloop.glib import DBusGMainLoop
 from dbus import ByteArray
 
 
+logger = logging.getLogger("purikura.dbus")
+
+# config
+bus_name = 'com.kilbuckcreek.photobooth'
+bus_path = '/com/kilbuckcreek/photobooth'
+
 DBusGMainLoop(set_as_default=True)
 bus = dbus.SessionBus()
 
+
 class PhotoboothService(dbus.service.Object):
     def __init__(self):
-        name = dbus.service.BusName('com.kilbuckcreek.photobooth', bus=dbus.SessionBus())
-        dbus.service.Object.__init__(self, name, '/com/kilbuckcreek/photobooth')
+        name = dbus.service.BusName(bus_name, bus=dbus.SessionBus())
+        dbus.service.Object.__init__(self, name, bus_path)
 
         self._filename = 'capture.jpg'
         self._locked = True
         self.camera = None
         self.reset()
         self.do_preview = False
-        self_key = None
 
-    @dbus.service.method('com.kilbuckcreek.photobooth', out_signature='b')
+    @dbus.service.method(bus_name, out_signature='b')
     def capture_preview(self):
         if self._locked:
             try:
@@ -44,7 +48,7 @@ class PhotoboothService(dbus.service.Object):
 
         return False
 
-    @dbus.service.method('com.kilbuckcreek.photobooth', out_signature='b')
+    @dbus.service.method(bus_name, out_signature='b')
     def capture_image(self):
         if self._locked:
             try:
@@ -61,41 +65,41 @@ class PhotoboothService(dbus.service.Object):
 
         return False
 
-    @dbus.service.method('com.kilbuckcreek.photobooth', out_signature='b')
+    @dbus.service.method(bus_name, out_signature='b')
     def preview_running(self):
         return self.do_preview
 
-    @dbus.service.method('com.kilbuckcreek.photobooth', out_signature='b')
+    @dbus.service.method(bus_name, out_signature='b')
     def preview_safe(self):
         return not self.preview_lock
 
-    @dbus.service.signal('com.kilbuckcreek.photobooth')
+    @dbus.service.signal(bus_name)
     def preview_updated(self, value):
         pass
 
-    @dbus.service.method('com.kilbuckcreek.photobooth')
+    @dbus.service.method(bus_name)
     def stop_preview(self, key=None):
         if self._key == key:
             self.do_preview = False
             gobject.source_remove(self.timer)
 
-    @dbus.service.method('com.kilbuckcreek.photobooth')
+    @dbus.service.method(bus_name)
     def start_preview(self, key=None):
         self._key = key
         self.do_preview = True
         self.download_preview()
         self.timer = gobject.timeout_add(300, self.download_preview)
 
-    @dbus.service.method('com.kilbuckcreek.photobooth', out_signature='ay')
+    @dbus.service.method(bus_name, out_signature='ay')
     def get_preview(self):
         if self._locked and self.do_preview:
             try:
-               data = self.camera.capture_preview().get_data()
-               return ByteArray(data)
+                data = self.camera.capture_preview().get_data()
+                return ByteArray(data)
             except shutter.ShutterError as e:
                 self.reset()
 
-    @dbus.service.method('com.kilbuckcreek.photobooth', out_signature='b')
+    @dbus.service.method(bus_name, out_signature='b')
     def download_preview(self):
         if self._locked:
             try:
@@ -124,7 +128,7 @@ class PhotoboothService(dbus.service.Object):
         self.release_camera()
         self.open_and_lock_camera()
 
-    @dbus.service.method('com.kilbuckcreek.photobooth')
+    @dbus.service.method(bus_name)
     def do_reset(self):
         self.reset()
 

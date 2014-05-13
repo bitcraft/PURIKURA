@@ -14,7 +14,6 @@ class SenderThread(threading.Thread):
 
     def run(self):
         import email
-        from email.mime.text import MIMEText
 
         msg = email.MIMEMultipart.MIMEMultipart('mixed')
         msg['subject'] = 'Your photo from Kilbuck Creek Photo Booth'

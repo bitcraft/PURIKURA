@@ -19,11 +19,10 @@
 *   along with pyrikura.  If not, see <http://www.gnu.org/licenses/>.
 *
 """
+from types import StringType, ListType
+
 from yapsy.PluginManager import PluginManager as IPluginManager
 from yapsy.IPlugin import IPlugin
-
-from types import StringType, ListType
-import sys
 
 
 class Plugin(IPlugin):
@@ -37,7 +36,6 @@ class Plugin(IPlugin):
 
     cmd_XXX
     allow commands to be invoked from the shell
-
     """
 
     def __init__(self):

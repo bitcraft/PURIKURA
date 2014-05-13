@@ -2,18 +2,16 @@
 
 import kivy
 
-kivy.require('1.5.0')
+kivy.require('1.8.0')
 
-import time
 import dbus
-import os, math
+import os
 import shutil
 from functools import partial
 
 from kivy.config import Config
 from kivy.animation import Animation
 from kivy.factory import Factory
-from kivy.lang import Builder, Parser, ParserException
 from kivy.factory import Factory
 from kivy.animation import Animation
 from kivy.loader import Loader
@@ -21,7 +19,6 @@ from kivy.core.image import Image as CoreImage
 from kivy.properties import *
 from kivy.clock import Clock
 
-from kivy.uix.accordion import Accordion, AccordionItem
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.screenmanager import Screen
 from kivy.uix.label import Label
@@ -30,6 +27,9 @@ from kivy.uix.popup import Popup
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 
+import logging
+
+logger = logging.getLogger("purikura.kiosk")
 
 # load our templates
 module = os.path.dirname(os.path.abspath(__file__))
@@ -77,7 +77,7 @@ def search(root, uniqueid):
 
 class IconAccordionItem(AccordionItem):
     icon_source = StringProperty()
-    icon_size = ListProperty
+    icon_size = ListProperty()
 
 
 OFFSET = 172
@@ -379,7 +379,6 @@ class SenderThread(threading.Thread):
 
     def run(self):
         import email
-        from email.mime.text import MIMEText
 
         msg = email.MIMEMultipart.MIMEMultipart('mixed')
         msg['subject'] = 'Your photo from Kilbuck Creek Photo Booth'
@@ -399,11 +398,7 @@ class SenderThread(threading.Thread):
 
         with open(auth_file) as fh:
             auth = pickle.load(fh)
-            print
-            auth
             auth = auth['smtp']
-            print
-            auth
 
         with open('email.log', 'a') as fh:
             fh.write('{}\t{}\n'.format(self.address, self.filename))

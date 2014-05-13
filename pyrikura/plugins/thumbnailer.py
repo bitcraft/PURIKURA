@@ -5,9 +5,13 @@ spawns a thread that launches a childprocess that resizes the image.
 creates a square crop to the size passed
 '''
 
+import subprocess
+import os
+import threading
+import shlex
+
 from pyrikura.broker import Broker
 from pyrikura.plugin import Plugin as pl
-import subprocess, os, threading, shlex
 
 
 thumbnail_cmd = 'convert -define jpeg:size={} {} -thumbnail {}^ -gravity center -extent {} {}'

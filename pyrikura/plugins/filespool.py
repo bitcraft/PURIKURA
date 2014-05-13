@@ -1,11 +1,10 @@
-from pyrikura.plugin import Plugin
 import subprocess
+
+from pyrikura.plugin import Plugin
 
 
 class FileSpool(Plugin):
     def process(self, msg, sender):
         cmd = ['lpr', msg]
         subprocess.call(cmd)
-        print
-        'printing {0}'.format(msg)
         self.publish([msg])

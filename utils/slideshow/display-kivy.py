@@ -20,9 +20,11 @@
 *
 """
 import kivy
+
 kivy.require('1.5.0')
 
 from kivy.config import Config
+
 Config.set('graphics', 'fullscreen', True)
 
 Config.set('graphics', 'width', '1920')
@@ -34,8 +36,6 @@ Config.set('graphics', 'show_mousecursor', False)
 # performance tweaks
 Config.set('graphics', 'multisamples', 0)
 
-
-from kivy.lang import Builder
 from kivy.animation import Animation
 from kivy.app import App
 from kivy.clock import Clock
@@ -48,27 +48,26 @@ from kivy.properties import *
 import random, glob, os
 
 
-
 target_size = 768, 768
 event_name = 'gunnar-dolly'
 
 settings = {}
 settings['originals'] = os.path.join('/', 'home', 'mjolnir', 'events', \
-                        event_name, 'originals')
+                                     event_name, 'originals')
 
 
 
 #Builder.load_file('display-kivy.kv')
 
-Loader.num_workers=3
-Loader.max_upload_per_frame=2
+Loader.num_workers = 3
+Loader.max_upload_per_frame = 2
 
 
 class CustomImage(Image):
     pass
 
-Factory.register('CustomImage', CustomImage)
 
+Factory.register('CustomImage', CustomImage)
 
 
 def get_files():
@@ -76,8 +75,7 @@ def get_files():
 
 
 class SlideshowWidget(FloatLayout):
-
-    image_duration = NumericProperty(3) 
+    image_duration = NumericProperty(3)
     new_image_interval = NumericProperty(1)
 
 
@@ -106,11 +104,11 @@ class SlideshowWidget(FloatLayout):
 
         if self.side:
             self.side = 0
-            pos_hint = {'x': random.random()/4, 'top': .5}
+            pos_hint = {'x': random.random() / 4, 'top': .5}
         else:
             self.side = 1
-            pos_hint = {'x': random.random()/4+.5, 'top': .5}
-       
+            pos_hint = {'x': random.random() / 4 + .5, 'top': .5}
+
         image = Factory.AsyncImage(
             source=filename,
             pos_hint=pos_hint,
@@ -122,19 +120,19 @@ class SlideshowWidget(FloatLayout):
         super(SlideshowWidget, self).add_widget(widget, *arg, **kwarg)
 
         ani = Animation(
-            t = 'linear',
-            y = self.height,
-            duration = self.image_duration)
+            t='linear',
+            y=self.height,
+            duration=self.image_duration)
 
         del widget.pos_hint['top']
         ani.bind(on_complete=self.destroy_widget)
         ani.start(widget)
 
 
-
 class SlideshowApp(App):
     def build(self):
         return SlideshowWidget()
+
 
 if __name__ == '__main__':
     import pygame

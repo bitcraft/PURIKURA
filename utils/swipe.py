@@ -1,9 +1,11 @@
-from subprocess import PIPE, Popen
-from threading  import Thread
+from threading import Thread
 from Queue import Queue, Empty
-import os, time, sys, hashlib
+import time
+import sys
+
 
 ON_POSIX = 'posix' in sys.builtin_module_names
+
 
 def enqueue_output(out, queue):
     while 1:
@@ -11,13 +13,15 @@ def enqueue_output(out, queue):
         queue.put(byte)
     out.close()
 
+
 key = None
+
 
 def handle_data(data):
     global key
     if key is None:
         key = data
-        print 'got key!' 
+        print 'got key!'
     else:
         if key == data:
             print 'match!'
@@ -33,7 +37,7 @@ if __name__ == '__main__':
     reader = open(device)
     q = Queue()
     t = Thread(target=enqueue_output, args=(reader, q))
-    t.daemon = True # thread dies with the program
+    t.daemon = True  # thread dies with the program
     t.start()
 
     swipe_time = None
@@ -41,7 +45,7 @@ if __name__ == '__main__':
 
     while 1:
         try:
-            byte = q.get_nowait() 
+            byte = q.get_nowait()
         except Empty:
             if swipe_time is None:
                 pass

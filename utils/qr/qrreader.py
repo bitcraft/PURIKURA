@@ -7,6 +7,7 @@ def handle(decode):
     print decode
     sys.stdout.flush()
 
+
 if __name__ == '__main__':
     del sys.argv[0]
     if len(sys.argv):
