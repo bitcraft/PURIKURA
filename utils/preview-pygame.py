@@ -77,10 +77,7 @@ def quit_pressed():
 
 
 if __name__ == '__main__':
-    pygame.display.set_mode((0,0), pygame.FULLSCREEN |
-                                   pygame.DOUBLEBUF |
-                                   pygame.HWSURFACE)
-
+    pygame.display.set_mode((0,0), pygame.FULLSCREEN)
     main_surface = pygame.display.get_surface()
 
     pygame.mouse.set_visible(False)
@@ -109,4 +106,4 @@ if __name__ == '__main__':
         thread0.stop()
         thread1.stop()
         time.sleep(1)
-        camera.exit()
+        camera.close()

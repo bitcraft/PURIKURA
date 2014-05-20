@@ -111,7 +111,7 @@ class PhotoboothService(dbus.service.Object):
         if self._locked:
             raise Exception
         self._locked = True
-        self.camera = shutter.camera()
+        self.camera = shutter.Camera()
         g_camera = self.camera
 
     def release_camera(self):

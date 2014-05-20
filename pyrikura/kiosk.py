@@ -44,10 +44,10 @@ from dbus.mainloop.glib import DBusGMainLoop
 
 DBusGMainLoop(set_as_default=True)
 
-bus = dbus.SessionBus()
-pb_obj = bus.get_object('com.kilbuckcreek.photobooth',
-                        '/com/kilbuckcreek/photobooth')
-pb_iface = dbus.Interface(pb_obj, dbus_interface='com.kilbuckcreek.photobooth')
+#bus = dbus.SessionBus()
+#pb_obj = bus.get_object('com.kilbuckcreek.photobooth',
+#                        '/com/kilbuckcreek/photobooth')
+#pb_iface = dbus.Interface(pb_obj, dbus_interface='com.kilbuckcreek.photobooth')
 
 
 def handle_print_number_error(value):
