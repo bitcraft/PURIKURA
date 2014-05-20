@@ -1,6 +1,7 @@
+import sys
+
 from pyrikura.plugin import Plugin
 from pyrikura.broker import Broker
-import sys
 
 
 class ConsolePrinterBroker(Broker):

@@ -1,7 +1,6 @@
 from pyrikura.broker import Broker
 from pyrikura.plugin import Plugin
 import serial
-import time
 
 
 class ArduinoBroker(Broker):

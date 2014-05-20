@@ -1,5 +1,7 @@
+import re
+import subprocess
+
 from pyrikura.plugin import Plugin
-import re, subprocess
 
 
 class Scripter(Plugin):

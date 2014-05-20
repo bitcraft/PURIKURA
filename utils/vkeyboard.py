@@ -102,6 +102,10 @@ method in the :doc:`api-kivy.core.window`.
 
 __all__ = ('VKeyboard', )
 
+from os.path import join, splitext
+from os import listdir
+from json import loads
+
 from kivy import kivy_data_dir
 from kivy.vector import Vector
 from kivy.config import Config
@@ -114,10 +118,6 @@ from kivy.graphics import Color, BorderImage, Canvas
 from kivy.core.image import Image
 from kivy.resources import resource_find
 from kivy.clock import Clock
-
-from os.path import join, splitext
-from os import listdir
-from json import loads
 
 
 default_layout_path = join(kivy_data_dir, 'keyboards')
@@ -235,7 +235,7 @@ class VKeyboard(Scatter):
     '''
 
     key_background_normal = StringProperty(
-            'atlas://data/images/defaulttheme/vkeyboard_key_normal')
+        'atlas://data/images/defaulttheme/vkeyboard_key_normal')
     '''Filename of the key background image for use when no touches are active
     on the widget.
 
@@ -479,7 +479,7 @@ class VKeyboard(Scatter):
             for line_nb, index in active_keys.itervalues():
                 pos, size = layout_geometry['LINE_%d' % line_nb][index]
                 BorderImage(texture=texture, pos=pos, size=size,
-                        border=self.key_border)
+                            border=self.key_border)
 
     def refresh_keys_hint(self):
         layout = self.available_layouts[self.layout]
@@ -565,7 +565,7 @@ class VKeyboard(Scatter):
         with self.background_key_layer:
             Color(*self.background_color)
             BorderImage(texture=texture, size=self.size,
-                    border=self.background_border)
+                        border=self.background_border)
 
         # XXX seperate drawing the keys and the fonts to avoid
         # XXX reloading the texture each time
@@ -575,15 +575,16 @@ class VKeyboard(Scatter):
         texture = Image(key_normal, mipmap=True).texture
         with self.background_key_layer:
             for line_nb in xrange(1, layout_rows + 1):
-		key_nb = 0
+                key_nb = 0
                 for pos, size in layout_geometry['LINE_%d' % line_nb]:
                     try:
-		        text = layout[layout_mode + '_' + str(line_nb)][key_nb][0]
+                        text = layout[layout_mode + '_' + str(line_nb)][key_nb][
+                            0]
                     except IndexError:
                         continue
-		    if not text == "":
+                    if not text == "":
                         BorderImage(texture=texture, pos=pos, size=size,
-                            border=self.key_border)
+                                    border=self.key_border)
                     key_nb += 1
 
         # then draw the text
@@ -598,9 +599,9 @@ class VKeyboard(Scatter):
                     text = layout[layout_mode + '_' + str(line_nb)][key_nb][0]
                 except IndexError:
                     continue
-		l = Label(text=text, font_size=font_size, pos=pos, size=size,
-			font_name=self.font_name)
-		self.add_widget(l)
+                l = Label(text=text, font_size=font_size, pos=pos, size=size,
+                          font_name=self.font_name)
+                self.add_widget(l)
                 key_nb += 1
 
     def on_key_down(self, *largs):
@@ -657,7 +658,7 @@ class VKeyboard(Scatter):
         x_hint = x / self.width
         y_hint = y / self.height
         if x_hint > mleft and x_hint < 1. - mright \
-            and y_hint > mbottom and y_hint < 1. - mtop:
+                and y_hint > mbottom and y_hint < 1. - mtop:
             return False
         return True
 
@@ -691,11 +692,11 @@ class VKeyboard(Scatter):
         b_modifiers = self._get_modifiers()
 
         if not displayed_char == '':
-	    self.dispatch('on_key_down', b_keycode, internal, b_modifiers)
+            self.dispatch('on_key_down', b_keycode, internal, b_modifiers)
 
-	    # save key as an active key for drawing
-	    self.active_keys[uid] = key[1]
-	    self.refresh_active_keys_layer()
+            # save key as an active key for drawing
+            self.active_keys[uid] = key[1]
+            self.refresh_active_keys_layer()
 
     def process_key_up(self, touch):
         uid = touch.uid
@@ -751,5 +752,6 @@ class VKeyboard(Scatter):
 
 if __name__ == '__main__':
     from kivy.base import runTouchApp
+
     vk = VKeyboard(layout='azerty')
     runTouchApp(vk)

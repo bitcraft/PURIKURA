@@ -2,18 +2,19 @@
 
 import kivy
 
-kivy.require('1.5.0')
+kivy.require('1.8.0')
 
-import time
 import dbus
-import os, math
+import os
 import shutil
+import ConfigParser
 from functools import partial
+
+from dbus.mainloop.glib import DBusGMainLoop
 
 from kivy.config import Config
 from kivy.animation import Animation
 from kivy.factory import Factory
-from kivy.lang import Builder, Parser, ParserException
 from kivy.factory import Factory
 from kivy.animation import Animation
 from kivy.loader import Loader
@@ -21,7 +22,6 @@ from kivy.core.image import Image as CoreImage
 from kivy.properties import *
 from kivy.clock import Clock
 
-from kivy.uix.accordion import Accordion, AccordionItem
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.screenmanager import Screen
 from kivy.uix.label import Label
@@ -30,6 +30,9 @@ from kivy.uix.popup import Popup
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 
+import logging
+
+logger = logging.getLogger("purikura.kiosk")
 
 # load our templates
 module = os.path.dirname(os.path.abspath(__file__))
@@ -38,16 +41,39 @@ Builder.load_file(os.path.join(module, 'kiosk-composite.kv'))
 Builder.load_file(os.path.join(module, 'kiosk-single.kv'))
 del module
 
-MAXIMUM_PRINTS = 3
+# because i hate typing
+jpath = os.path.join
 
-from dbus.mainloop.glib import DBusGMainLoop
 
-DBusGMainLoop(set_as_default=True)
+def load_config(name):
+    home = os.path.expanduser("~")
+    path = jpath(home, '/git/PURIKURA/config', name)
+    cfg = ConfigParser.ConfigParser()
+    msg = 'loading {} configuration from {}...'
+    logger.info(msg.format(__name__, path))
+    cfg.read(path)
+    return cfg
 
 #bus = dbus.SessionBus()
 #pb_obj = bus.get_object('com.kilbuckcreek.photobooth',
 #                        '/com/kilbuckcreek/photobooth')
 #pb_iface = dbus.Interface(pb_obj, dbus_interface='com.kilbuckcreek.photobooth')
+cfg = load_config('kiosk.ini')
+
+MAXIMUM_PRINTS = cfg.getint('kiosk', 'max-prints')
+
+# load the config from the service to get path info
+# this is mostly copypasta from service.py
+cfg = load_config('service.ini')
+dbus_name = cfg.get('camera', 'dbus-name')
+dbus_path = cfg.get('camera', 'dbus-path')
+
+
+# dbus  :D
+DBusGMainLoop(set_as_default=True)
+bus = dbus.SessionBus()
+pb_obj = bus.get_object(dbus_name, dbus_path)
+pb_iface = dbus.Interface(pb_obj, dbus_interface=dbus_name)
 
 
 def handle_print_number_error(value):
@@ -77,7 +103,7 @@ def search(root, uniqueid):
 
 class IconAccordionItem(AccordionItem):
     icon_source = StringProperty()
-    icon_size = ListProperty
+    icon_size = ListProperty()
 
 
 OFFSET = 172
@@ -379,7 +405,6 @@ class SenderThread(threading.Thread):
 
     def run(self):
         import email
-        from email.mime.text import MIMEText
 
         msg = email.MIMEMultipart.MIMEMultipart('mixed')
         msg['subject'] = 'Your photo from Kilbuck Creek Photo Booth'
@@ -399,11 +424,7 @@ class SenderThread(threading.Thread):
 
         with open(auth_file) as fh:
             auth = pickle.load(fh)
-            print
-            auth
             auth = auth['smtp']
-            print
-            auth
 
         with open('email.log', 'a') as fh:
             fh.write('{}\t{}\n'.format(self.address, self.filename))

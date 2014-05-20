@@ -28,7 +28,6 @@ display = platform.get_display("")
 screens = display.get_screens()
 window = pyglet.window.Window(fullscreen=True, screen=screens[-1], vsync=0)
 
-
 from pyglet.image import *
 from pyglet.sprite import Sprite
 from PIL import Image, ImageOps
@@ -46,7 +45,7 @@ NEW_PHOTO_INTERVAL = 5
 
 settings = {}
 settings['originals'] = os.path.join('/', 'home', 'mjolnir', 'events', \
-                        event_name, 'originals')
+                                     event_name, 'originals')
 
 
 def get_files():
@@ -63,7 +62,7 @@ def load_resize_and_convert(queue, filename):
     image = Image.open(filename)
     image = image.transpose(Image.FLIP_TOP_BOTTOM)
     image.thumbnail(target_size, Image.ANTIALIAS)
-    image = ImageOps.expand(image, border=16, fill=(255,255,255))
+    image = ImageOps.expand(image, border=16, fill=(255, 255, 255))
     image = image.convert()
     w, h = image.size
     image = ImageData(w, h, image.mode, image.tostring())
@@ -74,6 +73,7 @@ class TableclothDisplay(object):
     """
     class for showing images that fall onto a scrolling table cloth
     """
+
     def __init__(self, window, bkg_image, folder):
         self.background = pyglet.graphics.Batch()
 
@@ -101,13 +101,14 @@ class TableclothDisplay(object):
         if self.bkg0.y + self.bkg0.height <= self.height:
             self.bkg0.y = self.height
 
-        self.bkg1.y = self.bkg0.y - self.bkg0.height -1
+        self.bkg1.y = self.bkg0.y - self.bkg0.height - 1
 
 
 load_queue = Queue()
 images = []
 image_batch = pyglet.graphics.Batch()
 displayed = set()
+
 
 def new_photo(dt=0):
     files = get_files()
@@ -121,14 +122,16 @@ def new_photo(dt=0):
     p = Process(target=load_resize_and_convert, args=(load_queue, filename))
     p.start()
 
+
 @window.event
 def on_draw():
     display.background.draw()
     image_batch.draw()
 
+
 def scroll(dt):
     display.scroll(0, dt * 20.0)
-    
+
     to_remove = []
     for sprite in images:
         if sprite.y > window_size[1]:
@@ -142,7 +145,10 @@ def scroll(dt):
     for sprite in images:
         sprite.y += dist
 
+
 side = 0
+
+
 def check_queue(dt):
     global side
 
@@ -154,10 +160,10 @@ def check_queue(dt):
     else:
         if side:
             side = 0
-            x = random.randint(0, window_size[0]/2-image.width)
+            x = random.randint(0, window_size[0] / 2 - image.width)
         else:
             side = 1
-            x = random.randint(window_size[0]/2, window_size[0]-image.width)
+            x = random.randint(window_size[0] / 2, window_size[0] - image.width)
 
         y = -image.height
 

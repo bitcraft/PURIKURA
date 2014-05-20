@@ -1,6 +1,3 @@
-from queue import Queue
-
-
 class WorkflowNode(object):
     """
     WorkflowNode

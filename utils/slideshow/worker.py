@@ -47,7 +47,7 @@ def thumbnailer(queue, settings):
         image = Image.open(filename)
         image = image.transpose(Image.FLIP_TOP_BOTTOM)
         #image.thumbnail(settings['thumbnail_size'], Image.ANTIALIAS)
-        image = ImageOps.expand(image, border=12, fill=(255,255,255))
+        image = ImageOps.expand(image, border=12, fill=(255, 255, 255))
 
         w, h = image.size
         image = image.convert()
@@ -81,7 +81,7 @@ def loader(queue, settings):
         image = Image.open(filename)
         image = image.transpose(Image.FLIP_TOP_BOTTOM)
         image.thumbnail(settings['large_size'], Image.ANTIALIAS)
-        image = ImageOps.expand(image, border=32, fill=(255,255,255))
+        image = ImageOps.expand(image, border=32, fill=(255, 255, 255))
 
         w, h = image.size
         image = image.convert()

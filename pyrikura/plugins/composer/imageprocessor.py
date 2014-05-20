@@ -1,7 +1,8 @@
 """
 code for unmanaged subprocess that preprocesses images for templates
 """
-import Queue, sys, os, time
+import Queue
+import sys
 
 # mangle import paths to enable this sweet hack
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))

@@ -7,14 +7,13 @@ uses threads and stuff for speed
 suitable for any display that is compatible with SDL (framebuffers, etc)
 """
 
-import sys
-import os
 import threading
-import Queue
 import time
-import shutter
+
 import pygame
-from StringIO import StringIO
+
+import shutter
+from six.moves import queue, cStringIO
 
 
 class CaptureThread(threading.Thread):
@@ -53,14 +52,13 @@ class BlitThread(threading.Thread):
     def run(self):
         self._running = True
         get = self.queue.get
-        blit = self.surface.blit
         load = pygame.image.load
         scale = pygame.transform.scale
         screen = self.surface
         size = self.surface.get_size()
         lock = self.lock
         while self._running:
-            image = load(StringIO(get())).convert()
+            image = load(cStringIO(get())).convert()
             with lock:
                 scale(image, size, screen)
 
@@ -84,7 +82,7 @@ if __name__ == '__main__':
 
     display_lock = threading.Lock()
     camera_lock = threading.Lock()
-    queue = Queue.Queue(10)
+    queue = queue.Queue(10)
     camera = shutter.Camera()
 
     thread0 = CaptureThread(queue, camera, camera_lock)

@@ -1,6 +1,8 @@
+import os
+import shutil
+
 from pyrikura.broker import Broker
 from pyrikura.plugin import Plugin
-import os, shutil
 
 
 class FileCopyBroker(Broker):

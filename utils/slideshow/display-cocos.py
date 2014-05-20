@@ -19,22 +19,20 @@
 *   along with pyrikura.  If not, see <http://www.gnu.org/licenses/>.
 *
 """
+from multiprocessing import Process, Queue
+import os
+import subprocess
+import random
+
 import cocos
 from cocos.actions import *
 from cocos.scenes import *
 from cocos.sprite import Sprite
-
 import pyglet
-from pyglet.image import ImageData
-
-from PIL import Image, ImageOps
-
-from multiprocessing import Process, Queue
-import os, sys, subprocess, random
 
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from worker import *
+from utils.slideshow.worker import *
 
 os.chdir('/home/mjolnir/git/PURIKURA/slideshow')
 
@@ -48,14 +46,14 @@ event = 'test'
 
 settings = {}
 settings['shutter_sound'] = os.path.join('sounds', 'bell.wav')
-settings['printsrv']   = '/home/mjolnir/smb-printsrv'
-settings['template']   = 'templates/2x6vintage.template'
+settings['printsrv'] = '/home/mjolnir/smb-printsrv'
+settings['template'] = 'templates/2x6vintage.template'
 settings['thumbnails'] = '/home/mjolnir/events/{}/small'.format(event)
-settings['detail']     = '/home/mjolnir/events/{}/medium'.format(event)
-settings['originals']  = '/home/mjolnir/events/{}/originals'.format(event)
+settings['detail'] = '/home/mjolnir/events/{}/medium'.format(event)
+settings['originals'] = '/home/mjolnir/events/{}/originals'.format(event)
 settings['composites'] = '/home/mjolnir/events/{}/composites/'.format(event)
 settings['thumbnail_size'] = 768, 768
-settings['large_size'] = 1024, 1024 
+settings['large_size'] = 1024, 1024
 settings['s_queue_size'] = 6
 settings['l_queue_size'] = 3
 
@@ -90,9 +88,9 @@ def init():
 def fetch_thumbnail():
     return thumbnail_queue.get()
 
+
 def fetch_image():
     return image_queue.get()
-
 
 
 class PanScanLayer(cocos.layer.Layer):
@@ -136,27 +134,27 @@ class PanScanLayer(cocos.layer.Layer):
         else:
             sprite.x = width
 
-        sprite.y = random.randint(height*.25, height*.75)
-      
+        sprite.y = random.randint(height * .25, height * .75)
+
         #dst = random.randint(width*.25, width*.75), height / 2
-        dst = width/ 2, height / 2
+        dst = width / 2, height / 2
 
         sprite.scale = end_scale * 5
         sprite.opacity = 0
         sprite.do(
             spawn(
-                FadeIn(1), 
+                FadeIn(1),
                 AccelDeccel(
                     spawn(
                         ScaleTo(end_scale, duration=2),
-                        MoveTo( dst, duration=2)))) + 
-            Delay(self.interval) + 
-            FadeOut(.5) + 
-            CallFunc(sprite.kill) )
+                        MoveTo(dst, duration=2)))) +
+            Delay(self.interval) +
+            FadeOut(.5) +
+            CallFunc(sprite.kill))
 
         self._z += 1
         self.add(sprite, z=self._z)
-        
+
 
 class ScrollingLayer(cocos.layer.Layer):
     def __init__(self):
@@ -183,7 +181,7 @@ class ScrollingLayer(cocos.layer.Layer):
         w_width, w_height = cocos.director.director.get_window_size()
 
         if self._last_sprite is None:
-            y = w_height 
+            y = w_height
         else:
             y = self._last_sprite.y
 
@@ -193,13 +191,13 @@ class ScrollingLayer(cocos.layer.Layer):
             if self._cached_size is None:
                 image = fetch_thumbnail()
                 self._cached_size = image.width, image.height
-            
+
             image_height = self._cached_size[1]
 
             while y > -image_height:
                 if image is None:
                     image = fetch_thumbnail()
-                    
+
                 def check_position(dt, sprite, func):
                     if sprite.y - sprite.height / 2 > w_height:
                         sprite.unschedule(func)
@@ -209,14 +207,16 @@ class ScrollingLayer(cocos.layer.Layer):
 
                 if self._side:
                     self._side = 0
-                    x = random.randint(image.width/2, w_width/2-image.width/2)
+                    x = random.randint(image.width / 2,
+                                       w_width / 2 - image.width / 2)
                 else:
                     self._side = 1
-                    x = random.randint(w_width/2+image.width/2, w_width-image.width/2)
+                    x = random.randint(w_width / 2 + image.width / 2,
+                                       w_width - image.width / 2)
 
                 y -= image.height * .6
 
-                sprite = Sprite(image, position=(x,y))
+                sprite = Sprite(image, position=(x, y))
                 sprite.schedule(check_position, sprite, check_position)
 
                 self.batch.add(sprite)
@@ -248,19 +248,19 @@ class PhotoPileLayer(cocos.layer.Layer):
         sw = int((image.width * end_scale) / 2)
         sh = int((image.height * end_scale) / 2)
 
-        sprite.x = random.randint(sw, width-sw)
-        sprite.y = random.randint(sh, height-sh)
+        sprite.x = random.randint(sw, width - sw)
+        sprite.y = random.randint(sh, height - sh)
 
         sprite.opacity = 0
         sprite.scale = end_scale * 1.5
 
-        sprite.do( 
+        sprite.do(
             spawn(
                 FadeIn(.2),
-                AccelDeccel( ScaleTo(end_scale, duration=.4) )) + 
-            Delay(15) + 
-            FadeOut(.5) + 
-            CallFunc(sprite.kill) )
+                AccelDeccel(ScaleTo(end_scale, duration=.4))) +
+            Delay(15) +
+            FadeOut(.5) +
+            CallFunc(sprite.kill))
 
         self.z += 1
         self.add(sprite, z=self.z)
@@ -270,6 +270,7 @@ class BackgroundLayer(cocos.layer.Layer):
     """
     class for showing images that fall onto a scrolling table cloth
     """
+
     def __init__(self, filename):
         super(BackgroundLayer, self).__init__()
 
@@ -286,7 +287,7 @@ class BackgroundLayer(cocos.layer.Layer):
 
         self.bkg0.x = self.width / 2
         self.bkg1.x = self.width / 2
-        self.bkg0.y = self.bkg0.height / 2 
+        self.bkg0.y = self.bkg0.height / 2
 
         self.add(self.bkg0)
         self.add(self.bkg1)
@@ -312,15 +313,15 @@ class BackgroundLayer(cocos.layer.Layer):
         self.bkg1.y = self.bkg0.y - self.bkg0.height
 
         if self.bkg1.y - self.bkg1.height / 2 > 0:
-            self.bkg0.y -= self.bkg0.height 
+            self.bkg0.y -= self.bkg0.height
             self.bkg1.y = self.bkg0.y - self.bkg0.height
 
 
 if __name__ == '__main__':
     import itertools
     import inspect
-    
-    import cProfile, pstats, sys
+
+    import sys
 
     import cocos.scenes.transitions
     from cocos.layer.util_layers import ColorLayer
@@ -331,8 +332,8 @@ if __name__ == '__main__':
     temp = dict(inspect.getmembers(cocos.scenes.transitions))
 
     transitions = [
-        'FadeTransition', 
-        'ZoomTransition', 
+        'FadeTransition',
+        'ZoomTransition',
         'FlipX3DTransition',
     ]
 
@@ -367,11 +368,11 @@ if __name__ == '__main__':
             ScrollingLayer())
         return scene
 
-    all_scenes = [ panscan_scene, pile_scene, scroll_scene ]
+    all_scenes = [panscan_scene, pile_scene, scroll_scene]
     all_scenes = itertools.cycle(all_scenes)
 
     start_workers()
-    
+
     init()
 
     platform = pyglet.window.get_platform()
@@ -386,11 +387,11 @@ if __name__ == '__main__':
     try:
         cocos.director.director.run(next(all_scenes)())
     except KeyboardInterrupt:
-        [ p.terminate() for p in workers ]
+        [p.terminate() for p in workers]
         cocos.director.director.terminate_app = True
     except:
-        [ p.terminate() for p in workers ]
+        [p.terminate() for p in workers]
         raise
     finally:
-        [ p.terminate() for p in workers ]
+        [p.terminate() for p in workers]
 
