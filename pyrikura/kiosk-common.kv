@@ -49,20 +49,13 @@
     Accordion:
         orientation: 'vertical'
         pos: 16,0
-        min_space: 232
+        #min_space: 232
 
         AccordionItem:
             title: 'Print Copies'
             icon_source: 'images/icons/print.png'
             icon_size: 256, 256
             collapse: False
-
-            canvas.before:
-                Color:
-                    rgba: 0, 1, 0, 1
-                Rectangle:
-                    pos: self.pos
-                    size: self.size
 
             BoxLayout:
                 orientation: 'vertical'
