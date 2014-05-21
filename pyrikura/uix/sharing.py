@@ -37,7 +37,7 @@ class SharingControls(FloatLayout):
 
     email_addressee = StringProperty('')
     twitter_acct = StringProperty(
-        config.kiosk.get('twitter', 'account')
+        pkConfig.get('twitter', 'account')
     )
     filename = StringProperty()
 
