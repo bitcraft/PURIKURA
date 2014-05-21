@@ -24,7 +24,9 @@ import pygame
 from yapsy.PluginManager import PluginManager
 import dbus
 import serial
-import ConfigParser
+
+from pyrikura import resources
+from pyrikura.config import Config
 
 logger = logging.getLogger("purikura.booth")
 
@@ -32,37 +34,21 @@ logger = logging.getLogger("purikura.booth")
 # because i hate typing
 jpath = os.path.join
 
-def load_sound(filename):
-    path = jpath(app_sounds_path, filename)
-    return pygame.mixer.Sound(path)
-
-
-def load_config(name):
-    home = os.path.expanduser("~")
-    path = jpath(home, '/git/PURIKURA/config', name)
-    cfg = ConfigParser.ConfigParser()
-    msg = 'loading {} configuration from {}...'
-    logger.info(msg.format(__name__, path))
-    cfg.read(path)
-    return cfg
-
-cfg = load_config('service.ini')
-
 # paths
-app_root_path = cfg.get('paths', 'root')
+app_root_path = Config.get('paths', 'root')
 app_config_path = jpath(app_root_path, 'config')
 app_resources_path = jpath(app_root_path, 'resources')
 app_sounds_path = jpath(app_resources_path, 'sounds')
 app_images_path = jpath(app_resources_path, 'images')
 all_templates_path = jpath(app_resources_path, 'templates')
-all_images_path = cfg.get('paths', 'images')
-capture_image = cfg.get('camera', 'capture-image')
-shared_path = cfg.get('paths', 'shared')
-plugins_path = cfg.get('paths', 'plugins')
+all_images_path = Config.get('paths', 'images')
+capture_image = Config.get('camera', 'capture-image')
+shared_path = Config.get('paths', 'shared')
+plugins_path = Config.get('paths', 'plugins')
 
 # event paths
-event_name = cfg.get('event', 'name')
-template_path = jpath(all_templates_path, cfg.get('event', 'template'))
+event_name = Config.get('event', 'name')
+template_path = jpath(all_templates_path, Config.get('event', 'template'))
 event_images_path = jpath(all_images_path, event_name)
 thumbs_path = jpath(event_images_path, 'thumbnails')
 details_path = jpath(event_images_path, 'detail')
@@ -71,22 +57,29 @@ composites_path = jpath(event_images_path, 'composites')
 paths = ('thumbnails', 'detail', 'originals', 'composites')
 
 # mixer must be initialized before sounds will play
-pygame.mixer.init(frequency=cfg.getint('sound', 'mixer-frequency'),
-                  buffer=cfg.getint('sound', 'mixer-buffer'))
-
-# sounds
-bell0 = load_sound(cfg.get('sounds', 'bell0'))
-bell1 = load_sound(cfg.get('sounds', 'bell1'))
-error = load_sound(cfg.get('sounds', 'error'))
-whistle = load_sound(cfg.get('sounds', 'next'))
+pygame.mixer.init(frequency=Config.getint('sound', 'mixer-frequency'),
+                  buffer=Config.getint('sound', 'mixer-buffer'))
 
 # specific to arduino!
-arduino_port = cfg.get('arduino', 'port')
-arduino_baudrate = cfg.getint('arduino', 'baudrate')
+arduino_port = Config.get('arduino', 'port')
+arduino_baudrate = Config.getint('arduino', 'baudrate')
 
 # specific to the camera system i use!
-dbus_name = cfg.get('camera', 'dbus-name')
-dbus_path = cfg.get('camera', 'dbus-path')
+dbus_name = Config.get('camera', 'dbus-name')
+dbus_path = Config.get('camera', 'dbus-path')
+
+# load all the stuff
+resources.load()
+
+# i'm lazy!
+bell0 = resources.sounds['bell0']
+bell1 = resources.sounds['bell1']
+error = resources.sounds['error']
+finished = resources.sounds['finished']
+
+# override volumes a bit
+bell1.set_volume(.5)
+finished.set_volume(0.4)
 
 
 class CameraTrigger:
@@ -159,11 +152,9 @@ class Session:
         self.captures += 1
 
         if self.captures == self.needed_captures:
-            bell1.set_volume(.5)
             bell1.play()
         else:
-            whistle.set_volume(0.4)
-            whistle.play()
+            finished.play()
 
         self.comp.process(capture_image)
         self.arch1.process(capture_image)

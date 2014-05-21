@@ -1,68 +1,23 @@
-#!/usr/bin/env python
-
-import kivy
-
-kivy.require('1.8.0')
-
-import dbus
-import os
-import shutil
-from functools import partial
-from dbus.mainloop.glib import DBusGMainLoop
-
-from . import config
-
 from kivy.animation import Animation
 from kivy.clock import Clock
 from kivy.config import Config
 from kivy.core.image import Image as CoreImage
 from kivy.factory import Factory
 from kivy.factory import Factory
-from kivy.lang import Builder
 from kivy.loader import Loader
 from kivy.properties import *
 
-from kivy.uix.accordion import Accordion
-from kivy.uix.accordion import AccordionItem
-from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.screenmanager import Screen
-from kivy.uix.label import Label
 from kivy.uix.image import Image
-from kivy.uix.popup import Popup
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.button import Button
 
-import logging
-
-logger = logging.getLogger("purikura.kiosk")
-
-# default place for config files
-config.load('/home/mjolnir/git/PURIKURA/config/')
-
-# load our templates
-module = os.path.dirname(os.path.abspath(__file__))
-Builder.load_file(os.path.join(module, 'kiosk-common.kv'))
-Builder.load_file(os.path.join(module, 'kiosk-composite.kv'))
-Builder.load_file(os.path.join(module, 'kiosk-single.kv'))
-del module
-
-MAXIMUM_PRINTS = config.kiosk.getint('kiosk', 'max-prints')
-dbus_name = config.service.get('camera', 'dbus-name')
-dbus_path = config.service.get('camera', 'dbus-path')
-
-# dbus  :D
-#DBusGMainLoop(set_as_default=True)
-#bus = dbus.SessionBus()
-#pb_obj = bus.get_object(dbus_name, dbus_path)
-#pb_iface = dbus.Interface(pb_obj, dbus_interface=dbus_name)
+from .config import Config as pkConfig
+from .sharing import SharingControls
 
 
-def handle_print_number_error(value):
-    if value < 1:
-        return 1
-    elif value > MAXIMUM_PRINTS:
-        return MAXIMUM_PRINTS
-
+OFFSET = 172
+MAXIMUM_PRINTS = pkConfig.getint('kiosk', 'max-prints')
+dbus_name = pkConfig.get('camera', 'dbus-name')
+dbus_path = pkConfig.get('camera', 'dbus-path')
 
 # hack search method because one is not included with kivy
 def search(root, uniqueid):
@@ -80,16 +35,6 @@ def search(root, uniqueid):
                 return child
 
     return None
-
-
-class IconAccordionItem(AccordionItem):
-    icon_source = StringProperty()
-    icon_size = ListProperty()
-
-
-OFFSET = 172
-
-jpath = os.path.join
 
 
 def image_path(filename):
@@ -374,236 +319,4 @@ class PickerScreen(Screen):
 
         return (-self.scrollview.scroll_x * bkg_w - self.width / 2,
                 self.background.pos[1])
-
-
-import smtplib
-import threading
-import pickle
-
-sender = config.kiosk.get('email', 'sender')
-subject = config.kiosk.get('email', 'subject')
-auth_file = '/home/mjolnir/git/PURIKURA/secrets'
-
-
-class SenderThread(threading.Thread):
-    def __init__(self, address, filename):
-        threading.Thread.__init__(self)
-        self.address = address
-        self.filename = filename
-
-    def run(self):
-        import email
-
-        msg = email.MIMEMultipart.MIMEMultipart('mixed')
-        msg['subject'] = subject
-        msg['from'] = sender
-        msg['to'] = self.address
-
-        body = email.mime.Text.MIMEText('Here\'s your photo!\n\nThank you!\n\n')
-        msg.attach(body)
-
-        file_msg = email.mime.base.MIMEBase('image', 'jpeg')
-        file_msg.set_payload(open(self.filename).read())
-        email.encoders.encode_base64(file_msg)
-        file_msg.add_header(
-            'Content-Disposition',
-            'attachment;filname=photo.jpg')
-        msg.attach(file_msg)
-
-        with open(auth_file) as fh:
-            auth = pickle.load(fh)
-            auth = auth['smtp']
-
-        with open('email.log', 'a') as fh:
-            fh.write('{}\t{}\n'.format(self.address, self.filename))
-
-        smtpout = smtplib.SMTP(auth['host'])
-        smtpout.login(auth['username'], auth['password'])
-
-        auth = None
-
-        smtpout.sendmail(sender, [self.address], msg.as_string())
-        smtpout.quit()
-
-
-class SharingControls(FloatLayout):
-    prints = BoundedNumericProperty(1, min=1, max=MAXIMUM_PRINTS,
-                                    errorhandler=handle_print_number_error)
-
-    email_addressee = StringProperty('')
-    twitter_acct = StringProperty(
-        config.kiosk.get('twitter', 'account')
-    )
-    filename = StringProperty()
-
-    def __init__(self, *args, **kwargs):
-        super(SharingControls, self).__init__(*args, **kwargs)
-
-    def disable(self):
-        def derp(*arg):
-            return False
-
-        for widget in self.children:
-            widget.on_touch_down = derp
-            widget.on_touch_up = derp
-            widget.on_touch_motion = derp
-
-    def do_print(self, popup, widget):
-        popup.dismiss()
-
-        for i in range(self.prints):
-            filename = '/home/mjolnir/smb-printsrv/temp-preint-{}.png'.format(i)
-            shutil.copyfile(self.filename, filename)
-
-        layout = BoxLayout(orientation='vertical')
-        label = Label(
-            text='Your prints will be ready soon!',
-            font_size=30)
-        button = Button(
-            text='Awesome!',
-            font_size=30,
-            background_color=(0, 1, 0, 1))
-        layout.add_widget(label)
-        layout.add_widget(button)
-
-        popup = Popup(
-            title='Just thought you should know...',
-            content=layout,
-            size_hint=(.5, .5))
-
-        button.bind(on_release=popup.dismiss)
-        popup.open()
-
-    def do_email(self, popup, address, filename, widget):
-        thread = SenderThread(address, filename)
-        thread.daemon = True
-        thread.start()
-        popup.dismiss()
-
-        layout = BoxLayout(orientation='vertical')
-        label = Label(
-            text='Just sent this image to:\n\n{}'.format(address),
-            font_size=30)
-        button = Button(
-            text='Awesome!',
-            font_size=30,
-            background_color=(0, 1, 0, 1))
-        layout.add_widget(label)
-        layout.add_widget(button)
-
-        popup = Popup(
-            title='Just thought you should know...',
-            content=layout,
-            size_hint=(.5, .5))
-
-        button.bind(on_release=popup.dismiss)
-        from kivy.core.window import Window
-        Window.release_all_keyboards()
-        self.reset_email_textinput()
-        popup.open()
-
-    def confirm_print(self):
-        layout0 = BoxLayout(orientation='vertical')
-        layout1 = BoxLayout(orientation='horizontal')
-        label = Label(
-            text='You want to print {} copies?'.format(self.prints),
-            font_size=30)
-        button0 = Button(
-            text='Just do it!',
-            font_size=30,
-            background_color=(0, 1, 0, 1))
-        button1 = Button(
-            text='No',
-            font_size=30,
-            background_color=(1, 0, 0, 1))
-        layout1.add_widget(button1)
-        layout1.add_widget(button0)
-        layout0.add_widget(label)
-        layout0.add_widget(layout1)
-
-        popup = Popup(
-            title='Are you sure?',
-            content=layout0,
-            size_hint=(.5, .5),
-            auto_dismiss=False)
-
-        button0.bind(on_release=partial(
-            self.do_print, popup))
-
-        button1.bind(on_release=popup.dismiss)
-        popup.open()
-
-    def confirm_address(self):
-        if not self.email_addressee:
-            layout = BoxLayout(orientation='vertical')
-            label = Label(
-                text='Please enter an email address',
-                font_size=30)
-            button = Button(
-                text='ok!',
-                font_size=30,
-                background_color=(0, 1, 0, 1))
-            layout.add_widget(label)
-            layout.add_widget(button)
-
-            popup = Popup(
-                title='Oops!',
-                content=layout,
-                size_hint=(.5, .5))
-
-            button.bind(on_release=popup.dismiss)
-
-        else:
-            layout0 = BoxLayout(orientation='vertical')
-            layout1 = BoxLayout(orientation='horizontal')
-            label = Label(
-                text='Is this email address correct?\n\n{}'.format(
-                    self.email_addressee),
-                font_size=30)
-            button0 = Button(
-                text='Yes',
-                font_size=30,
-                background_color=(0, 1, 0, 1))
-            button1 = Button(
-                text='No',
-                font_size=30,
-                background_color=(1, 0, 0, 1))
-            layout1.add_widget(button1)
-            layout1.add_widget(button0)
-            layout0.add_widget(label)
-            layout0.add_widget(layout1)
-
-            popup = Popup(
-                title='Question',
-                content=layout0,
-                size_hint=(.5, .5),
-                auto_dismiss=False)
-
-            button0.bind(on_release=partial(
-                self.do_email, popup, str(self.email_addressee),
-                str(self.filename)))
-
-            button1.bind(on_release=popup.dismiss)
-
-        popup.open()
-
-    def check_email_text(self, widget):
-        self.email_addressee = widget.text
-
-    def add_print(self):
-        self.prints += 1
-
-    def remove_print(self):
-        self.prints -= 1
-
-    def change_vkeyboard_email(self):
-        Config.set('kivy', 'keyboard_mode', 'dock')
-        Config.set('kivy', 'keyboard_layout', 'email')
-
-    def reset_email_textinput(self):
-        self.email_textinput = ''
-
-    def change_vkeyboard_normal(self):
-        Config.set('kivy', 'keyboard_layout', DEFAULT_VKEYBOARD_LAYOUT)
-
 
