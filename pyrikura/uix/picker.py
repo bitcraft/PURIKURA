@@ -13,10 +13,12 @@ from kivy.uix.image import Image
 from ..config import Config as pkConfig
 from .sharing import SharingControls
 
+import os
 
 OFFSET = 172
 dbus_name = pkConfig.get('camera', 'dbus-name')
 dbus_path = pkConfig.get('camera', 'dbus-path')
+jpath = os.path.join
 
 
 # hack search method because one is not included with kivy
