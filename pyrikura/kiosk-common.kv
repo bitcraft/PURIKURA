@@ -26,8 +26,6 @@
     normal_background: ctx.item.background_normal if ctx.item.collapse else ctx.item.background_selected
     disabled_background: ctx.item.background_disabled_normal if ctx.item.collapse else ctx.item.background_disabled_selected
 
-    height: 232
-
     canvas.before:
         Color:
             rgba: self.disabled_color if self.disabled else self.color
@@ -52,7 +50,7 @@
     Accordion:
         orientation: 'vertical'
         pos: 16,0
-        #min_space: 232
+        min_space: 232
 
         AccordionItem:
             title: 'Print Copies'
