@@ -15,9 +15,9 @@ from .sharing import SharingControls
 
 
 OFFSET = 172
-MAXIMUM_PRINTS = pkConfig.getint('kiosk', 'max-prints')
 dbus_name = pkConfig.get('camera', 'dbus-name')
 dbus_path = pkConfig.get('camera', 'dbus-path')
+
 
 # hack search method because one is not included with kivy
 def search(root, uniqueid):

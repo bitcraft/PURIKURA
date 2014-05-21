@@ -13,6 +13,10 @@ from kivy.uix.button import Button
 from kivy.properties import *
 
 from ..smtp import SenderThread
+from ..config import Config as pkConfig
+
+
+MAXIMUM_PRINTS = pkConfig.getint('kiosk', 'max-prints')
 
 
 def handle_print_number_error(value):
