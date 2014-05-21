@@ -3,7 +3,7 @@
 [AccordionItemTitle@Widget]:
     text: ctx.title
 
-    canvas.before:
+    canvas.after:
         Color:
             rgb: 1,1,1
         Rectangle:
@@ -28,6 +28,7 @@
     Accordion:
         orientation: 'vertical'
         pos: 16,0
+        min_space: 232
 
         AccordionItem:
             title: 'Print Copies'
