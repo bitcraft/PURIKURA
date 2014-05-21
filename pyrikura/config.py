@@ -10,4 +10,4 @@ def reload(path):
     jpath = os.path.join
     Config.read(jpath(path, 'config.ini'))
 
-reload()
+reload('/home/mjolnir/git/PURIKURA/config/')
