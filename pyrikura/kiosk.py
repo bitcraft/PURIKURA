@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import kivy
+
 kivy.require('1.8.0')
 
 import dbus
@@ -21,7 +22,7 @@ from kivy.lang import Builder
 from kivy.loader import Loader
 from kivy.properties import *
 
-from kivy.uix.accordion import Accordion 
+from kivy.uix.accordion import Accordion
 from kivy.uix.accordion import AccordionItem
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.screenmanager import Screen
@@ -88,8 +89,9 @@ class IconAccordionItem(AccordionItem):
 
 OFFSET = 172
 
-
 jpath = os.path.join
+
+
 def image_path(filename):
     return jpath('/home/mjolnir/git/PURIKURA/resources/images/', filename)
 
@@ -429,7 +431,9 @@ class SharingControls(FloatLayout):
                                     errorhandler=handle_print_number_error)
 
     email_addressee = StringProperty('')
-    twitter_acct = StringProperty('@kilbuckcreekphoto')
+    twitter_acct = StringProperty(
+        config.kiosk.get('twitter', 'account')
+    )
     filename = StringProperty()
 
     def disable(self):
@@ -465,9 +469,7 @@ class SharingControls(FloatLayout):
             size_hint=(.5, .5))
 
         button.bind(on_release=popup.dismiss)
-
         popup.open()
-
 
     def do_email(self, popup, address, filename, widget):
         thread = SenderThread(address, filename)
@@ -492,15 +494,10 @@ class SharingControls(FloatLayout):
             size_hint=(.5, .5))
 
         button.bind(on_release=popup.dismiss)
-
         from kivy.core.window import Window
-
         Window.release_all_keyboards()
-
         self.reset_email_textinput()
-
         popup.open()
-
 
     def confirm_print(self):
         layout0 = BoxLayout(orientation='vertical')
@@ -531,9 +528,7 @@ class SharingControls(FloatLayout):
             self.do_print, popup))
 
         button1.bind(on_release=popup.dismiss)
-
         popup.open()
-
 
     def confirm_address(self):
         if not self.email_addressee:
