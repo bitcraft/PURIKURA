@@ -6,10 +6,10 @@ kivy.require('1.8.0')
 import dbus
 import os
 import shutil
-import ConfigParser
 from functools import partial
-
 from dbus.mainloop.glib import DBusGMainLoop
+
+from . import config
 
 from kivy.animation import Animation
 from kivy.clock import Clock
@@ -35,6 +35,9 @@ import logging
 
 logger = logging.getLogger("purikura.kiosk")
 
+# default place for config files
+config.load('/home/mjolnir/git/PURIKURA/config/')
+
 # load our templates
 module = os.path.dirname(os.path.abspath(__file__))
 Builder.load_file(os.path.join(module, 'kiosk-common.kv'))
@@ -42,28 +45,9 @@ Builder.load_file(os.path.join(module, 'kiosk-composite.kv'))
 Builder.load_file(os.path.join(module, 'kiosk-single.kv'))
 del module
 
-# because i hate typing
-jpath = os.path.join
-
-
-def load_config(name):
-    home = os.path.expanduser("~")
-    path = jpath('/home/mjolnir/git/PURIKURA/config', name)
-    cfg = ConfigParser.ConfigParser()
-    msg = 'loading {} configuration from {}...'
-    logger.info(msg.format(__name__, path))
-    cfg.read(path)
-    return cfg
-
-cfg = load_config('kiosk.ini')
-MAXIMUM_PRINTS = cfg.getint('kiosk', 'max-prints')
-
-# load the config from the service to get path info
-# this is mostly copypasta from service.py
-cfg = load_config('service.ini')
-dbus_name = cfg.get('camera', 'dbus-name')
-dbus_path = cfg.get('camera', 'dbus-path')
-
+MAXIMUM_PRINTS = config.kiosk.getint('kiosk', 'max-prints')
+dbus_name = config.service.get('camera', 'dbus-name')
+dbus_path = config.service.get('camera', 'dbus-path')
 
 # dbus  :D
 #DBusGMainLoop(set_as_default=True)
@@ -105,8 +89,10 @@ class IconAccordionItem(AccordionItem):
 OFFSET = 172
 
 
+jpath = os.path.join
 def image_path(filename):
     return jpath('/home/mjolnir/git/PURIKURA/resources/images/', filename)
+
 
 class PickerScreen(Screen):
     large_preview_size = ListProperty()
@@ -392,7 +378,8 @@ import smtplib
 import threading
 import pickle
 
-sender = 'leif@kilbuckcreek.com'
+sender = config.kiosk.get('email', 'sender')
+subject = config.kiosk.get('email', 'subject')
 auth_file = '/home/mjolnir/git/PURIKURA/secrets'
 
 
@@ -406,7 +393,7 @@ class SenderThread(threading.Thread):
         import email
 
         msg = email.MIMEMultipart.MIMEMultipart('mixed')
-        msg['subject'] = 'Your photo from Kilbuck Creek Photo Booth'
+        msg['subject'] = subject
         msg['from'] = sender
         msg['to'] = self.address
 

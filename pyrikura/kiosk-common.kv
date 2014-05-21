@@ -36,6 +36,13 @@
             icon_size: 256, 256
             collapse: False
 
+            canvas.before:
+                Color:
+                    rgba: 0, 1, 0, 1
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
             BoxLayout:
                 orientation: 'vertical'
                 pos_hint: {'top': 1}
