@@ -10,7 +10,7 @@ from kivy.properties import *
 from kivy.uix.screenmanager import Screen
 from kivy.uix.image import Image
 
-from .config import Config as pkConfig
+from ..config import Config as pkConfig
 from .sharing import SharingControls
 
 
