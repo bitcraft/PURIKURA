@@ -26,6 +26,9 @@
     normal_background: ctx.item.background_normal if ctx.item.collapse else ctx.item.background_selected
     disabled_background: ctx.item.background_disabled_normal if ctx.item.collapse else ctx.item.background_disabled_selected
 
+    size_hint: 1, None
+    height: 232
+
     canvas.before:
         Color:
             rgba: self.disabled_color if self.disabled else self.color
