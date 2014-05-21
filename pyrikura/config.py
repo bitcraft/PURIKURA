@@ -1,15 +1,13 @@
-__all__ = ('Config', 'reload')
+__all__ = ('Config',)
 
 from six.moves import configparser
 import os.path
 
-Config = None
+Config = configparser.ConfigParser()
 
 
 def reload(path):
-    global Config
-
-    Config = configparser.ConfigParser()
     jpath = os.path.join
     Config.read(jpath(path, 'config.ini'))
 
+reload('/home/mjolnir/git/PURIKURA/config/')

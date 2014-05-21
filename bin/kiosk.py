@@ -11,8 +11,6 @@ import logging
 import pygame
 
 from pyrikura.config import Config as pkConfig
-pkConfig.reload('/home/mjolnir/git/PURIKURA/config/')
-
 from pyrikura.uix.picker import PickerScreen
 
 from kivy.app import App
