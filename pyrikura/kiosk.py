@@ -439,7 +439,7 @@ class SharingControls(FloatLayout):
     def __init__(self, *args, **kwargs):
         super(SharingControls, self).__init__(*args, **kwargs)
         for widget in self.children:
-            widget.lable.height = 232
+            widget.label.height = 232
 
     def disable(self):
         def derp(*arg):
