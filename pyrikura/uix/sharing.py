@@ -15,7 +15,7 @@ from kivy.properties import *
 from ..smtp import SenderThread
 from ..config import Config as pkConfig
 
-
+print pkConfig.sections()
 MAXIMUM_PRINTS = pkConfig.getint('kiosk', 'max-prints')
 
 
