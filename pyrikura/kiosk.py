@@ -2,7 +2,7 @@
 
 import kivy
 kivy.require('1.8.0')
-``
+
 import dbus
 import os
 import shutil
@@ -11,16 +11,18 @@ from functools import partial
 
 from dbus.mainloop.glib import DBusGMainLoop
 
-from kivy.config import Config
 from kivy.animation import Animation
-from kivy.factory import Factory
-from kivy.factory import Factory
-from kivy.animation import Animation
-from kivy.loader import Loader
-from kivy.core.image import Image as CoreImage
-from kivy.properties import *
 from kivy.clock import Clock
+from kivy.config import Config
+from kivy.core.image import Image as CoreImage
+from kivy.factory import Factory
+from kivy.factory import Factory
+from kivy.lang import Builder
+from kivy.loader import Loader
+from kivy.properties import *
 
+from kivy.uix.accordion import Accordion 
+from kivy.uix.accordion import AccordionItem
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.screenmanager import Screen
 from kivy.uix.label import Label
@@ -46,19 +48,14 @@ jpath = os.path.join
 
 def load_config(name):
     home = os.path.expanduser("~")
-    path = jpath(home, '/git/PURIKURA/config', name)
+    path = jpath('/home/mjolnir/git/PURIKURA/config', name)
     cfg = ConfigParser.ConfigParser()
     msg = 'loading {} configuration from {}...'
     logger.info(msg.format(__name__, path))
     cfg.read(path)
     return cfg
 
-#bus = dbus.SessionBus()
-#pb_obj = bus.get_object('com.kilbuckcreek.photobooth',
-#                        '/com/kilbuckcreek/photobooth')
-#pb_iface = dbus.Interface(pb_obj, dbus_interface='com.kilbuckcreek.photobooth')
 cfg = load_config('kiosk.ini')
-
 MAXIMUM_PRINTS = cfg.getint('kiosk', 'max-prints')
 
 # load the config from the service to get path info
@@ -69,10 +66,10 @@ dbus_path = cfg.get('camera', 'dbus-path')
 
 
 # dbus  :D
-DBusGMainLoop(set_as_default=True)
-bus = dbus.SessionBus()
-pb_obj = bus.get_object(dbus_name, dbus_path)
-pb_iface = dbus.Interface(pb_obj, dbus_interface=dbus_name)
+#DBusGMainLoop(set_as_default=True)
+#bus = dbus.SessionBus()
+#pb_obj = bus.get_object(dbus_name, dbus_path)
+#pb_iface = dbus.Interface(pb_obj, dbus_interface=dbus_name)
 
 
 def handle_print_number_error(value):
@@ -108,6 +105,9 @@ class IconAccordionItem(AccordionItem):
 OFFSET = 172
 
 
+def image_path(filename):
+    return jpath('/home/mjolnir/git/PURIKURA/resources/images/', filename)
+
 class PickerScreen(Screen):
     large_preview_size = ListProperty()
     small_preview_size = ListProperty()
@@ -131,7 +131,7 @@ class PickerScreen(Screen):
         self.grid.bind(minimum_width=self.grid.setter('width'))
 
         # tweak the loading so it is quick
-        Loader.loading_image = CoreImage('images/loading.gif')
+        Loader.loading_image = CoreImage(image_path('loading.gif'))
         Loader.num_workers = 6
         Loader.max_upload_per_frame = 5
 
@@ -143,7 +143,7 @@ class PickerScreen(Screen):
         center_x = screen_width - (self.large_preview_size[0] / 2) - 16
 
         # defaults to the hidden state
-        self.focus_widget = Image(source='images/loading.gif')
+        self.focus_widget = Image(source=image_path('images/loading.gif'))
         self.focus_widget.allow_stretch = True
         self.focus_widget.x = center_x - OFFSET
         self.focus_widget.y = -1000

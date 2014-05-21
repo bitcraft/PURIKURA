@@ -1,7 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env pytghthon
 """
 Operator's kiosk for managing the photobooth
 """
+import sys
+sys.path.append('/home/mjolnir/git/PURIKURA/')
+
 import os
 import glob
 import logging
@@ -23,8 +26,7 @@ jpath = os.path.join
 
 
 def load_config(name):
-    home = os.path.expanduser("~")
-    path = jpath(home, '/git/PURIKURA/config', name)
+    path = jpath('/home/mjolnir/git/PURIKURA/config', name)
     cfg = ConfigParser.ConfigParser()
     msg = 'loading kiosk configuration from {}...'
     logger.info(msg.format(path))
@@ -43,6 +45,9 @@ Config.set('graphics', 'fullscreen', cfg.getboolean('display', 'fullscreen'))
 Config.set('graphics', 'width', cfg.getint('display', 'width'))
 Config.set('graphics', 'height', cfg.getint('display', 'height'))
 
+# the display/touch input i use needs some love
+Config.set('postproc', 'retain_time', 170)
+Config.set('postproc', 'retain_distance', 90)
 
 # load the config from the service to get path info
 # this is mostly copypasta from service.py
@@ -90,12 +95,12 @@ class CompositePicker(pyrikura.kiosk.PickerScreen):
     Image browser that displays composites
     """
     @staticmethod
-    def get_paths(self):
+    def get_paths():
         return composites_path, composites_path,\
                composites_path, composites_path
 
     @staticmethod
-    def get_images(self):
+    def get_images():
         return sorted(glob.glob('{0}/*.png'.format(composites_path)))
 
 
@@ -104,11 +109,11 @@ class SinglePicker(pyrikura.kiosk.PickerScreen):
     Image browser that uses displays one image at a time
     """
     @staticmethod
-    def get_paths(self):
+    def get_paths():
         return thumbs_path, details_path, originals_path, composites_path
 
     @staticmethod
-    def get_images(self):
+    def get_images():
         return sorted(glob.glob('{0}/*.jpg'.format(thumbs_path)))
 
 

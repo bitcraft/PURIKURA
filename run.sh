@@ -8,7 +8,7 @@ rm preview.jpg
 #sleep 1
 #python service.py &
 #sleep 1
-python kiosk.py &&
+python bin/kiosk.py &&
 #python slideshow/display-cocos.py
 
 killall -9 python
