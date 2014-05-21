@@ -43,19 +43,19 @@ Config.set('postproc', 'retain_distance', 90)
 jpath = os.path.join
 
 # paths
-app_root_path = Config.get('paths', 'root')
+app_root_path = pkConfig.get('paths', 'root')
 app_config_path = jpath(app_root_path, 'config')
 app_resources_path = jpath(app_root_path, 'resources')
 app_sounds_path = jpath(app_resources_path, 'sounds')
 app_images_path = jpath(app_resources_path, 'images')
 all_templates_path = jpath(app_resources_path, 'templates')
-all_images_path = Config.get('paths', 'images')
-capture_image = Config.get('camera', 'capture-image')
-shared_path = Config.get('paths', 'shared')
-plugins_path = Config.get('paths', 'plugins')
+all_images_path = pkConfig.get('paths', 'images')
+capture_image = pkConfig.get('camera', 'capture-image')
+shared_path = pkConfig.get('paths', 'shared')
+plugins_path = pkConfig.get('paths', 'plugins')
 
 # event paths
-event_name = Config.get('event', 'name')
+event_name = pkConfig.get('event', 'name')
 template_path = jpath(all_templates_path, Config.get('event', 'template'))
 event_images_path = jpath(all_images_path, event_name)
 thumbs_path = jpath(event_images_path, 'thumbnails')
