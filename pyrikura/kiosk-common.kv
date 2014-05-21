@@ -1,7 +1,9 @@
 #:kivy 1.7
 
-[AccordionItemTitle2@Widget]:
+[AccordionItemTitle@Widget]:
     text: ctx.title
+    size_hint: 1, None
+    height: 232
 
     canvas.before:
         Color:
@@ -21,7 +23,7 @@
     canvas.after:
         PopMatrix
 
-[AccordionItemTitle@Label]:
+[AccordionItemTitle2@Label]:
     text: ctx.title
     normal_background: ctx.item.background_normal if ctx.item.collapse else ctx.item.background_selected
     disabled_background: ctx.item.background_disabled_normal if ctx.item.collapse else ctx.item.background_disabled_selected
@@ -53,7 +55,7 @@
     Accordion:
         orientation: 'vertical'
         pos: 16,0
-        #min_space: 232
+        min_space: 232
 
         AccordionItem:
             title: 'Print Copies'
