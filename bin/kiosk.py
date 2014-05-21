@@ -56,7 +56,7 @@ plugins_path = pkConfig.get('paths', 'plugins')
 
 # event paths
 event_name = pkConfig.get('event', 'name')
-template_path = jpath(all_templates_path, Config.get('event', 'template'))
+template_path = jpath(all_templates_path, pkConfig.get('event', 'template'))
 event_images_path = jpath(all_images_path, event_name)
 thumbs_path = jpath(event_images_path, 'thumbnails')
 details_path = jpath(event_images_path, 'detail')
