@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
 import kivy
-
 kivy.require('1.8.0')
-
+``
 import dbus
 import os
 import shutil
