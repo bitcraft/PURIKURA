@@ -7,8 +7,9 @@ from kivy.factory import Factory
 from kivy.loader import Loader
 from kivy.properties import *
 
-from kivy.uix.screenmanager import Screen
 from kivy.uix.image import Image
+from kivy.uix.label import Label
+from kivy.uix.screenmanager import Screen
 
 from ..config import Config as pkConfig
 from .sharing import SharingControls
