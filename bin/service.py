@@ -85,9 +85,14 @@ finished.set_volume(finished.get_volume() * .5)
 
 class CameraTrigger:
     def __init__(self):
-        bus = dbus.SessionBus()
-        pb_obj = bus.get_object(dbus_name, dbus_path)
-        self.iface = dbus.Interface(pb_obj, dbus_interface=dbus_name)
+        try:
+            bus = dbus.SessionBus()
+            pb_obj = bus.get_object(dbus_name, dbus_path)
+            self.iface = dbus.Interface(pb_obj, dbus_interface=dbus_name)
+        except dbus.exceptions.DBusException:
+            logger.error('cannot find dbus service')
+            raise
+
         self.d = None
 
     def __call__(self):
@@ -129,8 +134,6 @@ class Session:
         self.running = False
         self.captures = 0
 
-        return
-
         pm = PluginManager()
         pm.setPluginPlaces([plugins_path])
         pm.collectPlugins()
@@ -156,8 +159,9 @@ class Session:
         self.arch1 = arch1
 
     def successful_capture(self, result):
-        logger.debug('successful capture')
         self.captures += 1
+        logger.debug('successful capture (%s/%s)',
+                     self.captures, self.needed_captures)
 
         if self.captures == self.needed_captures:
             bell1.play()
