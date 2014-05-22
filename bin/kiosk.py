@@ -1,4 +1,4 @@
-#!/usr/bin/env pytghthon
+#!/usr/bin/env python
 """
 Operator's kiosk for managing the photobooth
 """

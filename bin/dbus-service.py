@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 DBus service to share the camera object
 """
