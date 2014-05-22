@@ -3,10 +3,10 @@
 DBus service to share the camera object
 """
 import logging
-
+import shutter
 import gobject
 import dbus
-import shutter
+import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
 from dbus import ByteArray
 
@@ -24,8 +24,7 @@ bus = dbus.SessionBus()
 class PhotoboothService(dbus.service.Object):
     def __init__(self):
         name = dbus.service.BusName(bus_name, bus=dbus.SessionBus())
-        dbus.service.Object.__init__(self, name, bus_path)
-
+        super(PhotoboothService, self).__init__(name, bus_path)
         self._filename = 'capture.jpg'
         self._locked = True
         self.camera = None
