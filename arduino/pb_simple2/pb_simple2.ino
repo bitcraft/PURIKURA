@@ -31,7 +31,7 @@ Servo tiltServo;
 int tiltPosNegativeLimit = 20;
 int tiltPosPositiveLimit = 160;
 int tiltPos = tiltPosNegativeLimit;
-int servoResetFreq = 500;
+int servoResetFreq = 50;
 long lastServoResetTime = 0;
 
 // incoming protocol buffer
@@ -84,10 +84,19 @@ void readPin(int pin) {
   lastTriggerState[index] = thisState;
 }
 
-void setTilt(byte value) {
+void setTilt(byte newValue) {
+  int value = (int)newValue;
+  
+  if (value > tiltPosPositiveLimit) {
+    value = tiltPosPositiveLimit;
+  }
+  if (value < tiltPosNegativeLimit) {
+    value = tiltPosNegativeLimit;
+  }
+  
   if (tiltPosPositiveLimit >= value) {
     if (tiltPosNegativeLimit <= value) {
-      tiltPos = (int)value;
+      tiltPos = value;
     }
   }
 }
