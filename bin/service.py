@@ -36,7 +36,6 @@ from pyrikura.config import Config
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("purikura.booth")
 
-
 # because i hate typing
 jpath = os.path.join
 
@@ -79,9 +78,9 @@ bell1 = resources.sounds['bell1']
 error = resources.sounds['error']
 finished = resources.sounds['finished']
 
-# override volumes a bit
-bell1.set_volume(.5)
-finished.set_volume(0.4)
+# manage volumes a bit
+bell1.set_volume(bell1.get_volume() * .6)
+finished.set_volume(finished.get_volume() * .5)
 
 
 class CameraTrigger:
@@ -92,6 +91,7 @@ class CameraTrigger:
         self.d = None
 
     def __call__(self):
+        logger.debug('calling the camera trigger')
         if self.d is None:
             return
 
@@ -104,6 +104,7 @@ class CameraTrigger:
             d.errback(Exception('Camera not focused'))
 
     def trigger(self, result):
+        logger.debug('cameratrigger.trigger'')
         self.d = defer.Deferred()
         reactor.callLater(1, self)
         return self.d
@@ -127,6 +128,8 @@ class Session:
 
         self.running = False
         self.captures = 0
+
+        return
 
         pm = PluginManager()
         pm.setPluginPlaces([plugins_path])
