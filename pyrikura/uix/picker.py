@@ -13,7 +13,7 @@ from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
 from kivy.uix.slider import Slider
 
-from six.moves import cStringIO
+from six.moves import cStringIO, queue
 import shutter
 import pygame
 import threading
@@ -93,17 +93,36 @@ class PickerScreen(Screen):
         arduino = serial.Serial(pkConfig.get('arduino', 'port'),
                                 pkConfig.getint('arduino', 'baudrate'))
 
+        serial_queue = queue.Queue(maxsize=10)
+        serial_thread = None
+
         def on_tilt(widget, value):
+            global serial_thread
+
             def send_serial():
-                arduino.write(chr(0x80))
-                arduino.write(chr(int(value)))
-                arduino.flush()
+                print 'new thread'
+                while 1:
+                    try:
+                        value = serial_queue.get(timeout=1)
+                    except queue.Empty:
+                        break
+                    arduino.write(chr(0x80) + chr(int(value)))
+                    arduino.flush()
+                    serial_queue.task_done()
+                print 'dying thread'
 
-            if serial_lock.acquire(False):
-                t = threading.Thread(target=send_serial)
-                t.start()
-                serial_lock.release()
+            try:
+                serial_queue.put(value, block=False)
+            except queue.Full:
+                try:
+                    serial_queue.get()
+                    serial_queue.put(value, block=False)
+                except (queue.Full, queue.Empty):
+                    pass
 
+            if serial_thread is None:
+                serial_thread = threading.Thread(target=send_serial)
+                serial_thread.start()
 
         self.tilt_slider = Slider(min=pkConfig.getint('arduino', 'max-tilt'),
                                   max=pkConfig.getint('arduino', 'min-tilt'),
@@ -156,7 +175,6 @@ class PickerScreen(Screen):
             else:
                 self.preview_widget.image = imgdata
                 #self.preview_widget.reload()
-            print 'update'
 
         Clock.schedule_interval(update_preview, .5)
 
@@ -376,7 +394,3 @@ class PickerScreen(Screen):
 
         return (-self.scrollview.scroll_x * bkg_w - self.width / 2,
                 self.background.pos[1])
-
-
-def send_to_serial(value):
-    pass
