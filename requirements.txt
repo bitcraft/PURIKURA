@@ -8,7 +8,7 @@ twisted
 pil
 pyserial
 libgphoto2
-wand
+python-wand
 imagemagick
 shutter
 yapsy

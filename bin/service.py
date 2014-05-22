@@ -27,6 +27,7 @@ from twisted.protocols.basic import LineReceiver
 from twisted.internet.serialport import SerialPort
 
 from yapsy.PluginManager import PluginManager
+logging.getLogger('yapsy').setLevel(logging.DEBUG)
 
 from pyrikura import resources
 from pyrikura.config import Config
@@ -230,7 +231,7 @@ class Arduino(LineReceiver):
         # if somehow we are out of sync, then just drop all data
         elif len(self._buf) > 2:
             self._buf = []
-            #session.start()
+            session.start()
 
 
 if __name__ == '__main__':
