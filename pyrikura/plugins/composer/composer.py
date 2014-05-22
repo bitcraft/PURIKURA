@@ -1,6 +1,8 @@
 from multiprocessing import JoinableQueue, Process, Pipe
 import ConfigParser
 import shutil
+import sys
+import os
 
 from pyrikura.plugin import Plugin
 from pyrikura.broker import Broker
@@ -10,7 +12,6 @@ from pyrikura.broker import Broker
 # mangle import paths to enable this sweet hack
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from imageprocessor import *
-
 
 
 # stupid hack to work around stale references in Wand :/
@@ -83,7 +84,6 @@ class ComposerBroker(Broker):
         self.ready_queue = JoinableQueue()
         self.reset()
 
-
     def reset(self):
         """
         template is reloaded each time the template is finished
@@ -155,7 +155,6 @@ class ComposerBroker(Broker):
                   self.config)
         )
         self._composer_process.start()
-
 
     def process(self, msg, sender=None):
         config = self._config_queue.pop()

@@ -3,6 +3,7 @@ code for unmanaged subprocess that preprocesses images for templates
 """
 import Queue
 import sys
+import os
 
 # mangle import paths to enable this sweet hack
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -30,6 +31,7 @@ def process_image(raw_queue, ready_queue, global_config):
 
     temp_positions = [i for i in image_config.keys() if
                       i[:8].lower() == 'position']
+
     for pos in temp_positions:
         pos = image_config[pos]
         if global_config['units'] == 'pixels':
@@ -50,12 +52,13 @@ def process_image(raw_queue, ready_queue, global_config):
         if global_config['units'] == 'pixels':
             x, y, w, h = [int(i) for i in area]
         else:
-            x, y, w, h = [int(float((i)) * global_config['dpi']) for i in area]
+            x, y, w, h = [int(float(i) * global_config['dpi']) for i in area]
         all_areas.append((x, y, w, h))
 
     # process each image
     for x, y, w, h in all_areas:
         if (w, h) not in done:
+
             # A U T O C R O P
             autocrop = image_config.get('autocrop', None)
             if autocrop:
@@ -69,18 +72,12 @@ def process_image(raw_queue, ready_queue, global_config):
                     image.resize(sw, h)
                     image.crop(left=cx, width=sw, height=h)
 
-
             # S C A L E
             scale = image_config.get('scale', None)
             if scale:
                 image.resize(w, h)
 
-
             # F I L T E R S
-            """
-            filters make heavy use of subprocess, so we need to make a temporary file
-            for it to manipulate.
-            """
             filter = image_config.get('filter', None)
             if filter:
                 scratch = 'prefilter-{}.miff'.format(image_config['filename'])

@@ -1,10 +1,9 @@
-import subprocess
-import os
-
 """
 these filters will always return a filename, not image class
 do not import any imagemagick libraries (for now)
 """
+import subprocess
+import os
 
 
 def execute(cmd):
@@ -12,7 +11,8 @@ def execute(cmd):
 
 
 def colortone(filename, color, level, type=0, output=None):
-    if output == None: output = filename
+    if output is None:
+        output = filename
 
     if type == 0:
         negate = '-negate'
@@ -33,7 +33,9 @@ def colortone(filename, color, level, type=0, output=None):
 
 def vignette(filename, w, h, color0='none', color1='black', ratio=1.5,
              output=None):
-    if output == None: output = filename
+
+    if output is None:
+        output = filename
 
     cmd = 'convert ( {} ) \
            ( -size {}x{} radial-gradient:{}-{} -gravity center \
@@ -47,7 +49,8 @@ def vignette(filename, w, h, color0='none', color1='black', ratio=1.5,
 
 
 def toaster(filename, w, h, output=None):
-    if output == None: output = filename
+    if output is None:
+        output = filename
 
     #output = filename + '-toaster.miff'
     scratch = filename + 'scratch.miff'
@@ -74,4 +77,3 @@ def toaster(filename, w, h, output=None):
     os.unlink(scratch)
 
     return output
-

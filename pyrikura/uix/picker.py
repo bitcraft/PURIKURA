@@ -193,7 +193,14 @@ class PickerScreen(Screen):
                 return
 
             fmt = 'rgb'
-            im = pygame.image.load(data)
+            orig = pygame.image.load(data)
+            orig_rect = orig.get_rect()
+            new_rect = pygame.Rect(0, 0, 1, 1).fit(orig_rect)
+            im = pygame.Surface(new_rect.size)
+            print new_rect
+            return
+            im.blit(orig, (x, 0), area)
+
             im = pygame.transform.flip(im, 0, 1)
             data = pygame.image.tostring(im, fmt.upper())
             imgdata = ImageData(im.get_width(), im.get_height(), fmt, data)
