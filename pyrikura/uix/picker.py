@@ -92,6 +92,39 @@ class ArduinoHandler(object):
             self.thread.start()
 
 
+class PreviewHandler(threading.Thread):
+    def __init__(self, q, lock):
+        self.queue = q
+        self.camera = camera
+        self.lock = lock
+        self.daemon = True
+        self._running = False
+
+    def stop(self):
+        self._running = False
+
+    def run(self):
+        self._running = True
+        capture_preview = self.camera.capture_preview
+        queue_put = self.queue.put
+        flip = pygame.transform.flip
+        load = pygame.image.load
+        tostring = pygame.image.tostring
+        lock = self.lock
+        fmt = 'rgb'
+
+        while self._running:
+            with lock:
+                preview = capture_preview()
+
+            im = load(cStringIO(preview.get_data()))
+            im = flip(im, 0, 1).convert()
+            data = tostring(im, fmt.upper())
+            imgdata = ImageData(im.get_width(), im.get_height(), fmt, data)
+            texture = Texture.create_from_data(imgdata)
+            queue_put(texture)
+
+
 class PickerScreen(Screen):
     large_preview_size = ListProperty()
     small_preview_size = ListProperty()
@@ -154,31 +187,30 @@ class PickerScreen(Screen):
                     widget.source = 'preview.jpg'
                     widget.reload()
 
-        def update_preview(*args, **kwargs):
-            filename = 'preview.jpg'
-            fmt = 'rgb'
-            im = pygame.image.load(
-                cStringIO(
-                    camera.capture_preview().get_data()
-                )
-            ).convert()
-            im = pygame.transform.flip(im, 0, 1)
-            data = pygame.image.tostring(im, fmt.upper())
-            imgdata = ImageData(im.get_width(), im.get_height(), fmt, data)
-            texture = Texture.create_from_data(imgdata)
-            if self.preview_widget is None:
-                self.preview_widget = Image(texture=texture, nocache=True)
-                self.preview_widget.allow_stretch = True
-                self.preview_widget.x = center_x - OFFSET
-                self.preview_widget.y = 0
-                self.preview_widget.size_hint = None, None
-                self.preview_widget.size = (600, 600)
-                self.preview_widget.bind(on_touch_down=self.on_image_touch)
-                self.layout.add_widget(self.preview_widget)
-            else:
-                self.preview_widget.texture = texture
+        self.preview_queue = queue.Queue()
+        self.camera_lock = threading.Lock()
 
-        Clock.schedule_interval(update_preview, .1)
+        self.preview_handler = PreviewHandler(self.preview_queue,
+                                              self.camera_lock)
+
+        self.preview_handler.start()
+
+        def update_preview(*args, **kwargs):
+            texture = self.preview_queue.get(False)
+            if texture:
+                if self.preview_widget is None:
+                    self.preview_widget = Image(texture=texture, nocache=True)
+                    self.preview_widget.allow_stretch = True
+                    self.preview_widget.x = center_x - OFFSET
+                    self.preview_widget.y = 0
+                    self.preview_widget.size_hint = None, None
+                    self.preview_widget.size = (600, 600)
+                    self.preview_widget.bind(on_touch_down=self.on_image_touch)
+                    self.layout.add_widget(self.preview_widget)
+                else:
+                    self.preview_widget.texture = texture
+
+        Clock.schedule_interval(update_preview, .05)
 
         #pb_iface.connect_to_signal('preview_updated', touch_preview)
 
