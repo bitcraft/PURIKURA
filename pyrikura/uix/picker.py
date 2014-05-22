@@ -121,11 +121,10 @@ class PickerScreen(Screen):
                 )
             ).convert()
             data = pygame.image.tostring(im, fmt.upper())
-            imgdata = ImageData(im.get_width(), im.get_height(), fmt, data,
-                                source=filename)
+            imgdata = ImageData(im.get_width(), im.get_height(), fmt, data)
             self.preview_widget.filename = None
             self.preview_widget.image = imgdata
-            #self.preview_widget.reload()
+            self.preview_widget.reload()
             print 'update'
 
         Clock.schedule_interval(update_preview, .5)
