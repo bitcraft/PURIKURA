@@ -118,6 +118,8 @@ class Session:
     countdown_interval = 1
 
     def __init__(self):
+        logger.debug('building new session...')
+
         def p(name, *arg, **kwarg):
             plugin = pm.getPluginByName(name)
             if not plugin:
@@ -166,8 +168,8 @@ class Session:
         self.arch1.process(capture_image)
 
     def failed_capture(self, result):
-        logger.debug('failed capture')
         """ plays the error sound rapidly 3x """
+        logger.debug('failed capture')
         task.deferLater(reactor, 0, error.play)
         task.deferLater(reactor, .15, error.play)
         task.deferLater(reactor, .30, error.play)
@@ -216,7 +218,7 @@ class Arduino(LineReceiver):
     """
 
     def __init__(self, session):
-        logger.debug('new camera')
+        logger.debug('new arduino')
         self.setRawMode()
         self.session = session
         self._buf = []
@@ -241,8 +243,10 @@ class Arduino(LineReceiver):
 
 
 if __name__ == '__main__':
+    logger.debug('starting')
     session = Session()
 
+    logger.debug('building new serial port listener...')
     # WARNING!  Arduino stuff here
     try:
         s = SerialPort(Arduino(session), arduino_port, reactor,
@@ -250,4 +254,5 @@ if __name__ == '__main__':
     except serial.serialutil.SerialException:
         raise
 
+    logger.debug('created new serial port listener {}', s)
     reactor.run()
