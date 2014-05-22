@@ -104,7 +104,7 @@ class CameraTrigger:
             d.errback(Exception('Camera not focused'))
 
     def trigger(self, result):
-        logger.debug('cameratrigger.trigger'')
+        logger.debug('cameratrigger.trigger')
         self.d = defer.Deferred()
         reactor.callLater(1, self)
         return self.d
