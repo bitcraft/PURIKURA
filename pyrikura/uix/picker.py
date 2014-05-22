@@ -2,6 +2,7 @@ from kivy.animation import Animation
 from kivy.clock import Clock
 from kivy.config import Config
 from kivy.core.image import Image as CoreImage
+from kivy.core.image import ImageData
 from kivy.factory import Factory
 from kivy.factory import Factory
 from kivy.loader import Loader
@@ -11,8 +12,15 @@ from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
 
+from six.moves import cStringIO
+import shutter
+import pygame
+
 from ..config import Config as pkConfig
 from .sharing import SharingControls
+
+
+camera = shutter.Camera()
 
 import os
 
@@ -79,7 +87,7 @@ class PickerScreen(Screen):
         center_x = screen_width - (self.large_preview_size[0] / 2) - 16
 
         # defaults to the hidden state
-        self.focus_widget = Image(source=image_path('images/loading.gif'))
+        self.focus_widget = Image(source=image_path('loading.gif'))
         self.focus_widget.allow_stretch = True
         self.focus_widget.x = center_x - OFFSET
         self.focus_widget.y = -1000
@@ -97,16 +105,30 @@ class PickerScreen(Screen):
         self.preview_widget.bind(on_touch_down=self.on_image_touch)
         self.layout.add_widget(self.preview_widget)
 
-        def update_preview(widget, mouse_point):
+        def touch_preview(widget, mouse_point):
             if widget.collide_point(mouse_point.x, mouse_point.y):
                 #pb_iface.capture_preview()
                 if os.path.exists('preview.jpg'):
                     widget.source = 'preview.jpg'
                     widget.reload()
 
-        self.preview_widget.bind(on_touch_down=update_preview)
+        def update_preview(*args, **kwargs):
+            filename = 'preview.jpg'
+            fmt = 'rgb'
+            im = pygame.image.load(
+                cStringIO(
+                    camera.capture_preview().get_data()
+                )
+            )
+            data = pygame.image.tostring(im, fmt.upper())
+            imgdata = ImageData(im.get_width(), im.get_height(), fmt, data,
+                                source=filename)
+            self.preview_widget.image = imgdata
+            self.preview_widget.reload()
 
-        #pb_iface.connect_to_signal('preview_updated', update_preview)
+        Clock.schedule_interval(update_preview, .1)
+
+        #pb_iface.connect_to_signal('preview_updated', touch_preview)
 
         self.preview_label = Label(
             text='Touch preview to close',
