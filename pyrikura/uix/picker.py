@@ -162,7 +162,7 @@ class PickerScreen(Screen):
                     camera.capture_preview().get_data()
                 )
             ).convert()
-            im = pygame.transform.flip(im)
+            im = pygame.transform.flip(im, 0, 1)
             data = pygame.image.tostring(im, fmt.upper())
             imgdata = ImageData(im.get_width(), im.get_height(), fmt, data)
             texture = Texture.create_from_data(imgdata)
