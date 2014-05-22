@@ -76,6 +76,7 @@ class ArduinoHandler(object):
                 self.arduino.write(chr(0x80) + chr(int(value)))
                 self.arduino.flush()
                 self.queue.task_done()
+            self.thread = None
             print 'dying thread'
 
         try:
