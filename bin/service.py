@@ -66,10 +66,6 @@ paths = ('thumbnails', 'detail', 'originals', 'composites')
 pygame.mixer.init(frequency=Config.getint('sound', 'mixer-frequency'),
                   buffer=Config.getint('sound', 'mixer-buffer'))
 
-# specific to arduino!
-arduino_port = Config.get('arduino', 'port')
-arduino_baudrate = Config.getint('arduino', 'baudrate')
-
 # specific to the camera system i use!
 dbus_name = Config.get('camera', 'dbus-name')
 dbus_path = Config.get('camera', 'dbus-path')
@@ -220,6 +216,7 @@ class Arduino(LineReceiver):
     """
 
     def __init__(self, session):
+        super(Arduino, self).__init__()
         logger.debug('new arduino')
         self.session = session
 
@@ -230,14 +227,14 @@ class Arduino(LineReceiver):
 
     def lineReceived(self, data):
         logger.debug('got serial data', data)
-        for i in data:
-            logger.debug('data: {}', ord(i))
-
-        data = data.strip()
-        cmd, arg = [ord(i) for i in data]
-        logger.debug('got command', ord(cmd), ord(arg))
-        self.process(cmd, arg)
-
+        try:
+            data = data.strip()
+            cmd, arg = [ord(i) for i in data]
+            logger.debug('got command', ord(cmd), ord(arg))
+            self.process(cmd, arg)
+        except:
+            logger.debug('unable to parse {}', [ord(i) for i in data])
+            raise
 
 if __name__ == '__main__':
     logger.debug('starting')
@@ -246,11 +243,12 @@ if __name__ == '__main__':
     logger.debug('building new serial port listener...')
     # WARNING!  Arduino stuff here
     try:
-        s = SerialPort(Arduino(session), arduino_port, reactor,
-                       baudrate=arduino_baudrate)
+        s = SerialPort(Arduino(session),
+                       Config.get('arduino', 'port'),
+                       reactor,
+                       baudrate=Config.getint('arduino', 'baudrate'))
     except serial.serialutil.SerialException:
         raise
 
-    logger.debug('created new serial port listener')
     logger.debug('starting reactor...')
     reactor.run()
