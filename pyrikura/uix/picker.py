@@ -193,7 +193,7 @@ class PickerScreen(Screen):
                 return
 
             if self.preview_widget is None:
-                fmt = 'rbg'
+                fmt = 'rgb'
                 im = pygame.image.load(data)
                 im = pygame.transform.flip(im, 0, 1)
                 data = pygame.image.tostring(im, fmt.upper())
