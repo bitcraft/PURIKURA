@@ -94,10 +94,16 @@ class PickerScreen(Screen):
                                 pkConfig.getint('arduino', 'baudrate'))
 
         def on_tilt(widget, value):
-            print value
-            arduino.write(chr(0x80))
-            arduino.write(chr(int(value)))
-            arduino.flush()
+            def send_serial():
+                arduino.write(chr(0x80))
+                arduino.write(chr(int(value)))
+                arduino.flush()
+
+            if serial_lock.acquire(False):
+                t = threading.Thread(target=send_serial)
+                t.start()
+                serial_lock.release()
+
 
         self.tilt_slider = Slider(min=pkConfig.getint('arduino', 'max-tilt'),
                                   max=pkConfig.getint('arduino', 'min-tilt'),
