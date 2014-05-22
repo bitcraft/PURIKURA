@@ -197,19 +197,22 @@ class PickerScreen(Screen):
         self.preview_handler.start()
 
         def update_preview(*args, **kwargs):
-            texture = self.preview_queue.get(False)
-            if texture:
-                if self.preview_widget is None:
-                    self.preview_widget = Image(texture=texture, nocache=True)
-                    self.preview_widget.allow_stretch = True
-                    self.preview_widget.x = center_x - OFFSET
-                    self.preview_widget.y = 0
-                    self.preview_widget.size_hint = None, None
-                    self.preview_widget.size = (600, 600)
-                    self.preview_widget.bind(on_touch_down=self.on_image_touch)
-                    self.layout.add_widget(self.preview_widget)
-                else:
-                    self.preview_widget.texture = texture
+            try:
+                texture = self.preview_queue.get(False)
+            except queue.Empty:
+                return
+
+            if self.preview_widget is None:
+                self.preview_widget = Image(texture=texture, nocache=True)
+                self.preview_widget.allow_stretch = True
+                self.preview_widget.x = center_x - OFFSET
+                self.preview_widget.y = 0
+                self.preview_widget.size_hint = None, None
+                self.preview_widget.size = (600, 600)
+                self.preview_widget.bind(on_touch_down=self.on_image_touch)
+                self.layout.add_widget(self.preview_widget)
+            else:
+                self.preview_widget.texture = texture
 
         Clock.schedule_interval(update_preview, .05)
 
