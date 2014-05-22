@@ -221,31 +221,22 @@ class Arduino(LineReceiver):
 
     def __init__(self, session):
         logger.debug('new arduino')
-        self.setRawMode()
         self.session = session
-        self._buf = []
 
     def process(self, cmd, arg):
-        logger.debug('processing: {} {}', chr(cmd), chr(arg))
+        logger.debug('processing: {} {}', ord(cmd), ord(arg))
         if cmd == 1:
             self.session.start()
 
-    def rawDataReceived(self, data):
+    def lineReceived(self, data):
         logger.debug('got serial data', data)
         for i in data:
-            logger.debug('data: {}', chr(i))
-            self._buf.append(i)
+            logger.debug('data: {}', ord(i))
 
-        if len(self._buf) == 2:
-            cmd, arg = [ord(i) for i in self._buf]
-            logger.debug('got command', chr(cmd), chr(arg))
-            self.process(cmd, arg)
-            self._buf = []
-
-        # if somehow we are out of sync, then just drop all data
-        elif len(self._buf) > 2:
-            logger.debug('failed buffer')
-            self._buf = []
+        data = data.strip()
+        cmd, arg = [ord(i) for i in data]
+        logger.debug('got command', ord(cmd), ord(arg))
+        self.process(cmd, arg)
 
 
 if __name__ == '__main__':
