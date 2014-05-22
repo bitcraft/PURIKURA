@@ -68,7 +68,7 @@ paths = ('thumbnails', 'detail', 'originals', 'composites')
 for d in (thumbs_path, details_path, originals_path, composites_path):
     try:
         isdir = os.path.isdir(d)
-    except:7
+    except:
         raise
     if not isdir:
         os.makedirs(d, 0755)
