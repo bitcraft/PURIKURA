@@ -11,6 +11,7 @@ from kivy.properties import *
 from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
+from kivy.uix.slider import Slider
 
 from six.moves import cStringIO
 import shutter
@@ -86,6 +87,24 @@ class PickerScreen(Screen):
         # the center of the preview image
         center_x = screen_width - (self.large_preview_size[0] / 2) - 16
 
+        import serial
+        arduino = serial.Serial(pkConfig.get('arduino', 'port'),
+                                pkConfig.getint('arduino', 'baudrate'))
+
+        def on_tilt(widget, value):
+            arduino.write(chr(0x80))
+            arduino.write(int(value))
+            arduino.flush()
+
+        self.tilt_slider = Slider(min=pkConfig.getint('arduino', 'min-tilt'),
+                                  max=pkConfig.getint('arduino', 'max-tilt'),
+                                  value=pkConfig.getint('arduino', 'tilt'),
+                                  orientation='vertical')
+
+        self.layout.add_widget(self.tilt_slider)
+
+        self.tilt_slider.bind(on_value=on_tilt)
+
         # defaults to the hidden state
         self.focus_widget = Image(source=image_path('loading.gif'))
         self.focus_widget.allow_stretch = True
@@ -112,7 +131,7 @@ class PickerScreen(Screen):
                 cStringIO(
                     camera.capture_preview().get_data()
                 )
-            )
+            ).convert()
             data = pygame.image.tostring(im, fmt.upper())
             imgdata = ImageData(im.get_width(), im.get_height(), fmt, data)
 
@@ -122,7 +141,7 @@ class PickerScreen(Screen):
                 self.preview_widget.x = center_x - OFFSET
                 self.preview_widget.y = 0
                 self.preview_widget.size_hint = None, None
-                self.preview_widget.size = (100, 100)
+                self.preview_widget.size = (200, 200)
                 self.preview_widget.bind(on_touch_down=self.on_image_touch)
                 self.layout.add_widget(self.preview_widget)
             else:
