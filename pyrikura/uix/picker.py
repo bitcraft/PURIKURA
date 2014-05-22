@@ -104,7 +104,7 @@ class PickerScreen(Screen):
 
         self.layout.add_widget(self.tilt_slider)
 
-        self.tilt_slider.bind(on_value=on_tilt)
+        self.tilt_slider.bind(value=on_tilt)
 
         # defaults to the hidden state
         self.focus_widget = Image(source=image_path('loading.gif'))
