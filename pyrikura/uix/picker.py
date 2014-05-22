@@ -92,6 +92,7 @@ class PickerScreen(Screen):
                                 pkConfig.getint('arduino', 'baudrate'))
 
         def on_tilt(widget, value):
+            print value
             arduino.write(chr(0x80))
             arduino.write(int(value))
             arduino.flush()
