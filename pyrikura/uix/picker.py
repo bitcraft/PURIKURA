@@ -108,23 +108,12 @@ class PreviewHandler(threading.Thread):
         self._running = True
         capture_preview = self.camera.capture_preview
         queue_put = self.queue.put
-        flip = pygame.transform.flip
-        load = pygame.image.load
-        tostring = pygame.image.tostring
         lock = self.lock
-        fmt = 'rgb'
 
         while self._running:
             with lock:
                 preview = capture_preview().get_data()
-
-            im = load(cStringIO(preview)).convert()
-            del preview
-            im = flip(im, 0, 1)
-            data = tostring(im, fmt.upper())
-            imgdata = ImageData(im.get_width(), im.get_height(), fmt, data)
-            texture = Texture.create_from_data(imgdata)
-            queue_put(texture)
+            queue_put(cStringIO(preview))
 
 
 class PickerScreen(Screen):
@@ -199,11 +188,17 @@ class PickerScreen(Screen):
 
         def update_preview(*args, **kwargs):
             try:
-                texture = self.preview_queue.get(False)
+                data = self.preview_queue.get(False)
             except queue.Empty:
                 return
 
             if self.preview_widget is None:
+                fmt = 'rbg'
+                im = pygame.image.load(data)
+                im = pygame.transform.flip(im, 0, 1)
+                data = pygame.image.tostring(im, fmt.upper())
+                imgdata = ImageData(im.get_width(), im.get_height(), fmt, data)
+                texture = Texture.create_from_data(imgdata)
                 self.preview_widget = Image(texture=texture, nocache=True)
                 self.preview_widget.allow_stretch = True
                 self.preview_widget.x = center_x - OFFSET
