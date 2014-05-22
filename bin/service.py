@@ -228,7 +228,7 @@ class Arduino(LineReceiver):
             self.session.start()
 
     def lineReceived(self, data):
-        logger.debug('got serial data', data)
+        logger.debug('got serial data {}', data)
         try:
             cmd, arg = data.split()
             logger.debug('got command', ord(cmd), ord(arg))
