@@ -94,6 +94,7 @@ class ArduinoHandler(object):
 
 class PreviewHandler(threading.Thread):
     def __init__(self, q, lock):
+        super(PreviewHandler, self).__init__()
         self.queue = q
         self.camera = camera
         self.lock = lock
