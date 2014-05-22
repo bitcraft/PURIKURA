@@ -96,7 +96,7 @@ class PickerScreen(Screen):
         self.focus_widget.bind(on_touch_down=self.on_image_touch)
         self.layout.add_widget(self.focus_widget)
 
-        self.preview_widget = Image(source='capture.jpg', nocache=False)
+        self.preview_widget = Image(source='capture.jpg', nocache=True)
         self.preview_widget.allow_stretch = True
         self.preview_widget.x = center_x - OFFSET
         self.preview_widget.y = 0
