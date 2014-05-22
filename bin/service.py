@@ -164,9 +164,10 @@ class Session:
                      self.captures, self.needed_captures)
 
         if self.captures == self.needed_captures:
+            logger.debug('finished the session')
             bell1.play()
         else:
-            logger.debug('finished the session')
+            logger.debug('finished the capture')
             finished.play()
 
         self.comp.process(capture_image)

@@ -2,6 +2,10 @@
 """
 DBus service to share the camera object
 """
+import sys
+sys.path.append('/home/mjolnir/git/PURIKURA/')
+
+import threading
 import logging
 import shutter
 import gobject
@@ -10,12 +14,13 @@ import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
 from dbus import ByteArray
 
+from pyrikura.config import Config
 
 logger = logging.getLogger("purikura.dbus")
 
-# config
-bus_name = 'com.kilbuckcreek.photobooth'
-bus_path = '/com/kilbuckcreek/photobooth'
+# dbus config
+bus_name = Config.get('camera', 'dbus-name')
+bus_path = Config.get('camera', 'dbus-path')
 
 DBusGMainLoop(set_as_default=True)
 bus = dbus.SessionBus()
@@ -23,16 +28,18 @@ bus = dbus.SessionBus()
 
 class PhotoboothService(dbus.service.Object):
     def __init__(self):
+        logger.debug('starting photobooth service...')
         name = dbus.service.BusName(bus_name, bus=dbus.SessionBus())
         super(PhotoboothService, self).__init__(name, bus_path)
         self._filename = 'capture.jpg'
-        self._locked = True
+        self.camera_lock = threading.Lock()
         self.camera = None
         self.reset()
         self.do_preview = False
 
     @dbus.service.method(bus_name, out_signature='b')
     def capture_preview(self):
+        logger.debug('capturing preview...')
         if self._locked:
             try:
                 self.camera.capture_image('preview.jpg')
@@ -50,6 +57,7 @@ class PhotoboothService(dbus.service.Object):
 
     @dbus.service.method(bus_name, out_signature='b')
     def capture_image(self):
+        logger.debug('capturing image...')
         if self._locked:
             try:
                 self.camera.capture_image(self._filename)
@@ -137,8 +145,9 @@ if __name__ == '__main__':
     service = PhotoboothService()
     loop = gobject.MainLoop()
 
+    logger.debug('starting gobject loop...')
     try:
         loop.run()
     except:
-        service.camera = None
+        loop.quit()
         raise
