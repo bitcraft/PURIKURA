@@ -13,17 +13,20 @@ kiosk app.
 This configuration is used in my professional photo booth service and uses an
 arduino for input.  Free free to customize.
 """
+import sys
+sys.path.append('/home/mjolnir/git/PURIKURA/')
+
 import os
 import logging
+import pygame
+import dbus
+import serial
 
 from twisted.internet import reactor, defer, task
 from twisted.protocols.basic import LineReceiver
 from twisted.internet.serialport import SerialPort
-import pygame
 
 from yapsy.PluginManager import PluginManager
-import dbus
-import serial
 
 from pyrikura import resources
 from pyrikura.config import Config
