@@ -230,12 +230,11 @@ class Arduino(LineReceiver):
     def lineReceived(self, data):
         logger.debug('got serial data', data)
         try:
-            data = data.strip()
-            cmd, arg = [ord(i) for i in data]
+            cmd, arg = data.split()
             logger.debug('got command', ord(cmd), ord(arg))
             self.process(cmd, arg)
-        except:
-            logger.debug('unable to parse {}', [ord(i) for i in data])
+        except ValueError:
+            logger.debug('unable to parse: {}', data)
             raise
 
 if __name__ == '__main__':
