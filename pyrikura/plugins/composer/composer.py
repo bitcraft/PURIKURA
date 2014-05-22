@@ -1,24 +1,21 @@
 from multiprocessing import JoinableQueue, Process, Pipe
-import ConfigParser
 import shutil
 import sys
 import os
+from six.moves import configparser, queue
 
 from pyrikura.plugin import Plugin
 from pyrikura.broker import Broker
-
 
 
 # mangle import paths to enable this sweet hack
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from imageprocessor import *
 
-
 # stupid hack to work around stale references in Wand :/
 def compose(conn, ready_queue, images, config):
     from wand.image import Image
     from wand.color import Color
-    import os
 
     # get all the images and overlay them
     layers = []
@@ -26,7 +23,7 @@ def compose(conn, ready_queue, images, config):
         try:
             this_config = ready_queue.get()
             layers.append((this_config['name'], this_config))
-        except Queue.Empty:
+        except queue.Empty:
             pass
 
     # the base to the image we are producing
@@ -91,7 +88,7 @@ class ComposerBroker(Broker):
         """
 
         # reread the template
-        cfg = ConfigParser.ConfigParser()
+        cfg = configparser.ConfigParser()
         cfg.read(self.template)
 
         # this will be passed to processors
