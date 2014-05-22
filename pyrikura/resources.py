@@ -37,7 +37,6 @@ def load():
             sound = pygame.mixer.Sound(path)
             sound.set_volume(vol)
             sounds[name] = sound
-            yield sound
 
     if Config.has_section('image-files'):
         for name, filename in Config.items('image-files'):
@@ -45,14 +44,12 @@ def load():
             logger.info("loading %s", path)
             #image = pygame.image.load(path)
             #images[name] = image
-            #yield image
 
     if Config.has_section('music-files'):
         for name, filename in Config.items('music-files'):
             path = jpath(resource_path, 'music', filename)
             logger.info("loading %s", path)
             music[name] = path
-            yield path
 
     loaded = True
 
