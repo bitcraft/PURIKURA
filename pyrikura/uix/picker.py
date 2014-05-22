@@ -112,7 +112,7 @@ class PickerScreen(Screen):
                 cStringIO(
                     camera.capture_preview().get_data()
                 )
-            ).convert()
+            )
             data = pygame.image.tostring(im, fmt.upper())
             imgdata = ImageData(im.get_width(), im.get_height(), fmt, data)
 
