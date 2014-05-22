@@ -54,8 +54,8 @@ def search(root, uniqueid):
 def image_path(filename):
     return jpath('/home/mjolnir/git/PURIKURA/resources/images/', filename)
 
+
 class ArduinoHandler(object):
-    
     def __init__(self):
         import serial
 
@@ -67,7 +67,6 @@ class ArduinoHandler(object):
 
     def on_tilt(self, widget, value):
         def send_serial():
-            print 'new thread'
             while 1:
                 try:
                     value = self.queue.get(timeout=1)
@@ -77,7 +76,6 @@ class ArduinoHandler(object):
                 self.arduino.flush()
                 self.queue.task_done()
             self.thread = None
-            print 'dying thread'
 
         try:
             self.queue.put(value, block=False)
