@@ -26,6 +26,7 @@ from twisted.internet import reactor, defer, task
 from twisted.protocols.basic import LineReceiver
 from twisted.internet.serialport import SerialPort
 
+import yapsy
 from yapsy.PluginManager import PluginManager
 logging.getLogger('yapsy').setLevel(logging.DEBUG)
 
@@ -153,6 +154,7 @@ class Session:
         self.arch1 = arch1
 
     def successful_capture(self, result):
+        logger.debug('successful capture')
         self.captures += 1
 
         if self.captures == self.needed_captures:
@@ -164,6 +166,7 @@ class Session:
         self.arch1.process(capture_image)
 
     def failed_capture(self, result):
+        logger.debug('failed capture')
         """ plays the error sound rapidly 3x """
         task.deferLater(reactor, 0, error.play)
         task.deferLater(reactor, .15, error.play)
@@ -185,6 +188,7 @@ class Session:
             self.running = False
 
     def do_session(self, result=None):
+        logger.debug('start new session')
         cam = CameraTrigger()
 
         d = self.countdown()
@@ -195,6 +199,7 @@ class Session:
 
     def start(self, result=None):
         if self.running:
+            logger.debug('want to start, bu already running')
             return
 
         self.running = True
@@ -211,11 +216,13 @@ class Arduino(LineReceiver):
     """
 
     def __init__(self, session):
+        logger.debug('new camera')
         self.setRawMode()
         self.session = session
         self._buf = []
 
     def process(self, cmd, arg):
+        logger.debug('new command from arduino: {} {}', cmd, chr(cmd))
         if cmd == 1:
             self.session.start()
 
@@ -231,7 +238,6 @@ class Arduino(LineReceiver):
         # if somehow we are out of sync, then just drop all data
         elif len(self._buf) > 2:
             self._buf = []
-            session.start()
 
 
 if __name__ == '__main__':
