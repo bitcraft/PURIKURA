@@ -33,6 +33,7 @@ logging.getLogger('yapsy').setLevel(logging.DEBUG)
 from pyrikura import resources
 from pyrikura.config import Config
 
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("purikura.booth")
 
 
@@ -162,6 +163,7 @@ class Session:
         if self.captures == self.needed_captures:
             bell1.play()
         else:
+            logger.debug('finished the session')
             finished.play()
 
         self.comp.process(capture_image)

@@ -20,7 +20,10 @@ def load():
     global sounds, images, music, loaded
 
     if loaded:
+        logger.debug('want to load resources, but already have')
         return
+
+    logger.debug('loading resources...')
 
     sounds = dict()
     images = dict()
