@@ -54,6 +54,43 @@ def search(root, uniqueid):
 def image_path(filename):
     return jpath('/home/mjolnir/git/PURIKURA/resources/images/', filename)
 
+class ArduinoHandler(object):
+    
+    def __init__(self):
+        import serial
+
+        self.arduino = serial.Serial(pkConfig.get('arduino', 'port'),
+                                     pkConfig.getint('arduino', 'baudrate'))
+    
+        self.queue = queue.Queue(maxsize=10)
+        self.thread = None
+
+    def on_tilt(self, widget, value):
+        def send_serial():
+            print 'new thread'
+            while 1:
+                try:
+                    value = self.queue.get(timeout=1)
+                except queue.Empty:
+                    break
+                self.arduino.write(chr(0x80) + chr(int(value)))
+                self.arduino.flush()
+                self.queue.task_done()
+            print 'dying thread'
+
+        try:
+            self.queue.put(value, block=False)
+        except queue.Full:
+            try:
+                self.queue.get()
+                self.queue.put(value, block=False)
+            except (queue.Full, queue.Empty):
+                pass
+
+        if self.thread is None:
+            self.thread = threading.Thread(target=send_serial)
+            self.thread.start()
+
 
 class PickerScreen(Screen):
     large_preview_size = ListProperty()
@@ -89,49 +126,14 @@ class PickerScreen(Screen):
         # the center of the preview image
         center_x = screen_width - (self.large_preview_size[0] / 2) - 16
 
-        import serial
-        arduino = serial.Serial(pkConfig.get('arduino', 'port'),
-                                pkConfig.getint('arduino', 'baudrate'))
-
-        serial_queue = queue.Queue(maxsize=10)
-        serial_thread = None
-
-        def on_tilt(widget, value):
-            global serial_thread
-
-            def send_serial():
-                print 'new thread'
-                while 1:
-                    try:
-                        value = serial_queue.get(timeout=1)
-                    except queue.Empty:
-                        break
-                    arduino.write(chr(0x80) + chr(int(value)))
-                    arduino.flush()
-                    serial_queue.task_done()
-                print 'dying thread'
-
-            try:
-                serial_queue.put(value, block=False)
-            except queue.Full:
-                try:
-                    serial_queue.get()
-                    serial_queue.put(value, block=False)
-                except (queue.Full, queue.Empty):
-                    pass
-
-            if serial_thread is None:
-                serial_thread = threading.Thread(target=send_serial)
-                serial_thread.start()
-
+        self.arduino_handler = ArduinoHandler()
         self.tilt_slider = Slider(min=pkConfig.getint('arduino', 'max-tilt'),
                                   max=pkConfig.getint('arduino', 'min-tilt'),
                                   value=pkConfig.getint('arduino', 'tilt'),
                                   orientation='vertical')
 
+        self.tilt_slider.bind(value=self.arduino_handler.on_tilt)
         self.layout.add_widget(self.tilt_slider)
-
-        self.tilt_slider.bind(value=on_tilt)
 
         # defaults to the hidden state
         self.focus_widget = Image(source=image_path('loading.gif'))
