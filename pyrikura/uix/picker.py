@@ -16,12 +16,14 @@ from kivy.uix.slider import Slider
 from six.moves import cStringIO
 import shutter
 import pygame
+import threading
 
 from ..config import Config as pkConfig
 from .sharing import SharingControls
 
 
 camera = shutter.Camera()
+serial_lock = threading.Lock()
 
 import os
 
@@ -97,8 +99,8 @@ class PickerScreen(Screen):
             arduino.write(chr(int(value)))
             arduino.flush()
 
-        self.tilt_slider = Slider(min=pkConfig.getint('arduino', 'min-tilt'),
-                                  max=pkConfig.getint('arduino', 'max-tilt'),
+        self.tilt_slider = Slider(min=pkConfig.getint('arduino', 'max-tilt'),
+                                  max=pkConfig.getint('arduino', 'min-tilt'),
                                   value=pkConfig.getint('arduino', 'tilt'),
                                   orientation='vertical')
 
@@ -369,3 +371,6 @@ class PickerScreen(Screen):
         return (-self.scrollview.scroll_x * bkg_w - self.width / 2,
                 self.background.pos[1])
 
+
+def send_to_serial(value):
+    pass
