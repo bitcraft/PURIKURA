@@ -3,6 +3,7 @@ from kivy.clock import Clock
 from kivy.config import Config
 from kivy.core.image import Image as CoreImage
 from kivy.core.image import ImageData
+from kivy.graphics.texture import Texture
 from kivy.factory import Factory
 from kivy.factory import Factory
 from kivy.loader import Loader
@@ -163,9 +164,9 @@ class PickerScreen(Screen):
             ).convert()
             data = pygame.image.tostring(im, fmt.upper())
             imgdata = ImageData(im.get_width(), im.get_height(), fmt, data)
-
+            texture = Texture.create_from_data(imgdata)
             if self.preview_widget is None:
-                self.preview_widget = Image(image=imgdata, nocache=True)
+                self.preview_widget = Image(texture=texture, nocache=True)
                 self.preview_widget.allow_stretch = True
                 self.preview_widget.x = center_x - OFFSET
                 self.preview_widget.y = 0
