@@ -117,7 +117,7 @@ class PickerScreen(Screen):
             fmt = 'rgb'
             im = pygame.image.load(
                 cStringIO(
-                    camera.capture_preview().get_data()
+                    camera.capture_preview().get_data().convert()
                 )
             )
             data = pygame.image.tostring(im, fmt.upper())
@@ -125,8 +125,9 @@ class PickerScreen(Screen):
                                 source=filename)
             self.preview_widget.image = imgdata
             self.preview_widget.reload()
+            print 'update'
 
-        Clock.schedule_interval(update_preview, .1)
+        Clock.schedule_interval(update_preview, .5)
 
         #pb_iface.connect_to_signal('preview_updated', touch_preview)
 
