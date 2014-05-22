@@ -226,21 +226,25 @@ class Arduino(LineReceiver):
         self._buf = []
 
     def process(self, cmd, arg):
-        logger.debug('new command from arduino: {} {}', cmd, chr(cmd))
+        logger.debug('processing: {} {}', chr(cmd), chr(arg))
         if cmd == 1:
             self.session.start()
 
     def rawDataReceived(self, data):
+        logger.debug('got serial data', data)
         for i in data:
+            logger.debug('data: {}', chr(i))
             self._buf.append(i)
 
         if len(self._buf) == 2:
             cmd, arg = [ord(i) for i in self._buf]
+            logger.debug('got command', chr(cmd), chr(arg))
             self.process(cmd, arg)
             self._buf = []
 
         # if somehow we are out of sync, then just drop all data
         elif len(self._buf) > 2:
+            logger.debug('failed buffer')
             self._buf = []
 
 
@@ -256,5 +260,6 @@ if __name__ == '__main__':
     except serial.serialutil.SerialException:
         raise
 
-    logger.debug('created new serial port listener {}', s)
+    logger.debug('created new serial port listener')
+    logger.debug('starting reactor...')
     reactor.run()
