@@ -116,10 +116,11 @@ class PreviewHandler(threading.Thread):
 
         while self._running:
             with lock:
-                preview = capture_preview()
+                preview = capture_preview().get_data()
 
-            im = load(cStringIO(preview.get_data()))
-            im = flip(im, 0, 1).convert()
+            im = load(cStringIO(preview)).convert()
+            del preview
+            im = flip(im, 0, 1)
             data = tostring(im, fmt.upper())
             imgdata = ImageData(im.get_width(), im.get_height(), fmt, data)
             texture = Texture.create_from_data(imgdata)
