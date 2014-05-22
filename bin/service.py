@@ -223,15 +223,15 @@ class Arduino(LineReceiver):
         self.session = session
 
     def process(self, cmd, arg):
-        logger.debug('processing: %s %s', ord(cmd), ord(arg))
-        if cmd == 1:
+        logger.debug('processing: %s %s', cmd, arg)
+        if cmd == 1 and arg == 2:
             self.session.start()
 
     def lineReceived(self, data):
         logger.debug('got serial data %s', data)
         try:
-            cmd, arg = data.split()
-            logger.debug('got command %s %s', ord(cmd), ord(arg))
+            cmd, arg = [int(i) for i in data.split()]
+            logger.debug('got command %s %s', cmd, arg)
             self.process(cmd, arg)
         except ValueError:
             logger.debug('unable to parse: %s', data)
