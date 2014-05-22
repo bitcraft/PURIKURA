@@ -96,14 +96,7 @@ class PickerScreen(Screen):
         self.focus_widget.bind(on_touch_down=self.on_image_touch)
         self.layout.add_widget(self.focus_widget)
 
-        self.preview_widget = Image(source='capture.jpg', nocache=True)
-        self.preview_widget.allow_stretch = True
-        self.preview_widget.x = center_x - OFFSET
-        self.preview_widget.y = 0
-        self.preview_widget.size_hint = None, None
-        self.preview_widget.size = (100, 100)
-        self.preview_widget.bind(on_touch_down=self.on_image_touch)
-        self.layout.add_widget(self.preview_widget)
+        self.preview_widget = None
 
         def touch_preview(widget, mouse_point):
             if widget.collide_point(mouse_point.x, mouse_point.y):
@@ -122,9 +115,19 @@ class PickerScreen(Screen):
             ).convert()
             data = pygame.image.tostring(im, fmt.upper())
             imgdata = ImageData(im.get_width(), im.get_height(), fmt, data)
-            self.preview_widget.filename = None
-            self.preview_widget.image = imgdata
-            self.preview_widget.reload()
+
+            if self.preview_widget is None:
+                self.preview_widget = Image(image=imgdata, nocache=True)
+                self.preview_widget.allow_stretch = True
+                self.preview_widget.x = center_x - OFFSET
+                self.preview_widget.y = 0
+                self.preview_widget.size_hint = None, None
+                self.preview_widget.size = (100, 100)
+                self.preview_widget.bind(on_touch_down=self.on_image_touch)
+                self.layout.add_widget(self.preview_widget)
+            else:
+                self.preview_widget.image = imgdata
+                self.preview_widget.reload()
             print 'update'
 
         Clock.schedule_interval(update_preview, .5)
