@@ -162,6 +162,7 @@ class PickerScreen(Screen):
                     camera.capture_preview().get_data()
                 )
             ).convert()
+            im = pygame.transform.flip(im)
             data = pygame.image.tostring(im, fmt.upper())
             imgdata = ImageData(im.get_width(), im.get_height(), fmt, data)
             texture = Texture.create_from_data(imgdata)
@@ -171,14 +172,13 @@ class PickerScreen(Screen):
                 self.preview_widget.x = center_x - OFFSET
                 self.preview_widget.y = 0
                 self.preview_widget.size_hint = None, None
-                self.preview_widget.size = (200, 200)
+                self.preview_widget.size = (600, 600)
                 self.preview_widget.bind(on_touch_down=self.on_image_touch)
                 self.layout.add_widget(self.preview_widget)
             else:
                 self.preview_widget.texture = texture
-                #self.preview_widget.reload()
 
-        Clock.schedule_interval(update_preview, .5)
+        Clock.schedule_interval(update_preview, .1)
 
         #pb_iface.connect_to_signal('preview_updated', touch_preview)
 
