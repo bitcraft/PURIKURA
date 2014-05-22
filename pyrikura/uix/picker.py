@@ -127,7 +127,7 @@ class PickerScreen(Screen):
                 self.layout.add_widget(self.preview_widget)
             else:
                 self.preview_widget.image = imgdata
-                self.preview_widget.reload()
+                #self.preview_widget.reload()
             print 'update'
 
         Clock.schedule_interval(update_preview, .5)
