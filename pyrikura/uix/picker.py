@@ -192,13 +192,14 @@ class PickerScreen(Screen):
             except queue.Empty:
                 return
 
+            fmt = 'rgb'
+            im = pygame.image.load(data)
+            im = pygame.transform.flip(im, 0, 1)
+            data = pygame.image.tostring(im, fmt.upper())
+            imgdata = ImageData(im.get_width(), im.get_height(), fmt, data)
+            texture = Texture.create_from_data(imgdata)
+
             if self.preview_widget is None:
-                fmt = 'rgb'
-                im = pygame.image.load(data)
-                im = pygame.transform.flip(im, 0, 1)
-                data = pygame.image.tostring(im, fmt.upper())
-                imgdata = ImageData(im.get_width(), im.get_height(), fmt, data)
-                texture = Texture.create_from_data(imgdata)
                 self.preview_widget = Image(texture=texture, nocache=True)
                 self.preview_widget.allow_stretch = True
                 self.preview_widget.x = center_x - OFFSET
