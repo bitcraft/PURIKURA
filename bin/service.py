@@ -216,7 +216,6 @@ class Arduino(LineReceiver):
     """
 
     def __init__(self, session):
-        super(Arduino, self).__init__()
         logger.debug('new arduino')
         self.session = session
 
