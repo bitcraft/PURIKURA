@@ -110,10 +110,12 @@ class PhotoboothService(dbus.service.Object):
         with self._camera_lock:
             try:
                 data = self._camera.capture_preview().get_data()
-                return dbus.Struct(True, dbus.ByteArray(data))
+                return dbus.Struct((True, dbus.ByteArray(data)),
+                                   signature='bay')
             except shutter.ShutterError as e:
                 logger.debug('unhandled error {}', e.result)
-                return dbus.Struct(False, dbus.ByteArray(''))
+                return dbus.Struct((False, dbus.ByteArray('')),
+                                   signature='bay')
 
     @dbus.service.method(bus_name)
     def reset(self):
