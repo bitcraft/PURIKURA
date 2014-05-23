@@ -85,7 +85,7 @@ class PhotoboothService(dbus.service.Object):
         logger.debug('attempting to capture preview...')
         with self._camera_lock:
             try:
-                self._camera.capture_image(self.preview_filename)
+                self._camera.capture_preview(self.preview_filename)
                 return True
             except shutter.ShutterError as e:
                 if e.result == -1:
