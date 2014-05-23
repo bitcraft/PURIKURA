@@ -37,10 +37,10 @@ class PhotoboothService(dbus.service.Object):
         self._camera = None
 
     def _open_camera(self):
+        logger.debug('attempting to open the camera...')
         with self._camera_lock:
             if self._camera is None:
                 try:
-                    logger.debug('attempting to open camera')
                     self._camera = shutter.Camera()
                     return True
                 except shutter.ShutterError as e:
@@ -50,12 +50,12 @@ class PhotoboothService(dbus.service.Object):
                 return True
 
     def _close_camera(self):
+        logger.debug('attempting to close the camera...')
         with self._camera_lock:
             if self._camera is None:
                 return True
             else:
                 try:
-                    logger.debug('attempting to close camera')
                     self._camera = None
                     return True
                 except shutter.ShutterError as e:
@@ -63,9 +63,9 @@ class PhotoboothService(dbus.service.Object):
                     return False
 
     def _reset(self):
+        logger.debug('attempting to reset the camera...')
         with self._camera_lock:
-            self._close_camera()
-            self._open_camera()
+            return self._close_camera() and self._open_camera()
 
     @dbus.service.method(bus_name, out_signature='b')
     def open_camera(self):
@@ -83,12 +83,10 @@ class PhotoboothService(dbus.service.Object):
                 self._camera.capture_image(self.preview_filename)
                 return True
             except shutter.ShutterError as e:
-                # couldn't focus
                 if e.result == -1:
-                    pass
+                    logger.debug('unable to focus camera')
                 else:
-                    self.reset()
-                    self._camera.capture_image(self.preview_filename)
+                    logger.debug('unhandled error {}', e.result)
                 return False
 
     @dbus.service.method(bus_name, out_signature='b')
@@ -99,23 +97,22 @@ class PhotoboothService(dbus.service.Object):
                 self._camera.capture_image(self.capture_filename)
                 return True
             except shutter.ShutterError as e:
-                # couldn't focus
                 if e.result == -1:
-                    pass
+                    logger.debug('unable to focus camera')
                 else:
-                    self.reset()
-                    self._camera.capture_image(self.capture_filename)
+                    logger.debug('unhandled error {}', e.result)
                 return False
 
-    @dbus.service.method(bus_name, out_signature='ay')
+    @dbus.service.method(bus_name, out_signature='(bs)')
     def download_preview(self):
         logger.debug('attempting to download preview...')
         with self._camera_lock:
             try:
                 data = self._camera.capture_preview().get_data()
-                return ByteArray(data)
+                return True, str(data)
             except shutter.ShutterError as e:
-                self.reset()
+                logger.debug('unhandled error {}', e.result)
+                return False, ''
 
     @dbus.service.method(bus_name)
     def reset(self):
