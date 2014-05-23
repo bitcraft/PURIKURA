@@ -12,6 +12,7 @@ import gobject
 import dbus
 import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
+from six.moves import queue
 
 from pyrikura.config import Config
 
@@ -27,6 +28,8 @@ bus = dbus.SessionBus()
 
 
 class PhotoboothService(dbus.service.Object):
+    """ Sharing of camera and arduino with a 'simple' api
+    """
     def __init__(self):
         logger.debug('starting photobooth service...')
         name = dbus.service.BusName(bus_name, bus=dbus.SessionBus())
@@ -35,6 +38,10 @@ class PhotoboothService(dbus.service.Object):
         self.preview_filename = 'preview.jpg'
         self._camera_lock = threading.Lock()
         self._camera = None
+        self._arduino_lock = threading.lock*()
+        self._arduino_conn = None
+        self._arduino_thread = None
+        self._arduino_queue = None
 
     def _open_camera(self):
         """ Open the camera for use (internal use only)
@@ -74,12 +81,45 @@ class PhotoboothService(dbus.service.Object):
                     logger.debug('unable to close camera')
                     return False
 
-    def _reset(self):
+    def _reset_camera(self):
         """ Reset camera by closing and opening it again (internal use only)
         """
         logger.debug('attempting to reset the camera...')
         with self._camera_lock:
             return self._close_camera() and self._open_camera()
+
+    def _open_arduino(self, conn):
+        """ Open the arduino (internal use only)
+        """
+        logger.debug('attempting to open the arduino...')
+        # HACK!
+        if self._arduino_thread:
+            self._arduino_thread.stop()
+        self._arduino_thread = None
+        self._arduino_queue = queue.Queue(maxsize=10)
+        with self._arduino_lock:
+            self._arduino_conn = conn
+            return True
+
+    def _close_arduino(self):
+        """ Close the arduino (internal use only)
+        """
+        # HACK!
+        logger.debug('attempting to close the arduino...')
+        if self._arduino_thread:
+            self._arduino_thread.stop()
+        self._arduino_thread = None
+        self._arduino_queue = None
+        with self.arduino_lock:
+            self._arduino_conn = None
+            return True
+
+    def _reset_arduino(self):
+        """ Reset arduino by closing and opening it again (internal use only)
+        """
+        logger.debug('attempting to reset the arduino...')
+        with self._camera_lock:
+            return self._close_arduino() and self._open_arduino()
 
     @dbus.service.method(bus_name, out_signature='b')
     def open_camera(self):
@@ -87,7 +127,6 @@ class PhotoboothService(dbus.service.Object):
 
         Safe to be called more that once or while camera is already open
         """
-
         return self._open_camera()
 
     @dbus.service.method(bus_name, out_signature='b')
@@ -155,11 +194,45 @@ class PhotoboothService(dbus.service.Object):
                 return dbus.Struct((False, dbus.ByteArray('')),
                                    signature='bay')
 
-    @dbus.service.method(bus_name)
+    @dbus.service.method(bus_name, out_signature='b')
     def reset(self):
         """ Reset camera by closing and opening it again
         """
-        self._reset()
+        self._reset_camera()
+
+    @dbus.service.method(bus_name, in_signature='i', out_signature='b')
+    def set_camera_tilt(self, value):
+        """ Set camera tilt
+
+        Uses the arduino for communications with servo.
+
+        Value must be 0 or greater, but less or equal to 180.
+
+        TODO: some kind of smoothing.
+        """
+        def send_serial():
+            while 1:
+                try:
+                    _value = self._arduino_queue.get(timeout=1)
+                except queue.Empty:
+                    break
+                with self._arduino_lock:
+                    self._arduino_conn.sendCommand(0x80, int(_value))
+                self._arduino_queue.task_done()
+            self._arduino_thread = None
+
+        try:
+            self._arduino_queue.put(value, block=False)
+        except queue.Full:
+            try:
+                self._arduino_queue.get()
+                self._arduino_queue.put(value, block=False)
+            except (queue.Full, queue.Empty):
+                pass
+
+        if self._arduino_thread is None:
+            self._arduino_thread = threading.Thread(target=send_serial)
+            self._arduino_thread.start()
 
 
 if __name__ == '__main__':

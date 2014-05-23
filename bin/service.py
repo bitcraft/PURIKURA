@@ -22,7 +22,7 @@ import pygame
 import dbus
 import serial
 
-from twisted.internet import reactor, defer, task
+from twisted.internet import reactor, defer, task, protocol, threads
 from twisted.protocols.basic import LineReceiver
 from twisted.internet.serialport import SerialPort
 
@@ -93,7 +93,6 @@ class CameraTrigger:
             logger.error('cannot find dbus service')
             raise
 
-        self.iface.open_camera()
         self.d = None
 
     def __call__(self):
@@ -117,8 +116,8 @@ class CameraTrigger:
 
 
 class Session:
-    needed_captures = 4
-    next_countdown_delay = 4
+    needed_captures = Config.get('event', 'needed-captures')
+    next_countdown_delay = Config.get('event', 'next-countdown-delay')
     countdown_interval = 1
 
     def __init__(self):
@@ -208,7 +207,7 @@ class Session:
 
     def start(self, result=None):
         if self.running:
-            logger.debug('want to start, bu already running')
+            logger.debug('want to start, but already running')
             return
 
         self.running = True
@@ -223,7 +222,6 @@ class Arduino(LineReceiver):
     0x01: trigger
     0x80: set servo
     """
-
     def __init__(self, session):
         logger.debug('new arduino')
         self.session = session
@@ -232,6 +230,19 @@ class Arduino(LineReceiver):
         logger.debug('processing: %s %s', cmd, arg)
         if cmd == 1 and arg == 2:
             self.session.start()
+
+    def sendCommand(self, cmd, arg):
+        def write_transport(data):
+            self.transport.write(data)
+
+        if self.session.running:
+            logger.debug('want to send, but in session: %s %s', cmd, arg)
+            return False
+        else:
+            logger.debug('sending: %s %s', cmd, arg)
+            data = chr(cmd) + chr(arg)
+            reactor.callFromThread(write_transport, data)
+            return True
 
     def lineReceived(self, data):
         logger.debug('got serial data %s', data)
@@ -243,19 +254,59 @@ class Arduino(LineReceiver):
             logger.debug('unable to parse: %s', data)
             raise
 
+
+class ArduinoProtocol(LineReceiver):
+    def lineReceived(self, data):
+        logger.debug('got remote data %s', data)
+        value = None
+
+        try:
+            value = int(data)
+        except ValueError:
+            logger.debug('cannot process data %s', data)
+
+        else:
+            try:
+                self.factory.arduino.sendCommand(0x80, value)
+            except:
+                logger.debug('problem communicationg with arduino')
+                raise
+
+        finally:
+            self.transport.loseConnection()
+
+
+class ArduinoFactory(protocol.ServerFactory):
+    protocol = ArduinoProtocol
+
+    def __init__(self, arduino):
+        self._arduino = arduino
+
+    @property
+    def arduino(self):
+        return self._arduino
+
+
 if __name__ == '__main__':
     logger.debug('starting')
     session = Session()
 
+    arduino = Arduino(session)
+
     logger.debug('building new serial port listener...')
-    # WARNING!  Arduino stuff here
     try:
-        s = SerialPort(Arduino(session),
+        s = SerialPort(arduino,
                        Config.get('arduino', 'port'),
                        reactor,
                        baudrate=Config.getint('arduino', 'baudrate'))
     except serial.serialutil.SerialException:
         raise
 
+    # starting arduino listener
+    reactor.listenTCP(11079, ArduinoFactory(arduino))
     logger.debug('starting reactor...')
-    reactor.run()
+    try:
+        reactor.run()
+    except:
+        reactor.stop()
+        raise

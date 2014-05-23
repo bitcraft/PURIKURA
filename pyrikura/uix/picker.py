@@ -63,63 +63,6 @@ class ArduinoHandler(object):
         self.queue = queue.Queue(maxsize=10)
         self.thread = None
 
-    def on_tilt(self, widget, value):
-        def send_serial():
-            while 1:
-                try:
-                    value = self.queue.get(timeout=1)
-                except queue.Empty:
-                    break
-                self.arduino.write(chr(0x80) + chr(int(value)))
-                self.arduino.flush()
-                self.queue.task_done()
-            self.thread = None
-
-        try:
-            self.queue.put(value, block=False)
-        except queue.Full:
-            try:
-                self.queue.get()
-                self.queue.put(value, block=False)
-            except (queue.Full, queue.Empty):
-                pass
-
-        if self.thread is None:
-            self.thread = threading.Thread(target=send_serial)
-            self.thread.start()
-
-
-class PreviewHandler(threading.Thread):
-    def __init__(self, q, lock):
-        super(PreviewHandler, self).__init__()
-        bus = dbus.SessionBus()
-        pb_obj = bus.get_object(dbus_name, dbus_path)
-        self.iface = dbus.Interface(pb_obj, dbus_interface=dbus_name)
-
-        self.iface.open_camera()
-        self.queue = q
-        self.lock = lock
-        self.daemon = True
-        self._running = False
-
-    def stop(self):
-        self._running = False
-
-    def run(self):
-        self._running = True
-        download_preview = self.iface.download_preview
-        queue_put = self.queue.put
-        lock = self.lock
-
-        while self._running:
-            with lock:
-                time.sleep(0.05)
-                result, data = download_preview(byte_arrays=True)
-
-            if result:
-                data = cStringIO(str(data))
-                queue_put(data)
-
 
 class PickerScreen(Screen):
     large_preview_size = ListProperty()
@@ -161,7 +104,10 @@ class PickerScreen(Screen):
                                   value=pkConfig.getint('arduino', 'tilt'),
                                   orientation='vertical')
 
-        self.tilt_slider.bind(value=self.arduino_handler.on_tilt)
+        def on_tilt(widget, value):
+            twisted_connection.write(int(value))
+
+        self.tilt_slider.bind(value=on_tilt)
         self.layout.add_widget(self.tilt_slider)
 
         # defaults to the hidden state
