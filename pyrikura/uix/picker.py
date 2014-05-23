@@ -107,14 +107,14 @@ class PreviewHandler(threading.Thread):
 
     def run(self):
         self._running = True
-        capture_preview = self.iface.capture_preview
+        download_preview = self.iface.download_preview
         queue_put = self.queue.put
         lock = self.lock
 
         while self._running:
             with lock:
                 time.sleep(0.05)
-                result, data = capture_preview()
+                result, data = download_preview()
 
             if result:
                 queue_put(cStringIO(data))
