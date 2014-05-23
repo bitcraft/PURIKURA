@@ -57,6 +57,7 @@ class PhotoboothService(dbus.service.Object):
                 return True
             else:
                 try:
+                    self._camera.close()
                     self._camera = None
                     return True
                 except shutter.ShutterError as e:
