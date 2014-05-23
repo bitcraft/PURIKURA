@@ -104,16 +104,16 @@ class PhotoboothService(dbus.service.Object):
                     logger.debug('unhandled error {}', e.result)
                 return False
 
-    @dbus.service.method(bus_name, out_signature='(bs)')
+    @dbus.service.method(bus_name, out_signature='(bay)')
     def download_preview(self):
         logger.debug('attempting to download preview...')
         with self._camera_lock:
             try:
                 data = self._camera.capture_preview().get_data()
-                return dbus.Struct(True, dbus.String(data))
+                return dbus.Struct(True, dbus.ByteArray(data))
             except shutter.ShutterError as e:
                 logger.debug('unhandled error {}', e.result)
-                return dbus.Struct(False, dbus.String(''))
+                return dbus.Struct(False, dbus.ByteArray(''))
 
     @dbus.service.method(bus_name)
     def reset(self):
