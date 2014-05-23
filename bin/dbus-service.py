@@ -112,7 +112,7 @@ class PhotoboothService(dbus.service.Object):
                 return True, str(data)
             except shutter.ShutterError as e:
                 logger.debug('unhandled error {}', e.result)
-                return False, ''
+                return False, 'none'
 
     @dbus.service.method(bus_name)
     def reset(self):
