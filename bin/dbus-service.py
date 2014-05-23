@@ -38,29 +38,34 @@ class PhotoboothService(dbus.service.Object):
 
     def _open_camera(self):
         with self._camera_lock:
-            try:
-                logger.debug('attempting to open camera')
-                self._camera = shutter.Camera()
+            if self.camera is None:
+                try:
+                    logger.debug('attempting to open camera')
+                    self._camera = shutter.Camera()
+                    return True
+                except shutter.ShutterError as e:
+                    logger.debug('unable to open camera')
+                    return False
+            else:
                 return True
-            except shutter.ShutterError as e:
-                logger.debug('unable to open camera')
-                return False
 
     def _close_camera(self):
         with self._camera_lock:
-            try:
-                logger.debug('attempting to close camera')
-                self._camera = None
+            if self.camera is None:
                 return True
-            except shutter.ShutterError as e:
-                logger.debug('unable to close camera')
-                return False
+            else:
+                try:
+                    logger.debug('attempting to close camera')
+                    self._camera = None
+                    return True
+                except shutter.ShutterError as e:
+                    logger.debug('unable to close camera')
+                    return False
 
     def _reset(self):
         with self._camera_lock:
-            if self._camera:
-                self._camera = None
-                self._open_camera()
+            self._close_camera()
+            self._open_camera()
 
     @dbus.service.method(bus_name, out_signature='b')
     def open_camera(self):
@@ -103,7 +108,7 @@ class PhotoboothService(dbus.service.Object):
                 return False
 
     @dbus.service.method(bus_name, out_signature='ay')
-    def downaload_preview(self):
+    def download_preview(self):
         logger.debug('attempting to download preview...')
         with self._camera_lock:
             try:
