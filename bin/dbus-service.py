@@ -38,7 +38,7 @@ class PhotoboothService(dbus.service.Object):
 
     def _open_camera(self):
         with self._camera_lock:
-            if self.camera is None:
+            if self._camera is None:
                 try:
                     logger.debug('attempting to open camera')
                     self._camera = shutter.Camera()
@@ -51,7 +51,7 @@ class PhotoboothService(dbus.service.Object):
 
     def _close_camera(self):
         with self._camera_lock:
-            if self.camera is None:
+            if self._camera is None:
                 return True
             else:
                 try:
