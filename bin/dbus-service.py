@@ -12,7 +12,6 @@ import gobject
 import dbus
 import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
-from dbus import ByteArray
 
 from pyrikura.config import Config
 
@@ -38,6 +37,10 @@ class PhotoboothService(dbus.service.Object):
         self._camera = None
 
     def _open_camera(self):
+        """ Open the camera for use (internal use only)
+
+        Safe to be called more that once or while camera is already open
+        """
         logger.debug('attempting to open the camera...')
         with self._camera_lock:
             if self._camera is None:
@@ -51,6 +54,10 @@ class PhotoboothService(dbus.service.Object):
                 return True
 
     def _close_camera(self):
+        """ Close the camera for use (internal use only)
+
+        Safe to be called more that once or while camera is already closed
+        """
         logger.debug('attempting to close the camera...')
         with self._camera_lock:
             if self._camera is None:
@@ -68,20 +75,35 @@ class PhotoboothService(dbus.service.Object):
                     return False
 
     def _reset(self):
+        """ Reset camera by closing and opening it again (internal use only)
+        """
         logger.debug('attempting to reset the camera...')
         with self._camera_lock:
             return self._close_camera() and self._open_camera()
 
     @dbus.service.method(bus_name, out_signature='b')
     def open_camera(self):
+        """ Open the camera for use
+
+        Safe to be called more that once or while camera is already open
+        """
+
         return self._open_camera()
 
     @dbus.service.method(bus_name, out_signature='b')
     def close_camera(self):
+        """ Close the camera for use
+
+        Safe to be called more that once or while camera is already closed
+        """
         return self._close_camera()
 
     @dbus.service.method(bus_name, out_signature='b')
     def capture_preview(self):
+        """ Capture a preview image and save to a file
+
+        Returns boolean of succeeded or not
+        """
         logger.debug('attempting to capture preview...')
         with self._camera_lock:
             try:
@@ -96,6 +118,10 @@ class PhotoboothService(dbus.service.Object):
 
     @dbus.service.method(bus_name, out_signature='b')
     def capture_image(self):
+        """ Capture a full image and save to a file
+
+        Returns boolean of succeeded or not
+        """
         logger.debug('attempting to capture image...')
         with self._camera_lock:
             try:
@@ -110,6 +136,14 @@ class PhotoboothService(dbus.service.Object):
 
     @dbus.service.method(bus_name, out_signature='(bay)')
     def download_preview(self):
+        """ Capture preview image and return data
+
+        Returns dbus.Struct:
+            [0] Boolean if succeeded or not
+            [1] dbus.ByteArray of preview image data
+
+        Image data will be an empty string if capture is not successful
+        """
         logger.debug('attempting to download preview...')
         with self._camera_lock:
             try:
@@ -123,6 +157,8 @@ class PhotoboothService(dbus.service.Object):
 
     @dbus.service.method(bus_name)
     def reset(self):
+        """ Reset camera by closing and opening it again
+        """
         self._reset()
 
 

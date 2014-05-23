@@ -93,6 +93,7 @@ class CameraTrigger:
             logger.error('cannot find dbus service')
             raise
 
+        self.iface.open_camera()
         self.d = None
 
     def __call__(self):
