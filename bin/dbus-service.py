@@ -57,7 +57,10 @@ class PhotoboothService(dbus.service.Object):
                 return True
             else:
                 try:
+
+                    logger.debug('attempting camera.close()...')
                     self._camera.close()
+                    logger.debug('attempting setting to none...')
                     self._camera = None
                     return True
                 except shutter.ShutterError as e:
