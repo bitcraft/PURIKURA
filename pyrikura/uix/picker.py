@@ -114,7 +114,7 @@ class PreviewHandler(threading.Thread):
         while self._running:
             with lock:
                 time.sleep(0.05)
-                result, data = download_preview()
+                result, data = download_preview(byte_arrays=True)
 
             if result:
                 data = cStringIO(str(data))
