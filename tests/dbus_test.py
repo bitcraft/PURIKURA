@@ -25,5 +25,5 @@ except dbus.exceptions.DBusException:
 print iface.open_camera()
 print iface.capture_preview()
 print iface.capture_image()
-print iface.download_preview()
+iface.download_preview()
 print iface.close_camera()
