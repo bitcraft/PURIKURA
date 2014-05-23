@@ -16,6 +16,7 @@ from dbus import ByteArray
 
 from pyrikura.config import Config
 
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("purikura.dbus")
 
 # dbus config
@@ -109,10 +110,10 @@ class PhotoboothService(dbus.service.Object):
         with self._camera_lock:
             try:
                 data = self._camera.capture_preview().get_data()
-                return True, data
+                return dbus.Struct(True, dbus.String(data))
             except shutter.ShutterError as e:
                 logger.debug('unhandled error {}', e.result)
-                return False, 'none'
+                return dbus.Struct(False, dbus.String(''))
 
     @dbus.service.method(bus_name)
     def reset(self):
