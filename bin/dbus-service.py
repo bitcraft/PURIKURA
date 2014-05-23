@@ -109,7 +109,7 @@ class PhotoboothService(dbus.service.Object):
         with self._camera_lock:
             try:
                 data = self._camera.capture_preview().get_data()
-                return True, str(data)
+                return True, data
             except shutter.ShutterError as e:
                 logger.debug('unhandled error {}', e.result)
                 return False, 'none'
