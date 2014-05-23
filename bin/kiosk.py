@@ -13,8 +13,8 @@ import pygame
 from pyrikura.config import Config as pkConfig
 from pyrikura.uix.picker import PickerScreen
 
-from kivy.app import App
 from kivy.config import Config
+from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager
 

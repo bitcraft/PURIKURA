@@ -1,6 +1,6 @@
+from kivy.config import Config
 from kivy.animation import Animation
 from kivy.clock import Clock
-from kivy.config import Config
 from kivy.core.image import Image as CoreImage
 from kivy.core.image import ImageData
 from kivy.graphics.texture import Texture
@@ -15,18 +15,15 @@ from kivy.uix.screenmanager import Screen
 from kivy.uix.slider import Slider
 
 from six.moves import cStringIO, queue
-import shutter
+import os
 import pygame
 import threading
+import dbus
+import time
 
 from ..config import Config as pkConfig
 from .sharing import SharingControls
 
-
-camera = shutter.Camera()
-serial_lock = threading.Lock()
-
-import os
 
 OFFSET = 172
 dbus_name = pkConfig.get('camera', 'dbus-name')
@@ -95,8 +92,12 @@ class ArduinoHandler(object):
 class PreviewHandler(threading.Thread):
     def __init__(self, q, lock):
         super(PreviewHandler, self).__init__()
+        bus = dbus.SessionBus()
+        pb_obj = bus.get_object(dbus_name, dbus_path)
+        self.iface = dbus.Interface(pb_obj, dbus_interface=dbus_name)
+
+        self.iface.open_camera()
         self.queue = q
-        self.camera = camera
         self.lock = lock
         self.daemon = True
         self._running = False
@@ -106,14 +107,17 @@ class PreviewHandler(threading.Thread):
 
     def run(self):
         self._running = True
-        capture_preview = self.camera.capture_preview
+        capture_preview = self.iface.capture_preview
         queue_put = self.queue.put
         lock = self.lock
 
         while self._running:
             with lock:
-                preview = capture_preview().get_data()
-            queue_put(cStringIO(preview))
+                time.sleep(0.05)
+                result, data = capture_preview()
+
+            if result:
+                queue_put(cStringIO(data))
 
 
 class PickerScreen(Screen):
