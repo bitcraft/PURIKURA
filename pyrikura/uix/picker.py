@@ -117,7 +117,8 @@ class PreviewHandler(threading.Thread):
                 result, data = download_preview()
 
             if result:
-                queue_put(cStringIO(data))
+                data = cStringIO(str(data))
+                queue_put(data)
 
 
 class PickerScreen(Screen):
