@@ -261,7 +261,7 @@ class PickerScreen(Screen):
                 max = pkConfig.getint('arduino', 'max-tilt')
                 min = pkConfig.getint('arduino', 'min-tilt')
 
-                def on_move(widget, touch):
+                def on_touch_move(widget, touch):
                     if widget.collide_point(touch.x, touch.y):
                         self.tilt += touch.dpos[1] / 8
                         if self.tilt < 0:
@@ -272,12 +272,12 @@ class PickerScreen(Screen):
                         self.arduino_handler.set_camera_tilt(value)
 
                 self.preview_widget = Image(texture=texture, nocache=True)
+                self.preview_widget.bind(on_touch_move=on_move)
                 self.preview_widget.allow_stretch = True
                 self.preview_widget.size_hint = None, None
                 self.preview_widget.size = (1280, 1024)
                 self.preview_widget.x = (1280/2)-(self.preview_widget.width/2)
                 self.preview_widget.y = -self.preview_widget.height
-                self.preview_widget.bind(on_move=on_move)
                 self.layout.add_widget(self.preview_widget)
             else:
                 self.preview_widget.texture = texture
@@ -615,6 +615,33 @@ class PickerScreen(Screen):
                 opacity=0.0,
                 duration=.5)
             ani.start(self.preview_widget)
+
+            # set the background to normal
+            x, y = self._calc_bg_pos()
+            ani = Animation(
+                y=y + 100,
+                x=x,
+                t='in_out_quad',
+                duration=.5)
+            ani.start(self.background)
+
+            # show the scrollview
+            x, y = self._scrollview_pos[0], self.scrollview.original_y
+            ani = Animation(
+                x=x,
+                y=y,
+                t='in_out_quad',
+                opacity=1.0,
+                duration=.5)
+            ani.start(self.scrollview)
+
+            # show the camera button
+            ani = Animation(
+                y=0,
+                t='in_out_quad',
+                opacity=1.0,
+                duration=.5)
+            ani.start(self.preview_button)
 
     def on_image_touch(self, widget, touch):
         """ called when any image is touched
