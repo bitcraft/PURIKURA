@@ -303,7 +303,7 @@ class PickerScreen(Screen):
         # move and animate the scrollview to the far edge
         if new:
             ani = Animation(
-                scroll_x=1.2,
+                scroll_x=1,
                 t='in_out_quad',
                 duration=1)
 
