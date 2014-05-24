@@ -225,11 +225,10 @@ class PickerScreen(Screen):
             except queue.Empty:
                 return
 
-            fmt = 'rgb'
-            im = im.transpose(PIL.FLIP_TOP_BOTTOM)
+            im = im.transpose(PIL.Image.FLIP_TOP_BOTTOM)
             imdata = ImageData(im.size[0],
                                im.size[1],
-                               fmt,
+                               im.mode,
                                im.tostring())
             texture = Texture.create_from_data(imdata)
 
