@@ -149,11 +149,15 @@ class PickerScreen(Screen):
         self.preview_handler = None
         self.preview_queue = None
         self.preview_widget = None
+        self.preview_label = None
+        self.preview_exit = None
         self.focus_widget = None
         self.layout = None
         self.background = None
         self.scrollview = None
         self.grid = None
+        self.locked = None
+        self.loaded = None
 
     def on_pre_enter(self):
         self.layout = search(self, 'layout')
@@ -191,7 +195,7 @@ class PickerScreen(Screen):
         self.tilt_slider.bind(value=set_camera_tilt)
         self.layout.add_widget(self.tilt_slider)
 
-        # defaults to the hidden state
+        # the focus widget is the large preview image
         self.focus_widget = Image(source=image_path('loading.gif'))
         self.focus_widget.allow_stretch = True
         self.focus_widget.x = center_x - OFFSET
@@ -206,6 +210,7 @@ class PickerScreen(Screen):
         self.preview_queue = queue.Queue()
         self.preview_handler = PreviewHandler(self.preview_queue)
         self.preview_handler.start()
+        self.preview_widget = None   # will be created on first image
 
         # handles updating the widget.  pygame doesn't allow creating surfaces
         # in the main thread, so it must be done here.
@@ -240,7 +245,13 @@ class PickerScreen(Screen):
             else:
                 self.preview_widget.texture = texture
 
-        # this is used with the focus widget is open
+        # this button is used to exit the large camera preview window
+        self.preview_exit = Image(source=image_path('chevron-right.gif'))
+        self.preview_exit.allow_stretch = True
+        self.preview_exit.x = 1280 - self.preview_exit.width
+        self.preview_exit.y = (1024 / 2) - (self.preview_exit.height / 2)
+
+        # the preview label is used with the focus widget is open
         self.preview_label = Label(
             text='Touch preview to close',
             text_size=(500, 100),
@@ -248,6 +259,7 @@ class PickerScreen(Screen):
             pos=(-1000, -1000))
         self.layout.add_widget(self.preview_label)
 
+        # the scrollview is amimated to move in and out
         self.scrollview.original_y = 100
         self.scrollview.y = self.scrollview.original_y
         self.scrollview.bind(scroll_x=self.on_picker_scroll)
@@ -256,6 +268,7 @@ class PickerScreen(Screen):
         self.background.y = -400
         self.background.pos = self._calc_bg_pos()
 
+        # locked and loaded  =D
         self.locked = False
         self.loaded = set()
 
@@ -293,163 +306,173 @@ class PickerScreen(Screen):
     def unlock(self, dt=None):
         self.locked = False
 
+    def change_state(self, state):
+        screen_width = int(Config.get('graphics', 'width'))
+        screen_height = int(Config.get('graphics', 'height'))
+
+        #  N O R M A L
+        if state == 'normal':
+            self.scrollview_hidden = False
+            self.locked = True
+
+            # schedule a unlock
+            Clock.schedule_once(self.unlock, .5)
+
+            # cancel all running animation
+            Animation.cancel_all(self.controls)
+            Animation.cancel_all(self.scrollview)
+            Animation.cancel_all(self.background)
+            Animation.cancel_all(self.focus_widget)
+
+            # close the keyboard
+            from kivy.core.window import Window
+
+            Window.release_all_keyboards()
+
+            # disable the controls (workaround until 1.8.0)
+            self.controls.disable()
+
+            # hide the controls
+            ani = Animation(
+                opacity=0.0,
+                duration=.3)
+
+            ani.bind(on_complete=self._remove_widget_after_ani)
+            ani.start(self.preview_label)
+            ani.start(self.controls)
+
+            # set the background to normal
+            x, y = self._calc_bg_pos()
+            ani = Animation(
+                y=y + 100,
+                x=x,
+                t='in_out_quad',
+                duration=.5)
+
+            ani.start(self.background)
+
+            # show the scrollview
+            x, y = self._scrollview_pos[0], self.scrollview.original_y
+            ani = Animation(
+                x=x,
+                y=y,
+                t='in_out_quad',
+                opacity=1.0,
+                duration=.5)
+
+            ani.start(self.scrollview)
+
+            # hide the focus widget
+            ani = Animation(
+                y=-1000,
+                x=self.focus_widget.x + OFFSET,
+                size=self.small_preview_size,
+                t='in_out_quad',
+                duration=.5)
+
+            ani &= Animation(
+                opacity=0.0,
+                duration=.5)
+
+            ani.start(self.focus_widget)
+
+        elif state == 'focus':
+            self.scrollview_hidden = True
+            self.locked = True
+
+            # schedule a unlock
+            Clock.schedule_once(self.unlock, .5)
+
+            # cancel all running animation
+            Animation.cancel_all(self.scrollview)
+            Animation.cancel_all(self.background)
+            Animation.cancel_all(self.focus_widget)
+
+            # set the focus widget to have the same image as the one picked
+            # do a bit of mangling to get a more detailed image
+            thumb, detail, original, comp = self.get_paths()
+            filename = os.path.join(detail, os.path.basename(widget.source))
+            original = os.path.join(original,
+                                    os.path.basename(widget.source))
+
+            # get a medium resolution image for the preview
+            self.focus_widget.source = filename
+
+            # show the controls
+            self.controls = SharingControls()
+            self.controls.filename = original
+            self.controls.size_hint = .40, 1
+            self.controls.opacity = 0
+
+            ani = Animation(
+                opacity=1.0,
+                duration=.3)
+
+            self.preview_label.pos_hint = {'x': .25, 'y': .47}
+
+            ani.start(self.preview_label)
+            ani.start(self.controls)
+
+            # set the z to something high to ensure it is on top
+            self.add_widget(self.controls)
+
+            # hide the scrollview
+            ani = Animation(
+                x=0,
+                y=-1000,
+                t='in_out_quad',
+                opacity=0.0,
+                duration=.7)
+
+            ani.start(self.scrollview)
+
+            # start a simple animation on the background
+            ani = Animation(
+                y=self.background.y - 100,
+                x=-self.background.width / 2.5,
+                t='in_out_quad',
+                duration=.5)
+
+            ani += Animation(
+                x=0,
+                duration=480)
+
+            ani.start(self.background)
+
+            hh = (screen_height - self.large_preview_size[1]) / 2
+
+            # show the focus widget
+            ani = Animation(
+                opacity=1.0,
+                y=screen_height - self.large_preview_size[1] - hh,
+                x=self.focus_widget.x - OFFSET,
+                size=self.large_preview_size,
+                t='in_out_quad',
+                duration=.5)
+
+            ani &= Animation(
+                opacity=1.0,
+                duration=.5)
+
+            ani.start(self.focus_widget)
+
     def on_image_touch(self, widget, mouse_point):
+        """ called when any image is touched
+        """
         if self.locked:
             return
 
         if widget.collide_point(mouse_point.x, mouse_point.y):
-            screen_width = int(Config.get('graphics', 'width'))
-            screen_height = int(Config.get('graphics', 'height'))
-
             # hide the focus widget
             if self.scrollview_hidden:
-                self.scrollview_hidden = False
-                self.locked = True
-
-                # schedule a unlock
-                Clock.schedule_once(self.unlock, .5)
-
-                # cancel all running animation
-                Animation.cancel_all(self.controls)
-                Animation.cancel_all(self.scrollview)
-                Animation.cancel_all(self.background)
-                Animation.cancel_all(self.focus_widget)
-
-                # close the keyboard
-                from kivy.core.window import Window
-
-                Window.release_all_keyboards()
-
-                # disable the controls (workaround until 1.8.0)
-                self.controls.disable()
-
-                # hide the controls
-                ani = Animation(
-                    opacity=0.0,
-                    duration=.3)
-
-                ani.bind(on_complete=self._remove_widget_after_ani)
-                ani.start(self.preview_label)
-                ani.start(self.controls)
-
-                # set the background to normal
-                x, y = self._calc_bg_pos()
-                ani = Animation(
-                    y=y + 100,
-                    x=x,
-                    t='in_out_quad',
-                    duration=.5)
-
-                ani.start(self.background)
-
-                # show the scrollview
-                x, y = self._scrollview_pos[0], self.scrollview.original_y
-                ani = Animation(
-                    x=x,
-                    y=y,
-                    t='in_out_quad',
-                    opacity=1.0,
-                    duration=.5)
-
-                ani.start(self.scrollview)
-
-                # hide the focus widget
-                ani = Animation(
-                    y=-1000,
-                    x=self.focus_widget.x + OFFSET,
-                    size=self.small_preview_size,
-                    t='in_out_quad',
-                    duration=.5)
-
-                ani &= Animation(
-                    opacity=0.0,
-                    duration=.5)
-
-                ani.start(self.focus_widget)
+                self.change_state('normal')
 
             # show the focus widget
             elif self.focus_widget is not widget:
                 if widget is self.preview_widget:
                     return False
 
-                self.scrollview_hidden = True
-                self.locked = True
-
-                # schedule a unlock
-                Clock.schedule_once(self.unlock, .5)
-
-                # cancel all running animation
-                Animation.cancel_all(self.scrollview)
-                Animation.cancel_all(self.background)
-                Animation.cancel_all(self.focus_widget)
-
-                # set the focus widget to have the same image as the one picked
-                # do a bit of mangling to get a more detailed image
-                thumb, detail, original, comp = self.get_paths()
-                filename = os.path.join(detail, os.path.basename(widget.source))
-                original = os.path.join(original,
-                                        os.path.basename(widget.source))
-
-                # get a medium resolution image for the preview
-                self.focus_widget.source = filename
-
-                # show the controls
-                self.controls = SharingControls()
-                self.controls.filename = original
-                self.controls.size_hint = .40, 1
-                self.controls.opacity = 0
-
-                ani = Animation(
-                    opacity=1.0,
-                    duration=.3)
-
-                self.preview_label.pos_hint = {'x': .25, 'y': .47}
-
-                ani.start(self.preview_label)
-                ani.start(self.controls)
-
-                # set the z to something high to ensure it is on top
-                self.add_widget(self.controls)
-
-                # hide the scrollview
-                ani = Animation(
-                    x=0,
-                    y=-1000,
-                    t='in_out_quad',
-                    opacity=0.0,
-                    duration=.7)
-
-                ani.start(self.scrollview)
-
-                # start a simple animation on the background
-                ani = Animation(
-                    y=self.background.y - 100,
-                    x=-self.background.width / 2.5,
-                    t='in_out_quad',
-                    duration=.5)
-
-                ani += Animation(
-                    x=0,
-                    duration=480)
-
-                ani.start(self.background)
-
-                hh = (screen_height - self.large_preview_size[1]) / 2
-
-                # show the focus widget
-                ani = Animation(
-                    opacity=1.0,
-                    y=screen_height - self.large_preview_size[1] - hh,
-                    x=self.focus_widget.x - OFFSET,
-                    size=self.large_preview_size,
-                    t='in_out_quad',
-                    duration=.5)
-
-                ani &= Animation(
-                    opacity=1.0,
-                    duration=.5)
-
-                ani.start(self.focus_widget)
+                self.change_state('focus')
 
     def on_picker_scroll(self, *arg):
         # this is the left/right parallax animation
@@ -458,6 +481,5 @@ class PickerScreen(Screen):
 
     def _calc_bg_pos(self):
         bkg_w = self.background.width * .3
-
         return (-self.scrollview.scroll_x * bkg_w - self.width / 2,
                 self.background.pos[1])
