@@ -243,8 +243,9 @@ class PickerScreen(Screen):
                 self.preview_widget.allow_stretch = True
                 self.preview_widget.size_hint = None, None
                 self.preview_widget.size = (1280, 1024)
-                self.preview_widget.x = 0
-                self.preview_widget.y = self.preview_widget.height
+                self.preview_widget.x = (1280/2)-(self.preview_widget.width/2)
+                self.preview_widget.y = -self.preview_widget.height
+                #self.preview_widget.opacity = 0.0
                 self.preview_widget.bind(on_move=on_move)
                 self.layout.add_widget(self.preview_widget)
             else:
@@ -260,6 +261,7 @@ class PickerScreen(Screen):
         self.preview_exit.height = 175
         self.preview_exit.x = 1280
         self.preview_exit.y = (1024 / 2) - (self.preview_exit.height / 2)
+        self.preview_widget.opacity = 0.0
         self.layout.add_widget(self.preview_exit)
 
         #   P R E V I E W   L A B E L
@@ -349,7 +351,7 @@ class PickerScreen(Screen):
             # schedule a unlock
             Clock.schedule_once(self.unlock, .5)
 
-            # cancel all running animation
+            # cancel all running animations
             Animation.cancel_all(self.controls)
             Animation.cancel_all(self.scrollview)
             Animation.cancel_all(self.background)
@@ -367,7 +369,6 @@ class PickerScreen(Screen):
             ani = Animation(
                 opacity=0.0,
                 duration=.3)
-
             ani.bind(on_complete=self._remove_widget_after_ani)
             ani.start(self.preview_label)
             ani.start(self.controls)
@@ -390,7 +391,6 @@ class PickerScreen(Screen):
                 t='in_out_quad',
                 opacity=1.0,
                 duration=.5)
-
             ani.start(self.scrollview)
 
             # hide the focus widget
@@ -418,7 +418,7 @@ class PickerScreen(Screen):
             # schedule a unlock
             Clock.schedule_once(self.unlock, .5)
 
-            # cancel all running animation
+            # cancel all running animations
             Animation.cancel_all(self.scrollview)
             Animation.cancel_all(self.background)
             Animation.cancel_all(self.focus_widget)
@@ -442,11 +442,10 @@ class PickerScreen(Screen):
             ani = Animation(
                 opacity=1.0,
                 duration=.3)
-
-            self.preview_label.pos_hint = {'x': .25, 'y': .47}
-
             ani.start(self.preview_label)
             ani.start(self.controls)
+
+            self.preview_label.pos_hint = {'x': .25, 'y': .47}
 
             # set the z to something high to ensure it is on top
             self.add_widget(self.controls)
@@ -458,7 +457,6 @@ class PickerScreen(Screen):
                 t='in_out_quad',
                 opacity=0.0,
                 duration=.7)
-
             ani.start(self.scrollview)
 
             # start a simple animation on the background
@@ -467,11 +465,9 @@ class PickerScreen(Screen):
                 x=-self.background.width / 2.5,
                 t='in_out_quad',
                 duration=.5)
-
             ani += Animation(
                 x=0,
                 duration=480)
-
             ani.start(self.background)
 
             hh = (screen_height - self.large_preview_size[1]) / 2
@@ -484,22 +480,74 @@ class PickerScreen(Screen):
                 size=self.large_preview_size,
                 t='in_out_quad',
                 duration=.5)
-
             ani &= Animation(
                 opacity=1.0,
                 duration=.5)
-
             ani.start(self.focus_widget)
 
         #=====================================================================
         #  N O R M A L  =>  P R E V I E W
         elif transition == ('normal', 'preview'):
-            pass
+
+            # cancel all running animations
+            Animation.cancel_all(self.scrollview)
+            Animation.cancel_all(self.background)
+            Animation.cancel_all(self.focus_widget)
+            Animation.cancel_all(self.preview_exit)
+            Animation.cancel_all(self.preview_widget)
+
+            # show the preview exit button
+            ani = Animation(
+                x=1280 - self.preview_exit.width,
+                t='in_out_quad',
+                duration=.5)
+            ani &= Animation(
+                opacity=1.0,
+                duration=.5)
+            ani.start(self.preview_exit)
+
+            # show the camera preview
+            ani = Animation(
+                y=0,
+                t='in_out_quad',
+                duration=.5)
+            ani &= Animation(
+                opacity=1.0,
+                duration=.5)
+            ani.start(self.preview_widget)
 
         #=====================================================================
         #  P R E V I E W  =>  N O R M A L
         elif transition == ('preview', 'normal'):
-            pass
+
+            # cancel all running animations
+            Animation.cancel_all(self.scrollview)
+            Animation.cancel_all(self.background)
+            Animation.cancel_all(self.focus_widget)
+            Animation.cancel_all(self.preview_exit)
+            Animation.cancel_all(self.preview_widget)
+
+            # hide the preview exit button
+            ani = Animation(
+                x=1280,
+                t='in_out_quad',
+                duration=.5)
+            ani &= Animation(
+                opacity=0.0,
+                duration=.5)
+            ani.start(self.preview_exit)
+
+            # hide the camera preview
+            ani = Animation(
+                y=-self.preview_widget.height,
+                t='in_out_quad',
+                duration=.5)
+            ani &= Animation(
+                opacity=0.0,
+                duration=.5)
+            ani.start(self.preview_widget)
+
+
 
     def on_image_touch(self, widget, mouse_point):
         """ called when any image is touched
