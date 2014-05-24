@@ -226,6 +226,7 @@ class PickerScreen(Screen):
                 return
 
             im = im.transpose(PIL.Image.FLIP_TOP_BOTTOM)
+            print im.mode
             imdata = ImageData(im.size[0],
                                im.size[1],
                                im.mode,
