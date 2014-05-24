@@ -231,7 +231,7 @@ class PickerScreen(Screen):
             if self.preview_widget is None:
                 self.preview_widget = Image(texture=texture, nocache=True)
                 self.preview_widget.allow_stretch = True
-                self.preview_widget.x = center_x - OFFSET
+                self.preview_widget.x = 0
                 self.preview_widget.y = 0
                 self.preview_widget.size_hint = None, None
                 self.preview_widget.size = (1280, 1024)
