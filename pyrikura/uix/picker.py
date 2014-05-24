@@ -16,6 +16,7 @@ from kivy.uix.slider import Slider
 
 from six.moves import cStringIO, queue
 import PIL
+import PIL.Image
 import os
 import pygame
 import threading
@@ -78,7 +79,7 @@ class PreviewGetThread(threading.Thread):
         download_preview = self.iface.download_preview
         queue_put = self.queue.put
         interval = pkConfig.getfloat('camera', 'preview-interval')
-        pil_open = PIL.image.open
+        pil_open = PIL.Image.open
 
         while self._running:
             time.sleep(interval)
