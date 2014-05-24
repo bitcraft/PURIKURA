@@ -87,8 +87,14 @@ class PreviewGetThread(threading.Thread):
 
             if result:
                 data = cStringIO(str(data))
-                image = pil_open(data)
-                queue_put(image)
+                im = pil_open(data)
+                im = im.transpose(PIL.Image.FLIP_TOP_BOTTOM)
+                imdata = ImageData(im.size[0],
+                                   im.size[1],
+                                   im.mode.lower(),
+                                   im.tostring())
+                texture = Texture.create_from_data(imdata)
+                queue_put(texture)
 
 
 class PreviewHandler(object):
@@ -221,16 +227,9 @@ class PickerScreen(Screen):
         # offloading the image loading into another thread
         def update_preview(*args, **kwargs):
             try:
-                im = self.preview_queue.get(False)
+                texture = self.preview_queue.get(False)
             except queue.Empty:
                 return
-
-            im = im.transpose(PIL.Image.FLIP_TOP_BOTTOM)
-            imdata = ImageData(im.size[0],
-                               im.size[1],
-                               im.mode.lower(),
-                               im.tostring())
-            texture = Texture.create_from_data(imdata)
 
             if self.preview_widget is None:
                 max = pkConfig.getint('arduino', 'max-tilt')
