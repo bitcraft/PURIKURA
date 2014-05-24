@@ -60,7 +60,7 @@ class ArduinoHandler(object):
                         break
             logger.debug('closing connection')
             try:
-                conn.send(str(255) + '\r\n')
+                conn.send(str(-1) + '\r\n')
                 conn.close()
             except:
                 pass
