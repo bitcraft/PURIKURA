@@ -151,7 +151,9 @@ class Session:
 
         comp = p('Composer', template=template_path)
 
-        #spool.subscribe(comp)
+        if Config.getboolean('kiosk', 'print'):
+            spool.subscribe(comp)
+
         arch2.subscribe(comp)
         thumb1.subscribe(arch1)
         thumb2.subscribe(arch1)
