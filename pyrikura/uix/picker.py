@@ -285,7 +285,7 @@ class PickerScreen(Screen):
                                 pkConfig.getfloat('camera', 'preview-interval'))
 
         # schedule a callback to check for new images
-        Clock.schedule_interval(self.scan, 1)
+        Clock.schedule_interval(self.scan, 5)
 
     def scan(self, dt):
         for filename in self.get_images():
