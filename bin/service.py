@@ -243,8 +243,8 @@ class Arduino(LineReceiver):
             return False
         else:
             logger.debug('sending: %s %s', cmd, arg)
-            self.transport.write(cmd, arg)
-            #data = chr(cmd) + chr(arg)
+            data = chr(cmd) + chr(arg)
+            self.transport.write(data)
             #reactor.callFromThread(write_transport, data)
             return True
 
