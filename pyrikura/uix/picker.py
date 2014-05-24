@@ -272,7 +272,7 @@ class PickerScreen(Screen):
                         self.arduino_handler.set_camera_tilt(value)
 
                 self.preview_widget = Image(texture=texture, nocache=True)
-                self.preview_widget.bind(on_touch_move=on_move)
+                self.preview_widget.bind(on_touch_move=on_touch_move)
                 self.preview_widget.allow_stretch = True
                 self.preview_widget.size_hint = None, None
                 self.preview_widget.size = (1280, 1024)
