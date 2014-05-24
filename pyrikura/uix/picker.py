@@ -121,6 +121,12 @@ class ArduinoHandler(object):
         self.iface.open_arduino()
 
     def set_camera_tilt(self, value):
+        try:
+            value = int(value)
+        except ValueError:
+            logger.debug('cannot accept %s for camera tilt', value)
+            return
+
         self.iface.set_camera_tilt(value)
 
 

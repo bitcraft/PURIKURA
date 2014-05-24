@@ -230,6 +230,22 @@ class PhotoboothService(dbus.service.Object):
         """
         self._reset_camera()
 
+    @dbus.service.method(bus_name, out_signature='b')
+    def open_arduino(self):
+        """ Open the arduino for use
+
+        Safe to be called more that once or while arduino is already open
+        """
+        return self._open_arduino()
+
+    @dbus.service.method(bus_name, out_signature='b')
+    def close_arduino(self):
+        """ Close the arduino
+
+        Safe to be called more that once or while arduino is already closed
+        """
+        return self._close_arduino()
+
     @dbus.service.method(bus_name, in_signature='i', out_signature='b')
     def set_camera_tilt(self, value):
         """ Set camera tilt
@@ -241,7 +257,7 @@ class PhotoboothService(dbus.service.Object):
         TODO: some kind of smoothing.
         """
         with self._arduino_lock:
-            self._arduino_handler.set_camera_tilt(int(value))
+            self._arduino_handler.set_camera_tilt(value)
 
 
 if __name__ == '__main__':
