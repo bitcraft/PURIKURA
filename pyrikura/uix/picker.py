@@ -234,7 +234,7 @@ class PickerScreen(Screen):
                 self.preview_widget.x = center_x - OFFSET
                 self.preview_widget.y = 0
                 self.preview_widget.size_hint = None, None
-                self.preview_widget.size = (600, 600)
+                self.preview_widget.size = (1280, 1024)
                 self.preview_widget.bind(on_touch_down=self.on_image_touch)
                 self.layout.add_widget(self.preview_widget)
             else:

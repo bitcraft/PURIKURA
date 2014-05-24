@@ -2,13 +2,12 @@
 """
 This program is the nuts and bolts of the photo booth.
 
-It uses the workflow/broker system to make a photobooth.  In relationship with
-then entire project, this is all that is needed to accept input, take photos,
+It uses a workflow/broker hack to make a photobooth.  In relationship with
+the entire project, this is all that is needed to accept input, take photos,
 compose and print them.  The kiosk app can be thought of as a pretty
 touch-enabled file browser.
 
-This, on the other hand, creates all the images that you can browse with in the
-kiosk app.
+This creates all the images that you can browse with in the kiosk app.
 
 This configuration is used in my professional photo booth service and uses an
 arduino for input.  Free free to customize.
