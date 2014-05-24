@@ -185,6 +185,7 @@ class PickerScreen(Screen):
     def on_pre_enter(self):
         # set up the 'normal' state
 
+        # these are pulled from the .kv format file
         self.layout = search(self, 'layout')
         self.background = search(self, 'background')
         self.scrollview = search(self, 'scrollview')
@@ -214,6 +215,13 @@ class PickerScreen(Screen):
         def set_camera_tilt(widget, value):
             self.arduino_handler.set_camera_tilt(value)
 
+        # this handles pulling the preview images from the dbus service
+        # queueing them and updaing the widget's texture
+        self.preview_queue = queue.Queue(maxsize=10)
+        self.preview_handler = PreviewHandler(self.preview_queue)
+        self.preview_handler.start()
+        self.preview_widget = None   # will be created on first image
+
         #   P R E V I E W   B U T T O N
         # the preview button is used to show and hide the camera preview
         def button_press(widget):
@@ -235,52 +243,6 @@ class PickerScreen(Screen):
         self.focus_widget.size = self.small_preview_size
         self.focus_widget.bind(on_touch_down=self.on_image_touch)
         self.layout.add_widget(self.focus_widget)
-
-        # this handles pulling the preview images from the dbus service
-        # queueing them and updaing the widget's texture
-        self.preview_queue = queue.Queue()
-        self.preview_handler = PreviewHandler(self.preview_queue)
-        self.preview_handler.start()
-        self.preview_widget = None   # will be created on first image
-
-        #   P R E V I E W   W I D G E T
-        # handles updating the widget.  pygame doesn't allow creating surfaces
-        # in the main thread, so it must be done here.
-        # in the future, using another library, such as pil, may allow
-        # offloading the image loading into another thread
-        def update_preview(*args, **kwargs):
-            try:
-                imdata = self.preview_queue.get(False)
-            except queue.Empty:
-                return
-
-            # textures must be created in the main thread (pygame)
-            texture = Texture.create_from_data(imdata)
-
-            if self.preview_widget is None:
-                max = pkConfig.getint('arduino', 'max-tilt')
-                min = pkConfig.getint('arduino', 'min-tilt')
-
-                def on_touch_move(widget, touch):
-                    if widget.collide_point(touch.x, touch.y):
-                        self.tilt += touch.dpos[1] / 5
-                        if self.tilt < 0:
-                            self.tilt = 0
-                        if self.tilt > 180:
-                            self.tilt = 180
-                        value = int(round(self.tilt, 0))
-                        self.arduino_handler.set_camera_tilt(value)
-
-                self.preview_widget = Image(texture=texture, nocache=True)
-                self.preview_widget.bind(on_touch_move=on_touch_move)
-                self.preview_widget.allow_stretch = True
-                self.preview_widget.size_hint = None, None
-                self.preview_widget.size = (1280, 1024)
-                self.preview_widget.x = (1280/2)-(self.preview_widget.width/2)
-                self.preview_widget.y = -self.preview_widget.height
-                self.layout.add_widget(self.preview_widget)
-            else:
-                self.preview_widget.texture = texture
 
         #   E X I T   B U T T O N
         # this button is used to exit the large camera preview window
@@ -319,10 +281,6 @@ class PickerScreen(Screen):
         # locked and loaded  =D
         self.locked = False
         self.loaded = set()
-
-        # schedule an interval to update the preview widget
-        Clock.schedule_interval(update_preview,
-                                pkConfig.getfloat('camera', 'preview-interval'))
 
         # schedule a callback to check for new images
         Clock.schedule_interval(self.scan, 1)
@@ -388,10 +346,6 @@ class PickerScreen(Screen):
         if transition == ('focus', 'normal'):
             self.scrollview_hidden = False
 
-            # schedule a unlock
-            self.locked = True
-            Clock.schedule_once(self.unlock, .5)
-
             # cancel all running animations
             Animation.cancel_all(self.controls)
             Animation.cancel_all(self.scrollview)
@@ -456,15 +410,15 @@ class PickerScreen(Screen):
 
             ani.start(self.focus_widget)
 
+            # schedule a unlock
+            self.locked = True
+            Clock.schedule_once(self.unlock, .5)
+
         #=====================================================================
         #  N O R M A L  =>  F O C U S
         elif transition == ('normal', 'focus'):
             widget = kwargs['widget']
             self.scrollview_hidden = True
-
-            # schedule a unlock
-            self.locked = True
-            Clock.schedule_once(self.unlock, .5)
 
             # cancel all running animations
             Animation.cancel_all(self.scrollview)
@@ -535,22 +489,22 @@ class PickerScreen(Screen):
                 duration=.5)
             ani.start(self.focus_widget)
 
+            # schedule a unlock
+            self.locked = True
+            Clock.schedule_once(self.unlock, .5)
+
         #=====================================================================
         #  N O R M A L  =>  P R E V I E W
         elif transition == ('normal', 'preview'):
             self.scrollview_hidden = True
-
-            # schedule a unlock
-            self.locked = True
-            Clock.schedule_once(self.unlock, .5)
 
             # cancel all running animations
             Animation.cancel_all(self.scrollview)
             Animation.cancel_all(self.background)
             Animation.cancel_all(self.focus_widget)
             Animation.cancel_all(self.preview_exit)
-            Animation.cancel_all(self.preview_widget)
             Animation.cancel_all(self.preview_button)
+            Animation.cancel_all(self.preview_widget)
 
             # show the preview exit button
             ani = Animation(
@@ -582,14 +536,18 @@ class PickerScreen(Screen):
             ani.start(self.scrollview)
             ani.start(self.preview_button)
 
+            # schedule a unlock
+            self.locked = True
+            Clock.schedule_once(self.unlock, .5)
+
+            # schedule an interval to update the preview widget
+            interval = pkConfig.getfloat('camera', 'preview-interval')
+            Clock.schedule_interval(self.update_preview, interval)
+
         #=====================================================================
         #  P R E V I E W  =>  N O R M A L
         elif transition == ('preview', 'normal'):
             self.scrollview_hidden = False
-
-            # schedule a unlock
-            self.locked = True
-            Clock.schedule_once(self.unlock, .5)
 
             # cancel all running animations
             Animation.cancel_all(self.scrollview)
@@ -645,6 +603,49 @@ class PickerScreen(Screen):
                 opacity=1.0,
                 duration=.5)
             ani.start(self.preview_button)
+
+            # schedule a unlock
+            self.locked = True
+            Clock.schedule_once(self.unlock, .5)
+
+            # unschedule the preview updater
+            Clock.unschedule(self.update_preview)
+
+    #   P R E V I E W   W I D G E T
+    # handles updating the widget in another thread
+    def update_preview(self, *args, **kwargs):
+        try:
+            imdata = self.preview_queue.get(False)
+        except queue.Empty:
+            return
+
+        # textures must be created in the main thread (pygame)
+        texture = Texture.create_from_data(imdata)
+
+        if self.preview_widget is None:
+            tilt_max = pkConfig.getint('arduino', 'max-tilt')
+            tilt_min = pkConfig.getint('arduino', 'min-tilt')
+
+            def on_touch_move(widget, touch):
+                if widget.collide_point(touch.x, touch.y):
+                    self.tilt += touch.dpos[1] / 5
+                    if self.tilt < tilt_min:
+                        self.tilt = tilt_min
+                    if self.tilt > tilt_max:
+                        self.tilt = tilt_max
+                    value = int(round(self.tilt, 0))
+                    self.arduino_handler.set_camera_tilt(value)
+
+            self.preview_widget = Image(texture=texture, nocache=True)
+            self.preview_widget.bind(on_touch_move=on_touch_move)
+            self.preview_widget.allow_stretch = True
+            self.preview_widget.size_hint = None, None
+            self.preview_widget.size = (1280, 1024)
+            self.preview_widget.x = (1280/2)-(self.preview_widget.width/2)
+            self.preview_widget.y = -self.preview_widget.height
+            self.layout.add_widget(self.preview_widget)
+        else:
+            self.preview_widget.texture = texture
 
     def on_image_touch(self, widget, touch):
         """ called when any image is touched

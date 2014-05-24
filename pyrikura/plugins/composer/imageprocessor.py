@@ -45,8 +45,6 @@ def process_image(raw_queue, ready_queue, global_config):
         this_config['area'] = (x, y, w, h)
         ready_queue.put(this_config)
 
-        #raw_areas.append((x,y,w,h))
-
     # REWRITE THIS!
     for area in raw_areas:
         if global_config['units'] == 'pixels':
