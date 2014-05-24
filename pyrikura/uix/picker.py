@@ -178,6 +178,7 @@ class PickerScreen(Screen):
         self.loaded = None
         self.controls = None
         self.state = 'normal'
+        self.tilt = 90
 
         self.controls_lock = threading.Lock()
 
@@ -261,7 +262,14 @@ class PickerScreen(Screen):
                 min = pkConfig.getint('arduino', 'min-tilt')
 
                 def on_move(widget, touch):
-                    print touch
+                    if widget.collide_point(touch.x, touch.y):
+                        self.tilt += touch.dpos[1] / 8
+                        if self.tilt < 0:
+                            self.tilt = 0
+                        if self.tilt > 180:
+                            self.tilt = 180
+                        value = int(round(self.tilt, 0))
+                        self.arduino_handler.set_camera_tilt(value)
 
                 self.preview_widget = Image(texture=texture, nocache=True)
                 self.preview_widget.allow_stretch = True
@@ -280,7 +288,7 @@ class PickerScreen(Screen):
             if widget.collide_point(touch.x, touch.y):
                 self.change_state('normal')
         self.preview_exit = Image(source=image_path('chevron-right.gif'))
-        self.preview_exit.bind(on_touch=exit_preview)
+        self.preview_exit.bind(on_touch_down=exit_preview)
         self.preview_exit.allow_stretch = True
         self.preview_exit.keep_ratio = False
         self.preview_exit.size_hint = None, None
