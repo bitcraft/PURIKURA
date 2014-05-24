@@ -217,7 +217,6 @@ class PickerScreen(Screen):
         # the preview button is used to show and hide the camera preview
         def button_press(widget):
             self.change_state('preview')
-
         self.preview_button = Button(text='show camera', font_size=20)
         self.preview_button.bind(on_press=button_press)
         self.preview_button.size_hint = 1, .1
@@ -279,6 +278,7 @@ class PickerScreen(Screen):
         # this button is used to exit the large camera preview window
         def exit_preview(widget):
             self.change_state('normal')
+        self.preview_exit.bind(on_press=exit_preview)
         self.preview_exit = Image(source=image_path('chevron-right.gif'))
         self.preview_exit.allow_stretch = True
         self.preview_exit.keep_ratio = False
@@ -287,7 +287,6 @@ class PickerScreen(Screen):
         self.preview_exit.height = 175
         self.preview_exit.x = 1280
         self.preview_exit.y = (1024 / 2) - (self.preview_exit.height / 2)
-        self.preview_exit.bind(on_press=exit_preview)
         self.layout.add_widget(self.preview_exit)
 
         #   P R E V I E W   L A B E L
@@ -371,13 +370,15 @@ class PickerScreen(Screen):
         self.state = new_state
         transition = (old_state, self.state)
 
+        logger.debug('transitioning state %s', transition)
+
         #====================================================================
         #  F O C U S  =>  N O R M A L
         if transition == ('focus', 'normal'):
             self.scrollview_hidden = False
-            self.locked = True
 
             # schedule a unlock
+            self.locked = True
             Clock.schedule_once(self.unlock, .5)
 
             # cancel all running animations
@@ -449,9 +450,9 @@ class PickerScreen(Screen):
         elif transition == ('normal', 'focus'):
             widget = kwargs['widget']
             self.scrollview_hidden = True
-            self.locked = True
 
             # schedule a unlock
+            self.locked = True
             Clock.schedule_once(self.unlock, .5)
 
             # cancel all running animations
@@ -527,9 +528,9 @@ class PickerScreen(Screen):
         #  N O R M A L  =>  P R E V I E W
         elif transition == ('normal', 'preview'):
             self.scrollview_hidden = True
-            self.locked = True
 
             # schedule a unlock
+            self.locked = True
             Clock.schedule_once(self.unlock, .5)
 
             # cancel all running animations
@@ -574,9 +575,9 @@ class PickerScreen(Screen):
         #  P R E V I E W  =>  N O R M A L
         elif transition == ('preview', 'normal'):
             self.scrollview_hidden = False
-            self.locked = True
 
             # schedule a unlock
+            self.locked = True
             Clock.schedule_once(self.unlock, .5)
 
             # cancel all running animations
@@ -610,9 +611,6 @@ class PickerScreen(Screen):
     def on_image_touch(self, widget, mouse_point):
         """ called when any image is touched
         """
-        if self.locked:
-            return
-
         if widget.collide_point(mouse_point.x, mouse_point.y):
             # hide the focus widget
             if self.scrollview_hidden:
