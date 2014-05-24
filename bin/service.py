@@ -229,7 +229,7 @@ class Arduino(LineReceiver):
         self.lock = threading.Lock()
 
     def process(self, cmd, arg):
-        logger.debug('processing: %s %s', cmd, arg)
+        logger.debug('processing for arduino: %s %s', cmd, arg)
         if cmd == 1 and arg == 2:
             self.session.start()
 
@@ -242,7 +242,7 @@ class Arduino(LineReceiver):
             logger.debug('want to send, but in session: %s %s', cmd, arg)
             return False
         else:
-            logger.debug('sending: %s %s', cmd, arg)
+            logger.debug('sending to arduino: %s %s', cmd, arg)
             data = chr(cmd) + chr(arg)
             self.transport.write(data)
             #reactor.callFromThread(write_transport, data)

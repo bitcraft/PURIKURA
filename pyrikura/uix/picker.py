@@ -107,11 +107,11 @@ class ArduinoHandler(object):
                     _value = self.queue.get(timeout=1)
                 except queue.Empty:
                     break
-                with self.lock:
+                else:
                     conn.send(str(int(_value)))
-                self.queue.task_done()
-            self.thread = None
+                    self.queue.task_done()
             conn.close()
+            self.thread = None
 
         try:
             self.queue.put(value, block=False)
