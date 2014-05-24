@@ -18,7 +18,6 @@ from six.moves import cStringIO, queue
 import os
 import pygame
 import threading
-import socket
 import time
 import dbus
 import logging
@@ -78,15 +77,17 @@ class PreviewHandlerThread(threading.Thread):
         download_preview = self.iface.download_preview
         queue_put = self.queue.put
         lock = self.lock
+        interval = pkConfig.getfloat('camera', 'preview-interval')
 
         while self._running:
             with lock:
-                time.sleep(0.05)
                 result, data = download_preview(byte_arrays=True)
 
             if result:
                 data = cStringIO(str(data))
                 queue_put(data)
+
+            time.sleep(interval)
 
 
 class PreviewHandler(object):
@@ -97,6 +98,7 @@ class PreviewHandler(object):
 
     def start(self):
         if self.thread is None:
+            logger.debug('starting the preview handler')
             self.thread = PreviewHandlerThread(self.queue, self.lock)
             self.thread.start()
         else:
@@ -106,56 +108,20 @@ class PreviewHandler(object):
         if self.thread is None:
             logger.debug('want to stop preview thread, but is not running')
         else:
+            logger.debug('stopping the preview handler')
             self.thread.stop()
             self.thread = None
 
 
 class ArduinoHandler(object):
     def __init__(self):
-        self.queue = queue.Queue(maxsize=4)
-        self.lock = threading.Lock()
-        self.thread = None
+        bus = dbus.SessionBus()
+        pb_obj = bus.get_object(dbus_name, dbus_path)
+        self.iface = dbus.Interface(pb_obj, dbus_interface=dbus_name)
+        self.iface.open_arduino()
 
-    def set_camera_tilt(self, widget, value):
-        """ Set camera tilt
-
-        TODO: some kind of smoothing.
-        """
-        def send_message():
-            host = 'localhost'
-            port = pkConfig.getint('arduino', 'tcp-port')
-            conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            conn.connect((host, port))
-            while 1:
-                try:
-                    logger.debug('waiting for value...')
-                    _value = self.queue.get(timeout=1)
-                except queue.Empty:
-                    logger.debug('thread timeout')
-                    break
-                else:
-                    conn.send(str(int(_value)))
-                    self.queue.task_done()
-            logger.debug('end of thread')
-            conn.close()
-            self.thread = None
-
-        try:
-            logger.debug('adding value to arduino queue')
-            self.queue.put(value, block=False)
-        except queue.Full:
-            logger.debug('arduino queue is full')
-            try:
-                self.queue.get()
-                self.queue.put(value, block=False)
-            except (queue.Full, queue.Empty):
-                logger.debug('got some error with arduino queue')
-                pass
-
-        if self.thread is None:
-            logger.debug('starting socket thread')
-            self.thread = threading.Thread(target=send_message)
-            self.thread.start()
+    def set_camera_tilt(self, value):
+        self.iface.set_camera_tilt(value)
 
 
 class PickerScreen(Screen):
@@ -206,7 +172,10 @@ class PickerScreen(Screen):
                                   value=pkConfig.getint('arduino', 'tilt'),
                                   orientation='vertical')
 
-        self.tilt_slider.bind(value=self.arduino_handler.set_camera_tilt)
+        def set_camera_tilt(widget, value):
+            self.arduino_handler.set_camera_tilt(value)
+
+        self.tilt_slider.bind(value=set_camera_tilt)
         self.layout.add_widget(self.tilt_slider)
 
         # defaults to the hidden state
@@ -265,7 +234,8 @@ class PickerScreen(Screen):
             else:
                 self.preview_widget.texture = texture
 
-        Clock.schedule_interval(update_preview, .05)
+        Clock.schedule_interval(update_preview,
+                                pkConfig.getfloat('camera', 'preview-interval'))
 
         #pb_iface.connect_to_signal('preview_updated', touch_preview)
 

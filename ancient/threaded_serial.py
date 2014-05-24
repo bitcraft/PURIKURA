@@ -1,6 +1,6 @@
 __author__ = 'Leif'
 
-    @dbus.service.method(bus_name, in_signature='i', out_signature='b')
+@dbus.service.method(bus_name, in_signature='i', out_signature='b')
     def set_camera_tilt(self, value):
         """ Set camera tilt
 
