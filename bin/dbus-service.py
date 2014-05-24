@@ -177,6 +177,10 @@ class PhotoboothService(dbus.service.Object):
 
         Returns boolean of succeeded or not
         """
+        if self._camera is None:
+            logger.debug('want to capture preview, but camera is not setup')
+            return False
+
         with self._camera_lock:
             try:
                 self._camera.capture_preview(self.preview_filename)
@@ -194,6 +198,10 @@ class PhotoboothService(dbus.service.Object):
 
         Returns boolean of succeeded or not
         """
+        if self._camera is None:
+            logger.debug('want to capture, but camera is not setup')
+            return False
+
         with self._camera_lock:
             try:
                 self._camera.capture_image(self.capture_filename)
@@ -215,6 +223,10 @@ class PhotoboothService(dbus.service.Object):
 
         Image data will be an empty string if capture is not successful
         """
+        if self._camera is None:
+            logger.debug('want to get preview, but camera is not setup')
+            return False
+
         with self._camera_lock:
             try:
                 data = self._camera.capture_preview().get_data()
