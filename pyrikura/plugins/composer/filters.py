@@ -2,8 +2,13 @@
 these filters will always return a filename, not image class
 do not import any imagemagick libraries (for now)
 """
+import sys
+sys.path.append('/home/mjolnir/git/PURIKURA/')
+
 import subprocess
 import os
+
+from pyrikura.config import Config
 
 
 def execute(cmd):
@@ -60,9 +65,11 @@ def toaster(filename, w, h, output=None):
     #scratch = colortone(filename, '#220000', 100, 0, output=scratch)
     scratch = colortone(filename, '#110000', 105, 0, output=scratch)
 
+    brightness = Config.get('postprocessing', 'brightness')
+
     # contrast
-    cmd = 'convert {} -modulate 300,105,100 {}'.format(
-        scratch, scratch
+    cmd = 'convert {} -modulate {},105,100 {}'.format(
+        brightness, scratch, scratch
     )
 
     execute(cmd)
