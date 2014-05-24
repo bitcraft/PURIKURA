@@ -187,16 +187,10 @@ class PickerScreen(Screen):
         # the center of the preview image
         center_x = screen_width - (self.large_preview_size[0] / 2) - 16
 
+        # stuff for the arduino/tilt
         self.arduino_handler = ArduinoHandler()
-        self.tilt_slider = Slider(max=pkConfig.getint('arduino', 'max-tilt'),
-                                  min=pkConfig.getint('arduino', 'min-tilt'),
-                                  value=pkConfig.getint('arduino', 'tilt'),
-                                  orientation='vertical')
-
         def set_camera_tilt(widget, value):
             self.arduino_handler.set_camera_tilt(value)
-        self.tilt_slider.bind(value=set_camera_tilt)
-        self.layout.add_widget(self.tilt_slider)
 
         # the focus widget is the large preview image
         self.focus_widget = Image(source=image_path('loading.gif'))
@@ -237,6 +231,8 @@ class PickerScreen(Screen):
             texture = Texture.create_from_data(imgdata)
 
             if self.preview_widget is None:
+                max=pkConfig.getint('arduino', 'max-tilt')
+                min=pkConfig.getint('arduino', 'min-tilt')
                 self.preview_widget = Image(texture=texture, nocache=True)
                 self.preview_widget.allow_stretch = True
                 self.preview_widget.size_hint = None, None
@@ -474,9 +470,13 @@ class PickerScreen(Screen):
 
             ani.start(self.focus_widget)
 
+        #=====================================================================
+        #  N O R M A L  =>  P R E V I E W
         elif transition == ('normal', 'preview'):
             pass
 
+        #=====================================================================
+        #  P R E V I E W  =>  N O R M A L
         elif transition == ('preview', 'normal'):
             pass
 
