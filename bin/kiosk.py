@@ -127,5 +127,10 @@ if __name__ == '__main__':
     #app.manager.add_widget(SinglePicker(name='singlepicker'))
     app.manager.add_widget(CompositePicker(name='compositepicker'))
 
-    app.run()
+    try:
+        app.run()
+    except:
+        raise
+
+    sys.exit(0)
 
