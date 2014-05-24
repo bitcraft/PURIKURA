@@ -158,8 +158,11 @@ class PickerScreen(Screen):
         self.grid = None
         self.locked = None
         self.loaded = None
+        self.state = 'normal'
 
     def on_pre_enter(self):
+        # set up the 'normal' state
+
         self.layout = search(self, 'layout')
         self.background = search(self, 'background')
         self.scrollview = search(self, 'scrollview')
@@ -248,6 +251,9 @@ class PickerScreen(Screen):
         # this button is used to exit the large camera preview window
         self.preview_exit = Image(source=image_path('chevron-right.gif'))
         self.preview_exit.allow_stretch = True
+        self.preview_exit.keep_ratio = False
+        self.preview_exit.width = 100
+        self.preview_exit.height = 250
         self.preview_exit.x = 1280 - self.preview_exit.width
         self.preview_exit.y = (1024 / 2) - (self.preview_exit.height / 2)
         self.layout.add_widget(self.preview_exit)
@@ -311,8 +317,16 @@ class PickerScreen(Screen):
         screen_width = int(Config.get('graphics', 'width'))
         screen_height = int(Config.get('graphics', 'height'))
 
-        #  N O R M A L
-        if state == 'normal':
+        transition = None
+
+        new_state = state
+        old_state = self.state
+        self.state = new_state
+        transition = (old_state, self.state)
+
+        #=====================================================================
+        #  F O C U S  =>  N O R M A L
+        if transition == ('focus', 'normal'):
             self.scrollview_hidden = False
             self.locked = True
 
@@ -377,7 +391,9 @@ class PickerScreen(Screen):
 
             ani.start(self.focus_widget)
 
-        elif state == 'focus':
+        #=====================================================================
+        #  N O R M A L  =>  F O C U S
+        elif transition == ('normal', 'focus'):
             self.scrollview_hidden = True
             self.locked = True
 
@@ -456,6 +472,13 @@ class PickerScreen(Screen):
                 duration=.5)
 
             ani.start(self.focus_widget)
+
+        elif transition == ('normal', 'preview'):
+            pass
+
+        elif transition == ('preview', 'normal'):
+            pass
+
 
     def on_image_touch(self, widget, mouse_point):
         """ called when any image is touched
