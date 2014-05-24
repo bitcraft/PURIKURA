@@ -252,7 +252,7 @@ class PickerScreen(Screen):
         self.preview_exit = Image(source=image_path('chevron-right.gif'))
         self.preview_exit.allow_stretch = True
         self.preview_exit.keep_ratio = False
-        self.preview_widget.size_hint = None, None
+        self.preview_exit.size_hint = None, None
         self.preview_exit.width = 64
         self.preview_exit.height = 175
         self.preview_exit.x = 1280 - self.preview_exit.width
