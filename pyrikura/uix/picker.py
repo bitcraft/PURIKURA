@@ -252,10 +252,10 @@ class PickerScreen(Screen):
         self.preview_exit = Image(source=image_path('chevron-right.gif'))
         self.preview_exit.allow_stretch = True
         self.preview_exit.keep_ratio = False
-        self.preview_exit.width = 100
-        self.preview_exit.height = 250
+        self.preview_exit.width = 64
+        self.preview_exit.height = 100
         self.preview_exit.x = 1280 - self.preview_exit.width
-        self.preview_exit.y = (1024 / 2) - (self.preview_exit.height / 2)
+        self.preview_exit.y = (1024 / 2) + (self.preview_exit.height / 2)
         self.layout.add_widget(self.preview_exit)
 
         # the preview label is used with the focus widget is open
