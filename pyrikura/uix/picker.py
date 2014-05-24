@@ -261,7 +261,7 @@ class PickerScreen(Screen):
         self.preview_exit.height = 175
         self.preview_exit.x = 1280
         self.preview_exit.y = (1024 / 2) - (self.preview_exit.height / 2)
-        self.preview_widget.opacity = 0.0
+        #self.preview_exit.opacity = 0.0
         self.layout.add_widget(self.preview_exit)
 
         #   P R E V I E W   L A B E L
