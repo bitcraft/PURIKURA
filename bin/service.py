@@ -259,7 +259,7 @@ class Arduino(LineReceiver):
             raise
 
 
-class ArduinoProtocol(LineReceiver):
+class ServoServiceProtocol(LineReceiver):
     def lineReceived(self, data):
         logger.debug('got remote data %s', data)
         value = None
@@ -280,8 +280,8 @@ class ArduinoProtocol(LineReceiver):
             self.transport.loseConnection()
 
 
-class ArduinoFactory(protocol.ServerFactory):
-    protocol = ArduinoProtocol
+class ServoServiceFactory(protocol.ServerFactory):
+    protocol = ServoServiceProtocol
 
     def __init__(self, arduino):
         self._arduino = arduino
@@ -306,8 +306,8 @@ if __name__ == '__main__':
         raise
 
     # starting arduino listener
-    reactor.listenTCP(Config.getint('arduino', 'tcp-port'),
-                      ArduinoFactory(arduino))
+    #reactor.listenTCP(Config.getint('arduino', 'tcp-port'),
+    #                  ServoServiceFactory(arduino))
 
     logger.debug('starting reactor...')
     try:
