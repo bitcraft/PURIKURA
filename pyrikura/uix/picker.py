@@ -480,7 +480,7 @@ class PickerScreen(Screen):
             ani = Animation(
                 opacity=1.0,
                 y=screen_height - self.large_preview_size[1] - hh,
-                x=(1280 / 2) - 100,
+                x=(1280 / 2) - 250,
                 size=self.large_preview_size,
                 t='in_out_quad',
                 duration=.5)
