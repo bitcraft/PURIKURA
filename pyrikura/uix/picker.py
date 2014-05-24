@@ -205,15 +205,15 @@ class PickerScreen(Screen):
         #   S H O W   P R E V I E W   B U T T O N
         # the preview button is used to show and hide the camera preview
         def button_press(widget):
-            if widget.state == 'show':
-                widget.state = 'hide'
+            if widget.my_state == 'show':
+                widget.my_state = 'hide'
                 widget.text = 'hide camera'
-            elif widget.state == 'hide':
-                widget.state = 'show'
+            elif widget.my_state == 'hide':
+                widget.my_state = 'show'
                 widget.text = 'show camera'
 
         self.preview_button = Button(text='show camera', font_size=20)
-        self.preview_button.state = 'show'
+        self.preview_button.my_state = 'show'
         self.preview_button.bind(on_press=button_press)
         self.layout.add_widget(self.preview_button)
 
