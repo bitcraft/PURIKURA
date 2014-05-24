@@ -18,8 +18,9 @@ from six.moves import cStringIO, queue
 import os
 import pygame
 import threading
-import dbus
+import socket
 import time
+import dbus
 
 from ..config import Config as pkConfig
 from .sharing import SharingControls
@@ -55,13 +56,43 @@ def image_path(filename):
 
 class ArduinoHandler(object):
     def __init__(self):
-        import serial
-
-        self.arduino = serial.Serial(pkConfig.get('arduino', 'port'),
-                                     pkConfig.getint('arduino', 'baudrate'))
-    
-        self.queue = queue.Queue(maxsize=10)
+        self.queue = queue.Queue(maxsize=4)
+        self.lock = threading.Lock()
         self.thread = None
+
+    def set_camera_tilt(self, value):
+        """ Set camera tilt
+
+        TODO: some kind of smoothing.
+        """
+        def send_message():
+            host = 'localhost'
+            port = pkConfig.getint('arduino', 'tcp-port')
+            conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            conn.connect((host, port))
+            while 1:
+                try:
+                    _value = self.queue.get(timeout=1)
+                except queue.Empty:
+                    break
+                with self.lock:
+                    conn.send(str(int(_value)))
+                self.queue.task_done()
+            self.thread = None
+            conn.close()
+
+        try:
+            self.queue.put(value, block=False)
+        except queue.Full:
+            try:
+                self.queue.get()
+                self.queue.put(value, block=False)
+            except (queue.Full, queue.Empty):
+                pass
+
+        if self.thread is None:
+            self.thread = threading.Thread(target=send_message)
+            self.thread.start()
 
 
 class PickerScreen(Screen):
@@ -104,10 +135,7 @@ class PickerScreen(Screen):
                                   value=pkConfig.getint('arduino', 'tilt'),
                                   orientation='vertical')
 
-        def on_tilt(widget, value):
-            twisted_connection.write(int(value))
-
-        self.tilt_slider.bind(value=on_tilt)
+        self.tilt_slider.bind(value=self.arduino_handler.set_camera_tilt)
         self.layout.add_widget(self.tilt_slider)
 
         # defaults to the hidden state

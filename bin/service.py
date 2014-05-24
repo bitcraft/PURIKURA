@@ -294,7 +294,6 @@ class ArduinoFactory(protocol.ServerFactory):
 if __name__ == '__main__':
     logger.debug('starting')
     session = Session()
-
     arduino = Arduino(session)
 
     logger.debug('building new serial port listener...')
@@ -307,7 +306,9 @@ if __name__ == '__main__':
         raise
 
     # starting arduino listener
-    reactor.listenTCP(11079, ArduinoFactory(arduino))
+    reactor.listenTCP(Config.getint('arduino', 'tcp-port'),
+                      ArduinoFactory(arduino))
+
     logger.debug('starting reactor...')
     try:
         reactor.run()
