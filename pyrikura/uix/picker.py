@@ -76,9 +76,9 @@ class PreviewGetThread(threading.Thread):
 
     def run(self):
         self._running = True
+        interval = pkConfig.getfloat('camera', 'preview-interval')
         download_preview = self.iface.download_preview
         queue_put = self.queue.put
-        interval = pkConfig.getfloat('camera', 'preview-interval')
         pil_open = PIL.Image.open
 
         while self._running:
@@ -86,8 +86,7 @@ class PreviewGetThread(threading.Thread):
             result, data = download_preview(byte_arrays=True)
 
             if result:
-                data = cStringIO(str(data))
-                im = pil_open(data)
+                im = pil_open(cStringIO(str(data)))
                 im = im.transpose(PIL.Image.FLIP_TOP_BOTTOM)
                 imdata = ImageData(im.size[0],
                                    im.size[1],
@@ -230,18 +229,23 @@ class PickerScreen(Screen):
             except queue.Empty:
                 return
 
+            # textures must be created in the main thread (pygame)
             texture = Texture.create_from_data(imdata)
 
             if self.preview_widget is None:
                 max = pkConfig.getint('arduino', 'max-tilt')
                 min = pkConfig.getint('arduino', 'min-tilt')
+
+                def on_motion(widget, touch):
+                    print touch
+
                 self.preview_widget = Image(texture=texture, nocache=True)
                 self.preview_widget.allow_stretch = True
                 self.preview_widget.size_hint = None, None
                 self.preview_widget.size = (1280, 1024)
                 self.preview_widget.x = 0
                 self.preview_widget.y = self.preview_widget.height
-                self.preview_widget.bind(on_touch_down=self.on_image_touch)
+                self.preview_widget.bind(on_move=on_move)
                 self.layout.add_widget(self.preview_widget)
             else:
                 self.preview_widget.texture = texture
