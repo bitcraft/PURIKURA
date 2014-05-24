@@ -87,8 +87,8 @@ class PreviewGetThread(threading.Thread):
 
             if result:
                 data = cStringIO(str(data))
-                img = pil_open(data)
-                queue_put(data)
+                image = pil_open(data)
+                queue_put(image)
 
 
 class PreviewHandler(object):
@@ -221,20 +221,17 @@ class PickerScreen(Screen):
         # offloading the image loading into another thread
         def update_preview(*args, **kwargs):
             try:
-                data = self.preview_queue.get(False)
+                im = self.preview_queue.get(False)
             except queue.Empty:
                 return
 
             fmt = 'rgb'
-            orig = pygame.image.load(data)
-            orig_rect = orig.get_rect()
-            new_rect = pygame.Rect(0, 0, 1, 1).fit(orig_rect)
-            im = pygame.Surface(new_rect.size)
-            im.blit(orig, (0, 0), new_rect)
-            im = pygame.transform.flip(im, 0, 1)
-            data = pygame.image.tostring(im, fmt.upper())
-            imgdata = ImageData(im.get_width(), im.get_height(), fmt, data)
-            texture = Texture.create_from_data(imgdata)
+            im = im.transpose(PIL.FLIP_TOP_BOTTOM)
+            imdata = ImageData(im.size[0],
+                               im.size[1],
+                               fmt,
+                               im.tostring())
+            texture = Texture.create_from_data(imdata)
 
             if self.preview_widget is None:
                 max = pkConfig.getint('arduino', 'max-tilt')
