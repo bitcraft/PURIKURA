@@ -57,7 +57,7 @@ def image_path(filename):
     return jpath('/home/mjolnir/git/PURIKURA/resources/images/', filename)
 
 
-class PreviewHandler(threading.Thread):
+class PreviewHandlerThread(threading.Thread):
     def __init__(self, q, lock):
         super(PreviewHandler, self).__init__()
         bus = dbus.SessionBus()
@@ -87,6 +87,27 @@ class PreviewHandler(threading.Thread):
             if result:
                 data = cStringIO(str(data))
                 queue_put(data)
+
+
+class PreviewHandler(object):
+    def __init__(self, q, lock):
+        self.thread = None
+        self.queue = q
+        self.lock = lock
+
+    def start(self):
+        if self.thread is None:
+            self.thread = PreviewHandlerThread(self.queue, self.lock)
+            self.thread.start()
+        else:
+            logger.debug('want to start preview thread, but already running')
+
+    def stop(self):
+        if self.thread is None:
+            logger.debug('want to stop preview thread, but is not running')
+        else:
+            self.thread.stop()
+            self.thread = None
 
 
 class ArduinoHandler(object):
