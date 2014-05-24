@@ -251,7 +251,7 @@ class PhotoboothService(dbus.service.Object):
                 return dbus.Struct((True, dbus.ByteArray(data)),
                                    signature='bay')
             except shutter.ShutterError as e:
-                logger.debug('unhandled error {}', e.result)
+                logger.debug('unhandled error %s: %s', e.result, e.message)
                 return dbus.Struct((False, dbus.ByteArray('')),
                                    signature='bay')
 
