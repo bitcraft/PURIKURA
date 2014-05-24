@@ -400,7 +400,8 @@ class PickerScreen(Screen):
                 duration=.3)
             ani.bind(on_complete=self._remove_widget_after_ani)
             ani.start(self.preview_label)
-            ani.start(self.controls)
+            if self.controls:
+                ani.start(self.controls)
 
             # set the background to normal
             x, y = self._calc_bg_pos()
