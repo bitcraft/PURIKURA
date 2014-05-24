@@ -276,10 +276,11 @@ class PickerScreen(Screen):
 
         #   E X I T   B U T T O N
         # this button is used to exit the large camera preview window
-        def exit_preview(widget):
-            self.change_state('normal')
+        def exit_preview(widget, touch):
+            if widget.collide_point(touch.x, touch.y):
+                self.change_state('normal')
         self.preview_exit = Image(source=image_path('chevron-right.gif'))
-        self.preview_exit.bind(on_press=exit_preview)
+        self.preview_exit.bind(on_touch=exit_preview)
         self.preview_exit.allow_stretch = True
         self.preview_exit.keep_ratio = False
         self.preview_exit.size_hint = None, None
@@ -364,7 +365,6 @@ class PickerScreen(Screen):
             return
 
         # replace with a state machine in the future?
-        transition = None
         new_state = state
         old_state = self.state
         self.state = new_state
@@ -608,10 +608,10 @@ class PickerScreen(Screen):
                 duration=.5)
             ani.start(self.preview_widget)
 
-    def on_image_touch(self, widget, mouse_point):
+    def on_image_touch(self, widget, touch):
         """ called when any image is touched
         """
-        if widget.collide_point(mouse_point.x, mouse_point.y):
+        if widget.collide_point(touch.x, touch.y):
             # hide the focus widget
             if self.scrollview_hidden:
                 self.change_state('normal', widget=widget)
