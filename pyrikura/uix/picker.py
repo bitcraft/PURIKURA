@@ -332,6 +332,7 @@ class PickerScreen(Screen):
 
         # replace with a state machine in the future?  ...yes.
         if state == 'preview' and self.preview_widget is None:
+            self.update_preview()
             return
 
         new_state = state
