@@ -54,6 +54,38 @@ def image_path(filename):
     return jpath('/home/mjolnir/git/PURIKURA/resources/images/', filename)
 
 
+class PreviewHandler(threading.Thread):
+    def __init__(self, q, lock):
+        super(PreviewHandler, self).__init__()
+        bus = dbus.SessionBus()
+        pb_obj = bus.get_object(dbus_name, dbus_path)
+        self.iface = dbus.Interface(pb_obj, dbus_interface=dbus_name)
+
+        self.iface.open_camera()
+        self.queue = q
+        self.lock = lock
+        self.daemon = True
+        self._running = False
+
+    def stop(self):
+        self._running = False
+
+    def run(self):
+        self._running = True
+        download_preview = self.iface.download_preview
+        queue_put = self.queue.put
+        lock = self.lock
+
+        while self._running:
+            with lock:
+                time.sleep(0.05)
+                result, data = download_preview(byte_arrays=True)
+
+            if result:
+                data = cStringIO(str(data))
+                queue_put(data)
+
+
 class ArduinoHandler(object):
     def __init__(self):
         self.queue = queue.Queue(maxsize=4)
