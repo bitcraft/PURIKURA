@@ -52,7 +52,8 @@ class ArduinoHandler(object):
                     logger.debug('thread timeout')
                     break
                 else:
-                    conn.send(str(int(_value)))
+                    logger.debug('sending %s', str(_value))
+                    conn.send(str(_value) + '\n')
                     self.queue.task_done()
             logger.debug('end of thread')
             conn.close()
