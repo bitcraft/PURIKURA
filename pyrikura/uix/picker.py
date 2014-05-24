@@ -292,6 +292,8 @@ class PickerScreen(Screen):
         Clock.schedule_interval(self.scan, 1)
 
     def scan(self, dt):
+        """ Scan for new images and scroll to edge if found
+        """
         new = False
         for filename in self.get_images():
             if filename not in self.loaded:
@@ -303,7 +305,7 @@ class PickerScreen(Screen):
         # move and animate the scrollview to the far edge
         if new:
             ani = Animation(
-                scroll_x=.8,
+                scroll_x=.99,
                 t='in_out_quad',
                 duration=1)
 
@@ -478,7 +480,7 @@ class PickerScreen(Screen):
             ani = Animation(
                 opacity=1.0,
                 y=screen_height - self.large_preview_size[1] - hh,
-                x=self.focus_widget.x - OFFSET,
+                x=1280 / 2,
                 size=self.large_preview_size,
                 t='in_out_quad',
                 duration=.5)
