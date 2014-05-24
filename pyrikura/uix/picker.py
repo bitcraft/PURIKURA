@@ -250,6 +250,7 @@ class PickerScreen(Screen):
         self.preview_exit.allow_stretch = True
         self.preview_exit.x = 1280 - self.preview_exit.width
         self.preview_exit.y = (1024 / 2) - (self.preview_exit.height / 2)
+        self.layout.add_widget(self.preview_exit)
 
         # the preview label is used with the focus widget is open
         self.preview_label = Label(
