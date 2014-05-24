@@ -21,10 +21,13 @@ import threading
 import socket
 import time
 import dbus
+import logging
 
 from ..config import Config as pkConfig
 from .sharing import SharingControls
 
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger('purikura.picker')
 
 OFFSET = 172
 dbus_name = pkConfig.get('camera', 'dbus-name')
@@ -98,18 +101,22 @@ class ArduinoHandler(object):
         TODO: some kind of smoothing.
         """
         def send_message():
+            logger.debug('starting socket thread')
             host = 'localhost'
             port = pkConfig.getint('arduino', 'tcp-port')
             conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             conn.connect((host, port))
             while 1:
                 try:
+                    logger.debug('waiting for value...')
                     _value = self.queue.get(timeout=1)
                 except queue.Empty:
+                    logger.debug('thread timeout')
                     break
                 else:
                     conn.send(str(int(_value)))
                     self.queue.task_done()
+            logger.debug('end of thread')
             conn.close()
             self.thread = None
 
