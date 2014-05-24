@@ -523,6 +523,7 @@ class PickerScreen(Screen):
         # this is the left/right parallax animation
         if not self.locked:
             self.background.pos = self._calc_bg_pos()
+        return True
 
     def _calc_bg_pos(self):
         bkg_w = self.background.width * .3
