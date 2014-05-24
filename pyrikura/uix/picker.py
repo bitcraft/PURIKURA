@@ -88,11 +88,19 @@ class PreviewGetThread(threading.Thread):
 
             if result:
                 im = pil_open(cStringIO(str(data)))
+
+                # crop to square format
+                w, h = im.size
+                d = (w - h)/2
+                im = im.crop((d, 0, w-d, h))
+                im.load()
+
                 im = im.transpose(PIL.Image.FLIP_TOP_BOTTOM)
                 imdata = ImageData(im.size[0],
                                    im.size[1],
                                    im.mode.lower(),
                                    im.tostring())
+
                 queue_put(imdata)
 
 
@@ -559,6 +567,7 @@ class PickerScreen(Screen):
             Animation.cancel_all(self.focus_widget)
             Animation.cancel_all(self.preview_exit)
             Animation.cancel_all(self.preview_widget)
+            Animation.cancel_all(self.preview_button)
 
             # hide the preview exit button
             ani = Animation(
