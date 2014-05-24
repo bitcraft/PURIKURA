@@ -179,6 +179,8 @@ class PickerScreen(Screen):
         self.controls = None
         self.state = 'normal'
 
+        self.controls_lock = threading.Lock()
+
     def on_pre_enter(self):
         # set up the 'normal' state
 
@@ -214,17 +216,9 @@ class PickerScreen(Screen):
         #   S H O W   P R E V I E W   B U T T O N
         # the preview button is used to show and hide the camera preview
         def button_press(widget):
-            if widget.my_state == 'show':
-                widget.my_state = 'hide'
-                widget.text = 'hide camera'
-                self.change_state('preview')
-            elif widget.my_state == 'hide':
-                widget.my_state = 'show'
-                widget.text = 'show camera'
-                self.change_state('normal')
+            self.change_state('preview')
 
         self.preview_button = Button(text='show camera', font_size=20)
-        self.preview_button.my_state = 'show'
         self.preview_button.bind(on_press=button_press)
         self.preview_button.size_hint = 1, .1
         self.preview_button.x = 0
@@ -276,7 +270,6 @@ class PickerScreen(Screen):
                 self.preview_widget.size = (1280, 1024)
                 self.preview_widget.x = (1280/2)-(self.preview_widget.width/2)
                 self.preview_widget.y = -self.preview_widget.height
-                #self.preview_widget.opacity = 0.0
                 self.preview_widget.bind(on_move=on_move)
                 self.layout.add_widget(self.preview_widget)
             else:
@@ -284,6 +277,8 @@ class PickerScreen(Screen):
 
         #   E X I T   B U T T O N
         # this button is used to exit the large camera preview window
+        def exit_preview(widget):
+            self.change_state('normal')
         self.preview_exit = Image(source=image_path('chevron-right.gif'))
         self.preview_exit.allow_stretch = True
         self.preview_exit.keep_ratio = False
@@ -292,7 +287,7 @@ class PickerScreen(Screen):
         self.preview_exit.height = 175
         self.preview_exit.x = 1280
         self.preview_exit.y = (1024 / 2) - (self.preview_exit.height / 2)
-        #self.preview_exit.opacity = 0.0
+        self.preview_exit.bind(on_press=exit_preview)
         self.layout.add_widget(self.preview_exit)
 
         #   P R E V I E W   L A B E L
@@ -366,8 +361,11 @@ class PickerScreen(Screen):
         screen_width = int(Config.get('graphics', 'width'))
         screen_height = int(Config.get('graphics', 'height'))
 
-        transition = None
+        if self.locked:
+            return
 
+        # replace with a state machine in the future?
+        transition = None
         new_state = state
         old_state = self.state
         self.state = new_state
@@ -449,7 +447,6 @@ class PickerScreen(Screen):
         #  N O R M A L  =>  F O C U S
         elif transition == ('normal', 'focus'):
             widget = kwargs['widget']
-
             self.scrollview_hidden = True
             self.locked = True
 
@@ -528,6 +525,11 @@ class PickerScreen(Screen):
         #=====================================================================
         #  N O R M A L  =>  P R E V I E W
         elif transition == ('normal', 'preview'):
+            self.scrollview_hidden = True
+            self.locked = True
+
+            # schedule a unlock
+            Clock.schedule_once(self.unlock, .5)
 
             # cancel all running animations
             Animation.cancel_all(self.scrollview)
@@ -557,9 +559,24 @@ class PickerScreen(Screen):
                 duration=.5)
             ani.start(self.preview_widget)
 
+            # hide the scrollview and camera button
+            ani = Animation(
+                x=0,
+                y=-1000,
+                t='in_out_quad',
+                opacity=0.0,
+                duration=.7)
+            ani.start(self.scrollview)
+            ani.start(self.preview_button)
+
         #=====================================================================
         #  P R E V I E W  =>  N O R M A L
         elif transition == ('preview', 'normal'):
+            self.scrollview_hidden = False
+            self.locked = True
+
+            # schedule a unlock
+            Clock.schedule_once(self.unlock, .5)
 
             # cancel all running animations
             Animation.cancel_all(self.scrollview)
