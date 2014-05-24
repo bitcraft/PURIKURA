@@ -299,15 +299,13 @@ class PickerScreen(Screen):
                 self.loaded.add(filename)
                 widget = self._create_preview_widget(filename)
                 self.grid.add_widget(widget)
-                if not self.scrollview_hidden:
-                    self.background.pos = self._calc_bg_pos()
 
         # move and animate the scrollview to the far edge
         if new:
             ani = Animation(
-                scroll_x=self.scrollview.width,
+                scroll_x=self.grid.width,
                 t='in_out_quad',
-                duration=.5)
+                duration=1)
 
             ani.start(self.scrollview)
 
