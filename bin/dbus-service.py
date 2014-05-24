@@ -42,23 +42,28 @@ class ArduinoHandler(object):
         def send_message():
             host = 'localhost'
             port = Config.getint('arduino', 'tcp-port')
+            conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            conn.connect((host, port))
             while 1:
                 try:
                     logger.debug('waiting for value...')
-                    _value = self.queue.get(timeout=3)
+                    _value = self.queue.get(timeout=4)
                 except queue.Empty:
                     logger.debug('thread timeout')
                     break
                 else:
                     logger.debug('sending %s', str(_value))
                     try:
-                        conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                        conn.connect((host, port))
                         conn.send(str(_value) + '\r\n')
-                        conn.close()
                         self.queue.task_done()
                     except:
                         break
+            logger.debug('closing connection')
+            try:
+                conn.send(str(255) + '\r\n')
+                conn.close()
+            except:
+                pass
             logger.debug('end of thread')
             self.thread = None
 

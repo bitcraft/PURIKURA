@@ -270,15 +270,16 @@ class ServoServiceProtocol(LineReceiver):
         except ValueError:
             logger.debug('cannot process data %s', data)
 
+        if value == -1:
+            self.transport.loseConnection()
+            return
+
         else:
             try:
                 self.factory.arduino.sendCommand(0x80, value)
             except:
                 logger.debug('problem communicationg with arduino')
                 raise
-
-        finally:
-            self.transport.loseConnection()
 
 
 class ServoServiceFactory(protocol.ServerFactory):
