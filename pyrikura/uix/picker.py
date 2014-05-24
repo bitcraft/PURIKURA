@@ -15,6 +15,7 @@ from kivy.uix.screenmanager import Screen
 from kivy.uix.slider import Slider
 
 from six.moves import cStringIO, queue
+import PIL
 import os
 import pygame
 import threading
@@ -56,11 +57,11 @@ def image_path(filename):
     return jpath('/home/mjolnir/git/PURIKURA/resources/images/', filename)
 
 
-class PreviewHandlerThread(threading.Thread):
+class PreviewGetThread(threading.Thread):
     """ Pulls data from dbus service and prepares it for the preview widget
     """
     def __init__(self, q):
-        super(PreviewHandlerThread, self).__init__()
+        super(PreviewGetThread, self).__init__()
         bus = dbus.SessionBus()
         pb_obj = bus.get_object(dbus_name, dbus_path)
         self.iface = dbus.Interface(pb_obj, dbus_interface=dbus_name)
@@ -84,6 +85,7 @@ class PreviewHandlerThread(threading.Thread):
 
             if result:
                 data = cStringIO(str(data))
+                img = PIL.open(data)
                 queue_put(data)
 
 
@@ -97,7 +99,7 @@ class PreviewHandler(object):
     def start(self):
         if self.thread is None:
             logger.debug('starting the preview handler')
-            self.thread = PreviewHandlerThread(self.queue)
+            self.thread = PreviewGetThread(self.queue)
             self.thread.start()
         else:
             logger.debug('want to start preview thread, but already running')
@@ -233,8 +235,8 @@ class PickerScreen(Screen):
             texture = Texture.create_from_data(imgdata)
 
             if self.preview_widget is None:
-                max=pkConfig.getint('arduino', 'max-tilt')
-                min=pkConfig.getint('arduino', 'min-tilt')
+                max = pkConfig.getint('arduino', 'max-tilt')
+                min = pkConfig.getint('arduino', 'min-tilt')
                 self.preview_widget = Image(texture=texture, nocache=True)
                 self.preview_widget.allow_stretch = True
                 self.preview_widget.size_hint = None, None
