@@ -59,7 +59,7 @@ def image_path(filename):
 
 class PreviewHandlerThread(threading.Thread):
     def __init__(self, q, lock):
-        super(PreviewHandler, self).__init__()
+        super(PreviewHandlerThread, self).__init__()
         bus = dbus.SessionBus()
         pb_obj = bus.get_object(dbus_name, dbus_path)
         self.iface = dbus.Interface(pb_obj, dbus_interface=dbus_name)
