@@ -101,7 +101,6 @@ class ArduinoHandler(object):
         TODO: some kind of smoothing.
         """
         def send_message():
-            logger.debug('starting socket thread')
             host = 'localhost'
             port = pkConfig.getint('arduino', 'tcp-port')
             conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -121,15 +120,19 @@ class ArduinoHandler(object):
             self.thread = None
 
         try:
+            logger.debug('adding value to arduino queue')
             self.queue.put(value, block=False)
         except queue.Full:
+            logger.debug('arduino queue is full')
             try:
                 self.queue.get()
                 self.queue.put(value, block=False)
             except (queue.Full, queue.Empty):
+                logger.debug('got some error with arduino queue')
                 pass
 
         if self.thread is None:
+            logger.debug('starting socket thread')
             self.thread = threading.Thread(target=send_message)
             self.thread.start()
 
@@ -139,6 +142,14 @@ class PickerScreen(Screen):
     small_preview_size = ListProperty()
     grid_rows = NumericProperty()
     images = ListProperty()
+
+    def __init__(self, *args, **kwargs):
+        super(PickerScreen, self).__init__(*args, **kwargs)
+
+        # these declarations are mainly to keep pycharm from annoying me with
+        # notification that these attributes are not declared in __init__
+        self.arduino_handler = None
+        self.preview_handler = None
 
     def on_pre_enter(self):
 
