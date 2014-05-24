@@ -42,8 +42,6 @@ class ArduinoHandler(object):
         def send_message():
             host = 'localhost'
             port = Config.getint('arduino', 'tcp-port')
-            conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            conn.connect((host, port))
             while 1:
                 try:
                     logger.debug('waiting for value...')
@@ -53,10 +51,12 @@ class ArduinoHandler(object):
                     break
                 else:
                     logger.debug('sending %s', str(_value))
-                    conn.send(str(_value) + '\n')
+                    conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    conn.connect((host, port))
+                    conn.send(str(_value) + '\r\n')
+                    conn.close()
                     self.queue.task_done()
             logger.debug('end of thread')
-            conn.close()
             self.thread = None
 
         try:
