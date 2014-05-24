@@ -57,6 +57,8 @@ def image_path(filename):
 
 
 class PreviewHandlerThread(threading.Thread):
+    """ Pulls data from dbus service and prepares it for the preview widget
+    """
     def __init__(self, q, lock):
         super(PreviewHandlerThread, self).__init__()
         bus = dbus.SessionBus()
@@ -65,7 +67,6 @@ class PreviewHandlerThread(threading.Thread):
 
         self.iface.open_camera()
         self.queue = q
-        self.lock = lock
         self.daemon = True
         self._running = False
 
@@ -76,30 +77,28 @@ class PreviewHandlerThread(threading.Thread):
         self._running = True
         download_preview = self.iface.download_preview
         queue_put = self.queue.put
-        lock = self.lock
         interval = pkConfig.getfloat('camera', 'preview-interval')
 
         while self._running:
-            with lock:
-                result, data = download_preview(byte_arrays=True)
+            time.sleep(interval)
+            result, data = download_preview(byte_arrays=True)
 
             if result:
                 data = cStringIO(str(data))
                 queue_put(data)
 
-            time.sleep(interval)
-
 
 class PreviewHandler(object):
-    def __init__(self, q, lock):
+    """ Manages the PreviewThread
+    """
+    def __init__(self, q):
         self.thread = None
         self.queue = q
-        self.lock = lock
 
     def start(self):
         if self.thread is None:
             logger.debug('starting the preview handler')
-            self.thread = PreviewHandlerThread(self.queue, self.lock)
+            self.thread = PreviewHandlerThread(self.queue)
             self.thread.start()
         else:
             logger.debug('want to start preview thread, but already running')
@@ -114,6 +113,8 @@ class PreviewHandler(object):
 
 
 class ArduinoHandler(object):
+    """ Manages connections to the arduino to send camera tilt information
+    """
     def __init__(self):
         bus = dbus.SessionBus()
         pb_obj = bus.get_object(dbus_name, dbus_path)
@@ -131,6 +132,10 @@ class ArduinoHandler(object):
 
 
 class PickerScreen(Screen):
+    """ A nice looking touch-enabled file browser
+
+    state transistions need some work...a lot of work.
+    """
     large_preview_size = ListProperty()
     small_preview_size = ListProperty()
     grid_rows = NumericProperty()
@@ -143,12 +148,15 @@ class PickerScreen(Screen):
         # notification that these attributes are not declared in __init__
         self.arduino_handler = None
         self.preview_handler = None
+        self.preview_queue = None
+        self.preview_widget = None
+        self.focus_widget = None
+        self.layout = None
+        self.background = None
+        self.scrollview = None
+        self.grid = None
 
     def on_pre_enter(self):
-
-        # schedule a callback to check for new images
-        Clock.schedule_interval(self.scan, 1)
-
         self.layout = search(self, 'layout')
         self.background = search(self, 'background')
         self.scrollview = search(self, 'scrollview')
@@ -162,8 +170,9 @@ class PickerScreen(Screen):
 
         # tweak the loading so it is quick
         Loader.loading_image = CoreImage(image_path('loading.gif'))
-        Loader.num_workers = 6
-        Loader.max_upload_per_frame = 5
+        Loader.num_workers = pkConfig.getint('kiosk', 'loaders')
+        Loader.max_upload_per_frame = pkConfig.getint('kiosk',
+                                                      'max-upload-per-frame')
 
         self.scrollview_hidden = False
         self._scrollview_pos_hint = self.scrollview.pos_hint
@@ -180,7 +189,6 @@ class PickerScreen(Screen):
 
         def set_camera_tilt(widget, value):
             self.arduino_handler.set_camera_tilt(value)
-
         self.tilt_slider.bind(value=set_camera_tilt)
         self.layout.add_widget(self.tilt_slider)
 
@@ -194,23 +202,16 @@ class PickerScreen(Screen):
         self.focus_widget.bind(on_touch_down=self.on_image_touch)
         self.layout.add_widget(self.focus_widget)
 
-        self.preview_widget = None
-
-        def touch_preview(widget, mouse_point):
-            if widget.collide_point(mouse_point.x, mouse_point.y):
-                #pb_iface.capture_preview()
-                if os.path.exists('preview.jpg'):
-                    widget.source = 'preview.jpg'
-                    widget.reload()
-
+        # this handles pulling the preview images from the dbus service
+        # queueing them and updaing the widget's texture
         self.preview_queue = queue.Queue()
-        self.camera_lock = threading.Lock()
-
-        self.preview_handler = PreviewHandler(self.preview_queue,
-                                              self.camera_lock)
-
+        self.preview_handler = PreviewHandler(self.preview_queue)
         self.preview_handler.start()
 
+        # handles updating the widget.  pygame doesn't allow creating surfaces
+        # in the main thread, so it must be done here.
+        # in the future, using another library, such as pil, may allow
+        # offloading the image loading into another thread
         def update_preview(*args, **kwargs):
             try:
                 data = self.preview_queue.get(False)
@@ -240,11 +241,7 @@ class PickerScreen(Screen):
             else:
                 self.preview_widget.texture = texture
 
-        Clock.schedule_interval(update_preview,
-                                pkConfig.getfloat('camera', 'preview-interval'))
-
-        #pb_iface.connect_to_signal('preview_updated', touch_preview)
-
+        # this is used with the focus widget is open
         self.preview_label = Label(
             text='Touch preview to close',
             text_size=(500, 100),
@@ -263,9 +260,14 @@ class PickerScreen(Screen):
         self.locked = False
         self.loaded = set()
 
-    def scan(self, dt):
+        # schedule an interval to update the preview widget
+        Clock.schedule_interval(update_preview,
+                                pkConfig.getfloat('camera', 'preview-interval'))
 
-        # load images from disk
+        # schedule a callback to check for new images
+        Clock.schedule_interval(self.scan, 1)
+
+    def scan(self, dt):
         for filename in self.get_images():
             if filename not in self.loaded:
                 self.loaded.add(filename)
@@ -434,6 +436,7 @@ class PickerScreen(Screen):
                 ani.start(self.background)
 
                 hh = (screen_height - self.large_preview_size[1]) / 2
+
                 # show the focus widget
                 ani = Animation(
                     opacity=1.0,
