@@ -9,6 +9,7 @@ from kivy.factory import Factory
 from kivy.loader import Loader
 from kivy.properties import *
 
+from kivy.uix.button import Button
 from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
@@ -159,6 +160,7 @@ class PickerScreen(Screen):
         self.preview_widget = None
         self.preview_label = None
         self.preview_exit = None
+        self.preview_button = None
         self.focus_widget = None
         self.layout = None
         self.background = None
@@ -199,6 +201,21 @@ class PickerScreen(Screen):
         self.arduino_handler = ArduinoHandler()
         def set_camera_tilt(widget, value):
             self.arduino_handler.set_camera_tilt(value)
+
+        #   S H O W   P R E V I E W   B U T T O N
+        # the preview button is used to show and hide the camera preview
+        def button_press(widget):
+            if widget.state == 'show':
+                widget.state = 'hide'
+                widget.text = 'hide camera'
+            elif widget.state == 'hide':
+                widget.state = 'show'
+                widget.text = 'show camera'
+
+        self.preview_button = Button(text='show camera', font_size=20)
+        self.preview_button.state = 'show'
+        self.preview_button.bind(on_press=button_press)
+        self.layout.add_widget(self.preview_button)
 
         #   F O C U S   W I D G E T
         # the focus widget is the large preview image
