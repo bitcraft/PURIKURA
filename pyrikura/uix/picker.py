@@ -289,16 +289,27 @@ class PickerScreen(Screen):
                                 pkConfig.getfloat('camera', 'preview-interval'))
 
         # schedule a callback to check for new images
-        Clock.schedule_interval(self.scan, 5)
+        Clock.schedule_interval(self.scan, 1)
 
     def scan(self, dt):
+        new = False
         for filename in self.get_images():
             if filename not in self.loaded:
+                new = True
                 self.loaded.add(filename)
                 widget = self._create_preview_widget(filename)
                 self.grid.add_widget(widget)
                 if not self.scrollview_hidden:
                     self.background.pos = self._calc_bg_pos()
+
+        # move and animate the scrollview to the far edge
+        if new:
+            ani = Animation(
+                scroll_x=self.scrollview.width,
+                t='in_out_quad',
+                duration=.5)
+
+            ani.start(self.scrollview)
 
     def _create_preview_widget(self, source):
         widget = Factory.AsyncImage(

@@ -43,7 +43,7 @@ def compose(conn, ready_queue, images, config):
             cache[image_config['filename']] = temp_image
         base.composite(temp_image, x, y)
 
-    new_path = 'composite.png'
+    new_path = 'composite-0000.png'
     overwrite = True
     if not overwrite:
         for image in cache.values():
