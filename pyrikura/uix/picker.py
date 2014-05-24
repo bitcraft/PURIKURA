@@ -278,8 +278,8 @@ class PickerScreen(Screen):
         # this button is used to exit the large camera preview window
         def exit_preview(widget):
             self.change_state('normal')
-        self.preview_exit.bind(on_press=exit_preview)
         self.preview_exit = Image(source=image_path('chevron-right.gif'))
+        self.preview_exit.bind(on_press=exit_preview)
         self.preview_exit.allow_stretch = True
         self.preview_exit.keep_ratio = False
         self.preview_exit.size_hint = None, None
