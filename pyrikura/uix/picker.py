@@ -236,7 +236,7 @@ class PickerScreen(Screen):
                 max = pkConfig.getint('arduino', 'max-tilt')
                 min = pkConfig.getint('arduino', 'min-tilt')
 
-                def on_motion(widget, touch):
+                def on_move(widget, touch):
                     print touch
 
                 self.preview_widget = Image(texture=texture, nocache=True)
