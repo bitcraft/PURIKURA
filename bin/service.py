@@ -117,8 +117,8 @@ class CameraTrigger:
 
 
 class Session:
-    needed_captures = Config.get('event', 'needed-captures')
-    next_countdown_delay = Config.get('event', 'next-countdown-delay')
+    needed_captures = Config.getint('event', 'needed-captures')
+    next_countdown_delay = Config.getint('event', 'next-countdown-delay')
     countdown_interval = 1
 
     def __init__(self):
