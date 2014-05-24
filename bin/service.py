@@ -21,6 +21,7 @@ import logging
 import pygame
 import dbus
 import serial
+import threading
 
 from twisted.internet import reactor, defer, task, protocol, threads
 from twisted.protocols.basic import LineReceiver
@@ -225,6 +226,7 @@ class Arduino(LineReceiver):
     def __init__(self, session):
         logger.debug('new arduino')
         self.session = session
+        self.lock = threading.Lock()
 
     def process(self, cmd, arg):
         logger.debug('processing: %s %s', cmd, arg)
@@ -233,15 +235,17 @@ class Arduino(LineReceiver):
 
     def sendCommand(self, cmd, arg):
         def write_transport(data):
-            self.transport.write(data)
+            with self.lock:
+                self.transport.write(data)
 
         if self.session.running:
             logger.debug('want to send, but in session: %s %s', cmd, arg)
             return False
         else:
             logger.debug('sending: %s %s', cmd, arg)
-            data = chr(cmd) + chr(arg)
-            reactor.callFromThread(write_transport, data)
+            self.transport.write(cmd, arg)
+            #data = chr(cmd) + chr(arg)
+            #reactor.callFromThread(write_transport, data)
             return True
 
     def lineReceived(self, data):
