@@ -263,7 +263,7 @@ class PickerScreen(Screen):
 
                 def on_touch_move(widget, touch):
                     if widget.collide_point(touch.x, touch.y):
-                        self.tilt += touch.dpos[1] / 8
+                        self.tilt += touch.dpos[1] / 5
                         if self.tilt < 0:
                             self.tilt = 0
                         if self.tilt > 180:
