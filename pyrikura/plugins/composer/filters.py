@@ -61,7 +61,7 @@ def toaster(filename, w, h, output=None):
     scratch = colortone(filename, '#110000', 105, 0, output=scratch)
 
     # contrast
-    cmd = 'convert {} -modulate 200,110,100 {}'.format(
+    cmd = 'convert {} -modulate 300,110,100 {}'.format(
         scratch, scratch
     )
 
