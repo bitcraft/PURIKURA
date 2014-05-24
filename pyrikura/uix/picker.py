@@ -78,6 +78,7 @@ class PreviewGetThread(threading.Thread):
         download_preview = self.iface.download_preview
         queue_put = self.queue.put
         interval = pkConfig.getfloat('camera', 'preview-interval')
+        pil_open = PIL.image.open
 
         while self._running:
             time.sleep(interval)
@@ -85,7 +86,7 @@ class PreviewGetThread(threading.Thread):
 
             if result:
                 data = cStringIO(str(data))
-                img = PIL.open(data)
+                img = pil_open(data)
                 queue_put(data)
 
 
