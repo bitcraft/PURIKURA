@@ -1,6 +1,7 @@
 __author__ = 'Leif'
 
 import shutil
+from functools import partial
 
 from kivy.uix.accordion import Accordion
 from kivy.uix.accordion import AccordionItem
