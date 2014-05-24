@@ -59,12 +59,11 @@ def image_path(filename):
 class PreviewHandlerThread(threading.Thread):
     """ Pulls data from dbus service and prepares it for the preview widget
     """
-    def __init__(self, q, lock):
+    def __init__(self, q):
         super(PreviewHandlerThread, self).__init__()
         bus = dbus.SessionBus()
         pb_obj = bus.get_object(dbus_name, dbus_path)
         self.iface = dbus.Interface(pb_obj, dbus_interface=dbus_name)
-
         self.iface.open_camera()
         self.queue = q
         self.daemon = True
