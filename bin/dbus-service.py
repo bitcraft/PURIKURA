@@ -51,11 +51,14 @@ class ArduinoHandler(object):
                     break
                 else:
                     logger.debug('sending %s', str(_value))
-                    conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    conn.connect((host, port))
-                    conn.send(str(_value) + '\r\n')
-                    conn.close()
-                    self.queue.task_done()
+                    try:
+                        conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        conn.connect((host, port))
+                        conn.send(str(_value) + '\r\n')
+                        conn.close()
+                        self.queue.task_done()
+                    except:
+                        break
             logger.debug('end of thread')
             self.thread = None
 

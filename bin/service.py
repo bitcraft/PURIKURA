@@ -307,8 +307,8 @@ if __name__ == '__main__':
         raise
 
     # starting arduino listener
-    #reactor.listenTCP(Config.getint('arduino', 'tcp-port'),
-    #                  ServoServiceFactory(arduino))
+    reactor.listenTCP(Config.getint('arduino', 'tcp-port'),
+                      ServoServiceFactory(arduino))
 
     logger.debug('starting reactor...')
     try:
