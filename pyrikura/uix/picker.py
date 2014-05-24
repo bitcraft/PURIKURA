@@ -181,8 +181,8 @@ class PickerScreen(Screen):
         center_x = screen_width - (self.large_preview_size[0] / 2) - 16
 
         self.arduino_handler = ArduinoHandler()
-        self.tilt_slider = Slider(min=pkConfig.getint('arduino', 'max-tilt'),
-                                  max=pkConfig.getint('arduino', 'min-tilt'),
+        self.tilt_slider = Slider(max=pkConfig.getint('arduino', 'max-tilt'),
+                                  min=pkConfig.getint('arduino', 'min-tilt'),
                                   value=pkConfig.getint('arduino', 'tilt'),
                                   orientation='vertical')
 
