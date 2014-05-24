@@ -235,10 +235,9 @@ class Arduino(LineReceiver):
             self.session.start()
 
     def sendCommand(self, cmd, arg):
-        if self.session.running:
-            logger.debug('sending to arduino: %s %s', cmd, arg)
-            data = chr(cmd) + chr(arg)
-            self.transport.write(data)
+        logger.debug('sending to arduino: %s %s', cmd, arg)
+        data = chr(cmd) + chr(arg)
+        self.transport.write(data)
 
     def lineReceived(self, data):
         logger.debug('got serial data %s', data)
@@ -269,7 +268,7 @@ class ServoServiceProtocol(LineReceiver):
             try:
                 self.factory.arduino.sendCommand(0x80, value)
             except:
-                logger.debug('problem communicationg with arduino')
+                logger.debug('problem communicating with arduino')
                 raise
 
 
