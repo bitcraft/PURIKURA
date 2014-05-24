@@ -168,6 +168,7 @@ class PickerScreen(Screen):
         self.grid = None
         self.locked = None
         self.loaded = None
+        self.controls = None
         self.state = 'normal'
 
     def on_pre_enter(self):
@@ -413,6 +414,14 @@ class PickerScreen(Screen):
                 duration=.5)
             ani.start(self.scrollview)
 
+            # show the camera button
+            ani = Animation(
+                y=y,
+                t='in_out_quad',
+                opacity=1.0,
+                duration=.5)
+            ani.start(self.preview_button)
+
             # hide the focus widget
             ani = Animation(
                 y=-1000,
@@ -442,6 +451,7 @@ class PickerScreen(Screen):
             Animation.cancel_all(self.scrollview)
             Animation.cancel_all(self.background)
             Animation.cancel_all(self.focus_widget)
+            Animation.cancel_all(self.preview_button)
 
             # set the focus widget to have the same image as the one picked
             # do a bit of mangling to get a more detailed image
@@ -470,7 +480,7 @@ class PickerScreen(Screen):
             # set the z to something high to ensure it is on top
             self.add_widget(self.controls)
 
-            # hide the scrollview
+            # hide the scrollview and camera button
             ani = Animation(
                 x=0,
                 y=-1000,
@@ -478,6 +488,7 @@ class PickerScreen(Screen):
                 opacity=0.0,
                 duration=.7)
             ani.start(self.scrollview)
+            ani.start(self.preview_button)
 
             # start a simple animation on the background
             ani = Animation(
@@ -515,6 +526,7 @@ class PickerScreen(Screen):
             Animation.cancel_all(self.focus_widget)
             Animation.cancel_all(self.preview_exit)
             Animation.cancel_all(self.preview_widget)
+            Animation.cancel_all(self.preview_button)
 
             # show the preview exit button
             ani = Animation(
@@ -566,8 +578,6 @@ class PickerScreen(Screen):
                 opacity=0.0,
                 duration=.5)
             ani.start(self.preview_widget)
-
-
 
     def on_image_touch(self, widget, mouse_point):
         """ called when any image is touched
