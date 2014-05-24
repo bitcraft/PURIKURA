@@ -214,7 +214,7 @@ class PickerScreen(Screen):
         def set_camera_tilt(widget, value):
             self.arduino_handler.set_camera_tilt(value)
 
-        #   S H O W   P R E V I E W   B U T T O N
+        #   P R E V I E W   B U T T O N
         # the preview button is used to show and hide the camera preview
         def button_press(widget):
             self.change_state('preview')
@@ -372,7 +372,10 @@ class PickerScreen(Screen):
         if self.locked:
             return
 
-        # replace with a state machine in the future?
+        # replace with a state machine in the future?  ...yes.
+        if state == 'preview' and self.preview_widget is None:
+            return
+
         new_state = state
         old_state = self.state
         self.state = new_state
