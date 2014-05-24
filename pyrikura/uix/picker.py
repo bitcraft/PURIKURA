@@ -303,7 +303,7 @@ class PickerScreen(Screen):
         # move and animate the scrollview to the far edge
         if new:
             ani = Animation(
-                scroll_x=self.grid.width,
+                scroll_x=1,
                 t='in_out_quad',
                 duration=1)
 
@@ -520,7 +520,6 @@ class PickerScreen(Screen):
     def on_picker_scroll(self, *arg):
         # this is the left/right parallax animation
         if not self.locked:
-            print self.scrollview.scroll_x, self.grid.width
             self.background.pos = self._calc_bg_pos()
 
     def _calc_bg_pos(self):
