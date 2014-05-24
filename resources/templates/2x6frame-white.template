@@ -33,5 +33,5 @@ autocrop = true
 filter = toaster
 
 [04label]
-filename = frame.png
+filename = frame-white.png
 position1 = 0,0
