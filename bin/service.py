@@ -235,19 +235,10 @@ class Arduino(LineReceiver):
             self.session.start()
 
     def sendCommand(self, cmd, arg):
-        def write_transport(data):
-            with self.lock:
-                self.transport.write(data)
-
         if self.session.running:
-            logger.debug('want to send, but in session: %s %s', cmd, arg)
-            return False
-        else:
             logger.debug('sending to arduino: %s %s', cmd, arg)
             data = chr(cmd) + chr(arg)
             self.transport.write(data)
-            #reactor.callFromThread(write_transport, data)
-            return True
 
     def lineReceived(self, data):
         logger.debug('got serial data %s', data)

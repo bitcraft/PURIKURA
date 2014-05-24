@@ -42,12 +42,18 @@ class ArduinoHandler(object):
         def send_message():
             host = 'localhost'
             port = Config.getint('arduino', 'tcp-port')
-            conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            conn.connect((host, port))
+
+            try:
+                conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                conn.connect((host, port))
+            except:
+                self.thread = None
+                return
+
             while 1:
                 try:
                     logger.debug('waiting for value...')
-                    _value = self.queue.get(timeout=4)
+                    _value = self.queue.get(timeout=1)
                 except queue.Empty:
                     logger.debug('thread timeout')
                     break
@@ -58,14 +64,17 @@ class ArduinoHandler(object):
                         self.queue.task_done()
                     except:
                         break
+
             logger.debug('closing connection')
             try:
                 conn.send(str(-1) + '\r\n')
                 conn.close()
             except:
                 pass
+
             logger.debug('end of thread')
             self.thread = None
+            return
 
         try:
             logger.debug('adding value to arduino queue')
