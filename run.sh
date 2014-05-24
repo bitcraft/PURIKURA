@@ -6,7 +6,7 @@ amixer -c 0 set Master 100%
 
 while true
 do
-    python bin/dbus_service.py &
+    python bin/dbus-service.py &
     sleep 1;
     python bin/service.py &
     python bin/kiosk.py &&
