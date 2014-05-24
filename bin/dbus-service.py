@@ -82,6 +82,7 @@ class ArduinoHandler(object):
         if self.thread is None:
             logger.debug('starting socket thread')
             self.thread = threading.Thread(target=send_message)
+            self.thread.daemon = True
             self.thread.start()
 
 
