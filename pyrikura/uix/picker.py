@@ -215,6 +215,9 @@ class PickerScreen(Screen):
         self.preview_button = Button(text='show camera', font_size=20)
         self.preview_button.my_state = 'show'
         self.preview_button.bind(on_press=button_press)
+        self.preview_widget.size_hint = 1, .1
+        self.preview_button.x = 0
+        self.preview_button.y = 0
         self.layout.add_widget(self.preview_button)
 
         #   F O C U S   W I D G E T
