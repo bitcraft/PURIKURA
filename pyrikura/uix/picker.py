@@ -92,7 +92,7 @@ class ArduinoHandler(object):
         self.lock = threading.Lock()
         self.thread = None
 
-    def set_camera_tilt(self, value):
+    def set_camera_tilt(self, widget, value):
         """ Set camera tilt
 
         TODO: some kind of smoothing.
