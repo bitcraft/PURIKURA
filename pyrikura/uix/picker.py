@@ -209,9 +209,11 @@ class PickerScreen(Screen):
             if widget.my_state == 'show':
                 widget.my_state = 'hide'
                 widget.text = 'hide camera'
+                self.change_state('preview')
             elif widget.my_state == 'hide':
                 widget.my_state = 'show'
                 widget.text = 'show camera'
+                self.change_state('normal')
 
         self.preview_button = Button(text='show camera', font_size=20)
         self.preview_button.my_state = 'show'
@@ -401,7 +403,6 @@ class PickerScreen(Screen):
                 x=x,
                 t='in_out_quad',
                 duration=.5)
-
             ani.start(self.background)
 
             # show the scrollview
@@ -416,7 +417,7 @@ class PickerScreen(Screen):
 
             # show the camera button
             ani = Animation(
-                y=y,
+                y=0,
                 t='in_out_quad',
                 opacity=1.0,
                 duration=.5)
