@@ -22,12 +22,12 @@ area1 = .37, 3.05, 1.27, 1.27
 area2 = 2.37, 3.05, 1.27, 1.27
 autocrop = true
 
-[05portrait]
+[04portrait]
 filename = auto
 area1 = .37, 4.5, 1.27, 1.27
 area2 = 2.37, 4.5, 1.27, 1.27
 autocrop = true
 
-[04label]
+[05label]
 filename = composite-frame-02.png
 position1 = 0,0
