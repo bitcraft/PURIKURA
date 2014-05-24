@@ -192,6 +192,7 @@ class PickerScreen(Screen):
         def set_camera_tilt(widget, value):
             self.arduino_handler.set_camera_tilt(value)
 
+        #   F O C U S   W I D G E T
         # the focus widget is the large preview image
         self.focus_widget = Image(source=image_path('loading.gif'))
         self.focus_widget.allow_stretch = True
@@ -209,6 +210,7 @@ class PickerScreen(Screen):
         self.preview_handler.start()
         self.preview_widget = None   # will be created on first image
 
+        #   P R E V I E W   W I D G E T
         # handles updating the widget.  pygame doesn't allow creating surfaces
         # in the main thread, so it must be done here.
         # in the future, using another library, such as pil, may allow
@@ -244,6 +246,7 @@ class PickerScreen(Screen):
             else:
                 self.preview_widget.texture = texture
 
+        #   E X I T   B U T T O N
         # this button is used to exit the large camera preview window
         self.preview_exit = Image(source=image_path('chevron-right.gif'))
         self.preview_exit.allow_stretch = True
@@ -251,10 +254,11 @@ class PickerScreen(Screen):
         self.preview_exit.size_hint = None, None
         self.preview_exit.width = 64
         self.preview_exit.height = 175
-        self.preview_exit.x = 1280 - self.preview_exit.width
+        self.preview_exit.x = 1280
         self.preview_exit.y = (1024 / 2) - (self.preview_exit.height / 2)
         self.layout.add_widget(self.preview_exit)
 
+        #   P R E V I E W   L A B E L
         # the preview label is used with the focus widget is open
         self.preview_label = Label(
             text='Touch preview to close',
@@ -310,7 +314,7 @@ class PickerScreen(Screen):
     def unlock(self, dt=None):
         self.locked = False
 
-    def change_state(self, state):
+    def change_state(self, state, **kwargs):
         screen_width = int(Config.get('graphics', 'width'))
         screen_height = int(Config.get('graphics', 'height'))
 
@@ -321,7 +325,7 @@ class PickerScreen(Screen):
         self.state = new_state
         transition = (old_state, self.state)
 
-        #=====================================================================
+        #====================================================================
         #  F O C U S  =>  N O R M A L
         if transition == ('focus', 'normal'):
             self.scrollview_hidden = False
@@ -391,6 +395,8 @@ class PickerScreen(Screen):
         #=====================================================================
         #  N O R M A L  =>  F O C U S
         elif transition == ('normal', 'focus'):
+            widget = kwargs['widget']
+
             self.scrollview_hidden = True
             self.locked = True
 
@@ -480,7 +486,6 @@ class PickerScreen(Screen):
         elif transition == ('preview', 'normal'):
             pass
 
-
     def on_image_touch(self, widget, mouse_point):
         """ called when any image is touched
         """
@@ -490,14 +495,14 @@ class PickerScreen(Screen):
         if widget.collide_point(mouse_point.x, mouse_point.y):
             # hide the focus widget
             if self.scrollview_hidden:
-                self.change_state('normal')
+                self.change_state('normal', widget=widget)
 
             # show the focus widget
             elif self.focus_widget is not widget:
                 if widget is self.preview_widget:
                     return False
 
-                self.change_state('focus')
+                self.change_state('focus', widget=widget)
 
     def on_picker_scroll(self, *arg):
         # this is the left/right parallax animation
