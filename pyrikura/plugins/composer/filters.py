@@ -1,10 +1,14 @@
-import subprocess
-import os
-
 """
 these filters will always return a filename, not image class
 do not import any imagemagick libraries (for now)
 """
+import sys
+sys.path.append('/home/mjolnir/git/PURIKURA/')
+
+import subprocess
+import os
+
+from pyrikura.config import Config
 
 
 def execute(cmd):
@@ -12,7 +16,8 @@ def execute(cmd):
 
 
 def colortone(filename, color, level, type=0, output=None):
-    if output == None: output = filename
+    if output is None:
+        output = filename
 
     if type == 0:
         negate = '-negate'
@@ -33,7 +38,9 @@ def colortone(filename, color, level, type=0, output=None):
 
 def vignette(filename, w, h, color0='none', color1='black', ratio=1.5,
              output=None):
-    if output == None: output = filename
+
+    if output is None:
+        output = filename
 
     cmd = 'convert ( {} ) \
            ( -size {}x{} radial-gradient:{}-{} -gravity center \
@@ -47,7 +54,8 @@ def vignette(filename, w, h, color0='none', color1='black', ratio=1.5,
 
 
 def toaster(filename, w, h, output=None):
-    if output == None: output = filename
+    if output is None:
+        output = filename
 
     #output = filename + '-toaster.miff'
     scratch = filename + 'scratch.miff'
@@ -55,17 +63,19 @@ def toaster(filename, w, h, output=None):
     # colortone
     #scratch = colortone(filename, '#330000', 100, 0, output=scratch)
     #scratch = colortone(filename, '#220000', 100, 0, output=scratch)
-    scratch = colortone(filename, '#110000', 100, 0, output=scratch)
+    scratch = colortone(filename, '#110000', 105, 0, output=scratch)
+
+    brightness = Config.get('postprocessing', 'brightness')
 
     # contrast
-    cmd = 'convert {} -modulate 130,115,100 -gamma 1.10 -contrast {}'.format(
-        scratch, scratch
+    cmd = 'convert {} -modulate {},105,100 {}'.format(
+        brightness, scratch, scratch
     )
 
     execute(cmd)
 
     # vignette kungfu
-    scratch = vignette(scratch, w, h, 'none', 'LavenderBlush3')
+    #scratch = vignette(scratch, w, h, 'none', 'LavenderBlush3')
     #scratch = vignette(scratch, w, h, '#FFD6C2', 'none')
     #scratch = vignette(scratch, w, h, '#E3C2B8', 'none')
     scratch = vignette(scratch, w, h, '#b3a298', 'none')
@@ -74,4 +84,3 @@ def toaster(filename, w, h, output=None):
     os.unlink(scratch)
 
     return output
-

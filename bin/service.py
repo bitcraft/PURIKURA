@@ -2,67 +2,58 @@
 """
 This program is the nuts and bolts of the photo booth.
 
-It uses the workflow/broker system to make a photobooth.  In relationship with
-then entire project, this is all that is needed to accept input, take photos,
+It uses a workflow/broker hack to make a photobooth.  In relationship with
+the entire project, this is all that is needed to accept input, take photos,
 compose and print them.  The kiosk app can be thought of as a pretty
 touch-enabled file browser.
 
-This, on the other hand, creates all the images that you can browse with in the
-kiosk app.
+This creates all the images that you can browse with in the kiosk app.
 
 This configuration is used in my professional photo booth service and uses an
 arduino for input.  Free free to customize.
 """
+import sys
+sys.path.append('/home/mjolnir/git/PURIKURA/')
+
 import os
 import logging
-
-from twisted.internet import reactor, defer, task
-from twisted.protocols.basic import LineReceiver
-from twisted.internet.serialport import SerialPort
 import pygame
-
-from yapsy.PluginManager import PluginManager
 import dbus
 import serial
-import ConfigParser
+import threading
 
+from twisted.internet import reactor, defer, task, protocol, threads
+from twisted.protocols.basic import LineReceiver
+from twisted.internet.serialport import SerialPort
+
+import yapsy
+from yapsy.PluginManager import PluginManager
+logging.getLogger('yapsy').setLevel(logging.DEBUG)
+
+from pyrikura import resources
+from pyrikura.config import Config
+
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("purikura.booth")
-
 
 # because i hate typing
 jpath = os.path.join
 
-def load_sound(filename):
-    path = jpath(app_sounds_path, filename)
-    return pygame.mixer.Sound(path)
-
-
-def load_config(name):
-    home = os.path.expanduser("~")
-    path = jpath(home, '/git/PURIKURA/config', name)
-    cfg = ConfigParser.ConfigParser()
-    msg = 'loading {} configuration from {}...'
-    logger.info(msg.format(__name__, path))
-    cfg.read(path)
-    return cfg
-
-cfg = load_config('service.ini')
-
 # paths
-app_root_path = cfg.get('paths', 'root')
+app_root_path = Config.get('paths', 'root')
 app_config_path = jpath(app_root_path, 'config')
 app_resources_path = jpath(app_root_path, 'resources')
 app_sounds_path = jpath(app_resources_path, 'sounds')
 app_images_path = jpath(app_resources_path, 'images')
 all_templates_path = jpath(app_resources_path, 'templates')
-all_images_path = cfg.get('paths', 'images')
-capture_image = cfg.get('camera', 'capture-image')
-shared_path = cfg.get('paths', 'shared')
-plugins_path = cfg.get('paths', 'plugins')
+all_images_path = Config.get('paths', 'images')
+capture_image = Config.get('camera', 'capture-image')
+shared_path = Config.get('paths', 'shared')
+plugins_path = Config.get('paths', 'plugins')
 
 # event paths
-event_name = cfg.get('event', 'name')
-template_path = jpath(all_templates_path, cfg.get('event', 'template'))
+event_name = Config.get('event', 'name')
+template_path = jpath(all_templates_path, Config.get('event', 'template'))
 event_images_path = jpath(all_images_path, event_name)
 thumbs_path = jpath(event_images_path, 'thumbnails')
 details_path = jpath(event_images_path, 'detail')
@@ -71,32 +62,42 @@ composites_path = jpath(event_images_path, 'composites')
 paths = ('thumbnails', 'detail', 'originals', 'composites')
 
 # mixer must be initialized before sounds will play
-pygame.mixer.init(frequency=cfg.getint('sound', 'mixer-frequency'),
-                  buffer=cfg.getint('sound', 'mixer-buffer'))
-
-# sounds
-bell0 = load_sound(cfg.get('sounds', 'bell0'))
-bell1 = load_sound(cfg.get('sounds', 'bell1'))
-error = load_sound(cfg.get('sounds', 'error'))
-whistle = load_sound(cfg.get('sounds', 'next'))
-
-# specific to arduino!
-arduino_port = cfg.get('arduino', 'port')
-arduino_baudrate = cfg.getint('arduino', 'baudrate')
+pygame.mixer.init(frequency=Config.getint('sound', 'mixer-frequency'),
+                  buffer=Config.getint('sound', 'mixer-buffer'))
 
 # specific to the camera system i use!
-dbus_name = cfg.get('camera', 'dbus-name')
-dbus_path = cfg.get('camera', 'dbus-path')
+dbus_name = Config.get('camera', 'dbus-name')
+dbus_path = Config.get('camera', 'dbus-path')
+
+# load all the stuff
+resources.load()
+
+# i'm lazy!
+bell0 = resources.sounds['bell0']
+bell1 = resources.sounds['bell1']
+error = resources.sounds['error']
+finished = resources.sounds['finished']
+
+# manage volumes a bit
+bell1.set_volume(bell1.get_volume() * .6)
+finished.set_volume(finished.get_volume() * .5)
 
 
 class CameraTrigger:
     def __init__(self):
-        bus = dbus.SessionBus()
-        pb_obj = bus.get_object(dbus_name, dbus_path)
-        self.iface = dbus.Interface(pb_obj, dbus_interface=dbus_name)
+        try:
+            bus = dbus.SessionBus()
+            pb_obj = bus.get_object(dbus_name, dbus_path)
+            self.iface = dbus.Interface(pb_obj, dbus_interface=dbus_name)
+        except dbus.exceptions.DBusException:
+            logger.error('cannot find dbus service')
+            raise
+
+        self.iface.open_camera()
         self.d = None
 
     def __call__(self):
+        logger.debug('calling the camera trigger')
         if self.d is None:
             return
 
@@ -109,17 +110,20 @@ class CameraTrigger:
             d.errback(Exception('Camera not focused'))
 
     def trigger(self, result):
+        logger.debug('cameratrigger.trigger')
         self.d = defer.Deferred()
         reactor.callLater(1, self)
         return self.d
 
 
 class Session:
-    needed_captures = 4
-    next_countdown_delay = 4
+    needed_captures = Config.getint('event', 'needed-captures')
+    next_countdown_delay = Config.getint('event', 'next-countdown-delay')
     countdown_interval = 1
 
     def __init__(self):
+        logger.debug('building new session...')
+
         def p(name, *arg, **kwarg):
             plugin = pm.getPluginByName(name)
             if not plugin:
@@ -147,7 +151,9 @@ class Session:
 
         comp = p('Composer', template=template_path)
 
-        spool.subscribe(comp)
+        if Config.getboolean('kiosk', 'print'):
+            spool.subscribe(comp)
+
         arch2.subscribe(comp)
         thumb1.subscribe(arch1)
         thumb2.subscribe(arch1)
@@ -157,19 +163,22 @@ class Session:
 
     def successful_capture(self, result):
         self.captures += 1
+        logger.debug('successful capture (%s/%s)',
+                     self.captures, self.needed_captures)
 
         if self.captures == self.needed_captures:
-            bell1.set_volume(.5)
+            logger.debug('finished the session')
             bell1.play()
         else:
-            whistle.set_volume(0.4)
-            whistle.play()
+            logger.debug('finished the capture')
+            finished.play()
 
         self.comp.process(capture_image)
         self.arch1.process(capture_image)
 
     def failed_capture(self, result):
         """ plays the error sound rapidly 3x """
+        logger.debug('failed capture')
         task.deferLater(reactor, 0, error.play)
         task.deferLater(reactor, .15, error.play)
         task.deferLater(reactor, .30, error.play)
@@ -190,6 +199,7 @@ class Session:
             self.running = False
 
     def do_session(self, result=None):
+        logger.debug('start new session')
         cam = CameraTrigger()
 
         d = self.countdown()
@@ -200,6 +210,7 @@ class Session:
 
     def start(self, result=None):
         if self.running:
+            logger.debug('want to start, but already running')
             return
 
         self.running = True
@@ -214,39 +225,86 @@ class Arduino(LineReceiver):
     0x01: trigger
     0x80: set servo
     """
-
     def __init__(self, session):
-        self.setRawMode()
+        logger.debug('new arduino')
         self.session = session
-        self._buf = []
+        self.lock = threading.Lock()
 
     def process(self, cmd, arg):
-        if cmd == 1:
+        logger.debug('processing for arduino: %s %s', cmd, arg)
+        if cmd == 1 and arg == 2:
             self.session.start()
 
-    def rawDataReceived(self, data):
-        for i in data:
-            self._buf.append(i)
+    def sendCommand(self, cmd, arg):
+        logger.debug('sending to arduino: %s %s', cmd, arg)
+        data = chr(cmd) + chr(arg)
+        self.transport.write(data)
 
-        if len(self._buf) == 2:
-            cmd, arg = [ord(i) for i in self._buf]
+    def lineReceived(self, data):
+        logger.debug('got serial data %s', data)
+        try:
+            cmd, arg = [int(i) for i in data.split()]
+            logger.debug('got command %s %s', cmd, arg)
             self.process(cmd, arg)
-            self._buf = []
+        except ValueError:
+            logger.debug('unable to parse: %s', data)
+            raise
 
-        # if somehow we are out of sync, then just drop all data
-        elif len(self._buf) > 2:
-            self._buf = []
-            #session.start()
+
+class ServoServiceProtocol(LineReceiver):
+    def lineReceived(self, data):
+        logger.debug('got remote data %s', data)
+        value = None
+
+        try:
+            value = int(data)
+        except ValueError:
+            logger.debug('cannot process data %s', data)
+
+        if value == -1:
+            self.transport.loseConnection()
+            return
+
+        else:
+            try:
+                self.factory.arduino.sendCommand(0x80, value)
+            except:
+                logger.debug('problem communicating with arduino')
+                raise
+
+
+class ServoServiceFactory(protocol.ServerFactory):
+    protocol = ServoServiceProtocol
+
+    def __init__(self, arduino):
+        self._arduino = arduino
+
+    @property
+    def arduino(self):
+        return self._arduino
 
 
 if __name__ == '__main__':
+    logger.debug('starting')
     session = Session()
+    arduino = Arduino(session)
 
-    # WARNING!  Arduino stuff here
+    logger.debug('building new serial port listener...')
     try:
-        s = SerialPort(Arduino(session), arduino_port, reactor,
-                       baudrate=arduino_baudrate)
+        s = SerialPort(arduino,
+                       Config.get('arduino', 'port'),
+                       reactor,
+                       baudrate=Config.getint('arduino', 'baudrate'))
     except serial.serialutil.SerialException:
         raise
 
-    reactor.run()
+    # starting arduino listener
+    reactor.listenTCP(Config.getint('arduino', 'tcp-port'),
+                      ServoServiceFactory(arduino))
+
+    logger.debug('starting reactor...')
+    try:
+        reactor.run()
+    except:
+        reactor.stop()
+        raise

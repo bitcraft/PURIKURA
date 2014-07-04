@@ -1,22 +1,23 @@
 import smtplib
 import threading
 import pickle
-
-sender = 'leif@kilbuckcreek.com'
-auth_file = '/home/mjolnir/git/PURIKURA/secrets'
+import email
+from .config import Config as pkConfig
 
 
 class SenderThread(threading.Thread):
-    def __init__(self, queue):
+    def __init__(self, address, filename):
         threading.Thread.__init__(self)
         self.address = address
         self.filename = filename
 
     def run(self):
-        import email
+        sender = pkConfig.get('email', 'sender')
+        subject = pkConfig.get('email', 'subject')
+        auth_file = '/home/mjolnir/git/PURIKURA/secrets'
 
         msg = email.MIMEMultipart.MIMEMultipart('mixed')
-        msg['subject'] = 'Your photo from Kilbuck Creek Photo Booth'
+        msg['subject'] = subject
         msg['from'] = sender
         msg['to'] = self.address
 
@@ -35,11 +36,10 @@ class SenderThread(threading.Thread):
             auth = pickle.load(fh)
             auth = auth['smtp']
 
+        with open('email.log', 'a') as fh:
+            fh.write('{}\t{}\n'.format(self.address, self.filename))
+
         smtpout = smtplib.SMTP(auth['host'])
         smtpout.login(auth['username'], auth['password'])
-
-        auth = None
-
         smtpout.sendmail(sender, [self.address], msg.as_string())
         smtpout.quit()
-

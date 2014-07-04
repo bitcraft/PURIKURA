@@ -1,144 +1,303 @@
+#!/usr/bin/env python
 """
 DBus service to share the camera object
 """
-import logging
+import sys
+sys.path.append('/home/mjolnir/git/PURIKURA/')
 
+import socket
+import threading
+import logging
+import shutter
 import gobject
 import dbus
-import shutter
+import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
-from dbus import ByteArray
+from six.moves import queue
 
+from pyrikura.config import Config
 
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("purikura.dbus")
 
-# config
-bus_name = 'com.kilbuckcreek.photobooth'
-bus_path = '/com/kilbuckcreek/photobooth'
+# dbus config
+bus_name = Config.get('camera', 'dbus-name')
+bus_path = Config.get('camera', 'dbus-path')
 
 DBusGMainLoop(set_as_default=True)
 bus = dbus.SessionBus()
 
 
-class PhotoboothService(dbus.service.Object):
+class ArduinoHandler(object):
     def __init__(self):
-        name = dbus.service.BusName(bus_name, bus=dbus.SessionBus())
-        dbus.service.Object.__init__(self, name, bus_path)
+        self.queue = queue.Queue(maxsize=4)
+        self.lock = threading.Lock()
+        self.thread = None
 
-        self._filename = 'capture.jpg'
-        self._locked = True
-        self.camera = None
-        self.reset()
-        self.do_preview = False
+    def set_camera_tilt(self, value):
+        """ Set camera tilt
+
+        TODO: some kind of smoothing.
+        """
+        def send_message():
+            host = 'localhost'
+            port = Config.getint('arduino', 'tcp-port')
+
+            try:
+                conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                conn.connect((host, port))
+            except:
+                self.thread = None
+                return
+
+            while 1:
+                try:
+                    logger.debug('waiting for value...')
+                    _value = self.queue.get(timeout=1)
+                except queue.Empty:
+                    logger.debug('thread timeout')
+                    break
+                else:
+                    logger.debug('sending %s', str(_value))
+                    try:
+                        conn.send(str(_value) + '\r\n')
+                        self.queue.task_done()
+                    except:
+                        break
+
+            logger.debug('closing connection')
+            try:
+                conn.send(str(-1) + '\r\n')
+                conn.close()
+            except:
+                pass
+
+            logger.debug('end of thread')
+            self.thread = None
+            return
+
+        try:
+            logger.debug('adding value to arduino queue')
+            self.queue.put(value, block=False)
+        except queue.Full:
+            logger.debug('arduino queue is full')
+            try:
+                self.queue.get()
+                self.queue.put(value, block=False)
+            except (queue.Full, queue.Empty):
+                logger.debug('got some error with arduino queue')
+                pass
+
+        if self.thread is None:
+            logger.debug('starting socket thread')
+            self.thread = threading.Thread(target=send_message)
+            self.thread.daemon = True
+            self.thread.start()
+
+
+class PhotoboothService(dbus.service.Object):
+    """ Sharing of camera and arduino with a 'simple' api
+    """
+    def __init__(self):
+        logger.debug('starting photobooth service...')
+        name = dbus.service.BusName(bus_name, bus=dbus.SessionBus())
+        super(PhotoboothService, self).__init__(name, bus_path)
+        self.capture_filename = 'capture.jpg'
+        self.preview_filename = 'preview.jpg'
+        self._camera_lock = threading.Lock()
+        self._camera = None
+
+        self._arduino_lock = threading.Lock()
+        self._arduino_handler = None
+
+    def _open_camera(self):
+        """ Open the camera for use (internal use only)
+
+        Safe to be called more that once or while camera is already open
+        """
+        with self._camera_lock:
+            if self._camera is None:
+                try:
+                    self._camera = shutter.Camera()
+                    return True
+                except shutter.ShutterError as e:
+                    logger.debug('unable to open camera')
+                    return False
+            else:
+                return True
+
+    def _close_camera(self):
+        """ Close the camera for use (internal use only)
+
+        Safe to be called more that once or while camera is already closed
+        """
+        with self._camera_lock:
+            if self._camera is None:
+                return True
+            else:
+                try:
+                    logger.debug('attempting camera.close()...')
+                    self._camera.close()
+                    logger.debug('attempting setting to none...')
+                    self._camera = None
+                    return True
+                except shutter.ShutterError as e:
+                    logger.debug('unable to close camera')
+                    return False
+
+    def _reset_camera(self):
+        """ Reset camera by closing and opening it again (internal use only)
+        """
+        logger.debug('attempting to reset the camera...')
+        with self._camera_lock:
+            return self._close_camera() and self._open_camera()
+
+    def _open_arduino(self):
+        """ Open the arduino (internal use only)
+        """
+        with self._arduino_lock:
+            self._arduino_handler = ArduinoHandler()
+        return True
+
+    def _close_arduino(self):
+        """ Close the arduino (internal use only)
+        """
+        with self._arduino_lock:
+            self._arduino_handler = None
+        return True
+
+    def _reset_arduino(self):
+        """ Reset arduino by closing and opening it again (internal use only)
+        """
+        logger.debug('attempting to reset the arduino...')
+        with self._arduino_lock:
+            return self._close_arduino() and self._open_arduino()
+
+    @dbus.service.method(bus_name, out_signature='b')
+    def open_camera(self):
+        """ Open the camera for use
+
+        Safe to be called more that once or while camera is already open
+        """
+        return self._open_camera()
+
+    @dbus.service.method(bus_name, out_signature='b')
+    def close_camera(self):
+        """ Close the camera for use
+
+        Safe to be called more that once or while camera is already closed
+        """
+        return self._close_camera()
 
     @dbus.service.method(bus_name, out_signature='b')
     def capture_preview(self):
-        if self._locked:
+        """ Capture a preview image and save to a file
+
+        Returns boolean of succeeded or not
+        """
+        if self._camera is None:
+            logger.debug('want to capture preview, but camera is not setup')
+            return False
+
+        with self._camera_lock:
             try:
-                self.camera.capture_image('preview.jpg')
+                self._camera.capture_preview(self.preview_filename)
                 return True
             except shutter.ShutterError as e:
-                # couldn't focus
                 if e.result == -1:
-                    pass
+                    logger.debug('unable to focus camera')
                 else:
-                    self.reset()
-                    self.camera.capture_image('preview.jpg')
+                    logger.debug('unhandled error {}', e.result)
                 return False
-
-        return False
 
     @dbus.service.method(bus_name, out_signature='b')
     def capture_image(self):
-        if self._locked:
+        """ Capture a full image and save to a file
+
+        Returns boolean of succeeded or not
+        """
+        if self._camera is None:
+            logger.debug('want to capture, but camera is not setup')
+            return False
+
+        with self._camera_lock:
             try:
-                self.camera.capture_image(self._filename)
+                self._camera.capture_image(self.capture_filename)
                 return True
             except shutter.ShutterError as e:
-                # couldn't focus
                 if e.result == -1:
-                    pass
+                    logger.debug('unable to focus camera')
                 else:
-                    self.reset()
-                    self.camera.capture_image(self._filename)
+                    logger.debug('unhandled error {}', e.result)
                 return False
 
-        return False
-
-    @dbus.service.method(bus_name, out_signature='b')
-    def preview_running(self):
-        return self.do_preview
-
-    @dbus.service.method(bus_name, out_signature='b')
-    def preview_safe(self):
-        return not self.preview_lock
-
-    @dbus.service.signal(bus_name)
-    def preview_updated(self, value):
-        pass
-
-    @dbus.service.method(bus_name)
-    def stop_preview(self, key=None):
-        if self._key == key:
-            self.do_preview = False
-            gobject.source_remove(self.timer)
-
-    @dbus.service.method(bus_name)
-    def start_preview(self, key=None):
-        self._key = key
-        self.do_preview = True
-        self.download_preview()
-        self.timer = gobject.timeout_add(300, self.download_preview)
-
-    @dbus.service.method(bus_name, out_signature='ay')
-    def get_preview(self):
-        if self._locked and self.do_preview:
-            try:
-                data = self.camera.capture_preview().get_data()
-                return ByteArray(data)
-            except shutter.ShutterError as e:
-                self.reset()
-
-    @dbus.service.method(bus_name, out_signature='b')
+    @dbus.service.method(bus_name, out_signature='(bay)')
     def download_preview(self):
-        if self._locked:
+        """ Capture preview image and return data
+
+        Returns dbus.Struct:
+            [0] Boolean if succeeded or not
+            [1] dbus.ByteArray of preview image data
+
+        Image data will be an empty string if capture is not successful
+        """
+        if self._camera is None:
+            logger.debug('want to get preview, but camera is not setup')
+            return False
+
+        with self._camera_lock:
             try:
-                self.camera.capture_preview('preview.jpg')
-                return True
+                data = self._camera.capture_preview().get_data()
+                return dbus.Struct((True, dbus.ByteArray(data)),
+                                   signature='bay')
             except shutter.ShutterError as e:
-                self.reset()
-                return False
+                logger.debug('unhandled error %s: %s', e.result, e.message)
+                return dbus.Struct((False, dbus.ByteArray('')),
+                                   signature='bay')
 
-        return True
-
-    def open_and_lock_camera(self):
-        if self._locked:
-            raise Exception
-        self._locked = True
-        self.camera = shutter.camera()
-        g_camera = self.camera
-
-    def release_camera(self):
-        self._locked = False
-        self.camera = None
-
+    @dbus.service.method(bus_name, out_signature='b')
     def reset(self):
-        if self.camera:
-            self.camera.exit()
-        self.release_camera()
-        self.open_and_lock_camera()
+        """ Reset camera by closing and opening it again
+        """
+        self._reset_camera()
 
-    @dbus.service.method(bus_name)
-    def do_reset(self):
-        self.reset()
+    @dbus.service.method(bus_name, out_signature='b')
+    def open_arduino(self):
+        """ Open the arduino for use
+
+        Safe to be called more that once or while arduino is already open
+        """
+        return self._open_arduino()
+
+    @dbus.service.method(bus_name, out_signature='b')
+    def close_arduino(self):
+        """ Close the arduino
+
+        Safe to be called more that once or while arduino is already closed
+        """
+        return self._close_arduino()
+
+    @dbus.service.method(bus_name, in_signature='i', out_signature='b')
+    def set_camera_tilt(self, value):
+        """ Set camera tilt
+
+        Uses the arduino for communications with servo.
+
+        Value must be 0 or greater, but less or equal to 180.
+
+        TODO: some kind of smoothing.
+        """
+        with self._arduino_lock:
+            self._arduino_handler.set_camera_tilt(value)
 
 
 if __name__ == '__main__':
     service = PhotoboothService()
     loop = gobject.MainLoop()
 
+    logger.debug('starting gobject loop...')
     try:
         loop.run()
     except:
-        service.camera = None
+        loop.quit()
         raise

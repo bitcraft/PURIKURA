@@ -31,7 +31,7 @@ Servo tiltServo;
 int tiltPosNegativeLimit = 20;
 int tiltPosPositiveLimit = 160;
 int tiltPos = tiltPosNegativeLimit;
-int servoResetFreq = 500;
+int servoResetFreq = 50;
 long lastServoResetTime = 0;
 
 // incoming protocol buffer
@@ -73,8 +73,11 @@ void readPin(int pin) {
   if (triggerState[index] == LOW) {
     if (triggerHeld[index] == 0) {
       triggerHeld[index] = 1;
-      byte out[] = {pSwitchTrigger, pin};
-      Serial.write(out, 2);
+      Serial.print(pSwitchTrigger);
+      Serial.print(" ");
+      Serial.print(pin);
+      Serial.println();
+      Serial.flush();
     }
   } 
   else {
@@ -84,10 +87,19 @@ void readPin(int pin) {
   lastTriggerState[index] = thisState;
 }
 
-void setTilt(byte value) {
+void setTilt(byte newValue) {
+  int value = (int)newValue;
+  
+  if (value > tiltPosPositiveLimit) {
+    value = tiltPosPositiveLimit;
+  }
+  if (value < tiltPosNegativeLimit) {
+    value = tiltPosNegativeLimit;
+  }
+  
   if (tiltPosPositiveLimit >= value) {
     if (tiltPosNegativeLimit <= value) {
-      tiltPos = (int)value;
+      tiltPos = value;
     }
   }
 }
@@ -105,28 +117,23 @@ void loop() {
 
 void serialEvent() {
   byte cmd;
-  byte arg;
-  boolean complete = false;
   
   while (Serial.available()) {
     serBufferData[serBufferIndex] = (byte)Serial.read();
     cmd = serBufferData[0];
 
     if (serBufferIndex == 1) {
-      arg = serBufferData[1];
-      complete = true;
       serBufferIndex = 0;
     } else {
       serBufferIndex += 1;
     }
     
-    if (cmd == pSetTilt) {
-      if (complete) {
+    if (serBufferIndex == 0) {
+      byte arg = serBufferData[1];
+      if (cmd == pSetTilt) {
         setTilt(arg);
       }
-    } else {
-      // this command isn't known, so just ignore everything else
-      Serial.flush();
+      break;
     }
   }
 }

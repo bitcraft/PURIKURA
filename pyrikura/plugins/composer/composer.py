@@ -1,10 +1,11 @@
 from multiprocessing import JoinableQueue, Process, Pipe
-import ConfigParser
 import shutil
+import sys
+import os
+from six.moves import configparser, queue
 
 from pyrikura.plugin import Plugin
 from pyrikura.broker import Broker
-
 
 
 # mangle import paths to enable this sweet hack
@@ -12,12 +13,10 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from imageprocessor import *
 
 
-
-# stupid hack to work around stale references in Wand :/
+# stupid hack to work around stale references in Wand
 def compose(conn, ready_queue, images, config):
     from wand.image import Image
     from wand.color import Color
-    import os
 
     # get all the images and overlay them
     layers = []
@@ -25,7 +24,7 @@ def compose(conn, ready_queue, images, config):
         try:
             this_config = ready_queue.get()
             layers.append((this_config['name'], this_config))
-        except Queue.Empty:
+        except queue.Empty:
             pass
 
     # the base to the image we are producing
@@ -44,16 +43,13 @@ def compose(conn, ready_queue, images, config):
             cache[image_config['filename']] = temp_image
         base.composite(temp_image, x, y)
 
-
-    # save it!
-    new_path = 'composite.png'
-
+    new_path = 'composite-0000.png'
     overwrite = True
     if not overwrite:
         for image in cache.values():
             image.close()
 
-        # append a dash and numberal if there is a duplicate
+        # append a dash and numeral if there is a duplicate
         if os.path.exists(new_path):
             i = 1
             root, ext = os.path.splitext(new_path)
@@ -65,7 +61,6 @@ def compose(conn, ready_queue, images, config):
     base.format = 'png'
     base.save(filename=new_path)
     base.close()
-
     conn.send(new_path)
     conn.close()
 
@@ -83,7 +78,6 @@ class ComposerBroker(Broker):
         self.ready_queue = JoinableQueue()
         self.reset()
 
-
     def reset(self):
         """
         template is reloaded each time the template is finished
@@ -91,7 +85,7 @@ class ComposerBroker(Broker):
         """
 
         # reread the template
-        cfg = ConfigParser.ConfigParser()
+        cfg = configparser.ConfigParser()
         cfg.read(self.template)
 
         # this will be passed to processors
@@ -156,7 +150,6 @@ class ComposerBroker(Broker):
         )
         self._composer_process.start()
 
-
     def process(self, msg, sender=None):
         config = self._config_queue.pop()
         config['filename'] = msg
@@ -166,7 +159,7 @@ class ComposerBroker(Broker):
             filename = self._p_conn.recv()
             self._composer_process.join()
 
-            # make sure are children are really dead
+            # make sure all children are kill
             for p in self._processes:
                 p.join()
 
@@ -176,23 +169,13 @@ class ComposerBroker(Broker):
             self.publish([filename])
 
     def preprocess(self, config):
-
+        """ start a subprocess to preformat the incoming image
         """
-        start a subprocess to preformat the incoming image
-        """
-        # create a temporary filename in case the file needs to be written to
-        # disk.  this is only the case if a filter is needed during processing
-
         filename = config['filename']
-
         root, ext = os.path.splitext(filename)
         new_filename = 'temp-{}{}'.format(len(self._config_queue), ext)
         config['filename'] = new_filename
-
-        # create a copy of the file
         shutil.copy(filename, new_filename)
-
-        # add this image to the raw_queue
         self.raw_queue.put(config)
 
         # spawn another process for processing the image

@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 """
 display the camera's live preview using pygame.
-
-uses threads and stuff for speed
-
+uses threads for speed
 suitable for any display that is compatible with SDL (framebuffers, etc)
 """
 
@@ -75,10 +73,7 @@ def quit_pressed():
 
 
 if __name__ == '__main__':
-    pygame.display.set_mode((0, 0), pygame.FULLSCREEN |
-                                    pygame.DOUBLEBUF |
-                                    pygame.HWSURFACE)
-
+    pygame.display.set_mode((0,0), pygame.FULLSCREEN)
     main_surface = pygame.display.get_surface()
 
     pygame.mouse.set_visible(False)
@@ -87,6 +82,10 @@ if __name__ == '__main__':
     camera_lock = threading.Lock()
     queue = queue.Queue(10)
     camera = shutter.Camera()
+    
+    print camera.wait_for_event()
+    print camera.list_files()
+    print camera.summary
 
     thread0 = CaptureThread(queue, camera, camera_lock)
     thread0.daemon = True
@@ -107,4 +106,4 @@ if __name__ == '__main__':
         thread0.stop()
         thread1.stop()
         time.sleep(1)
-        camera.exit()
+        camera.close()

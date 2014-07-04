@@ -1,7 +1,9 @@
 #:kivy 1.7
 
-[AccordionItemTitle@Widget]:
+[AccordionItemTitle2@Widget]:
     text: ctx.title
+    size_hint: 1, None
+    height: 232
 
     canvas.before:
         Color:
@@ -21,6 +23,28 @@
     canvas.after:
         PopMatrix
 
+[AccordionItemTitle@Label]:
+    text: ctx.title
+    normal_background: ctx.item.background_normal if ctx.item.collapse else ctx.item.background_selected
+    disabled_background: ctx.item.background_disabled_normal if ctx.item.collapse else ctx.item.background_disabled_selected
+
+    canvas.before:
+        Color:
+            rgba: self.disabled_color if self.disabled else self.color
+        BorderImage:
+            source: self.disabled_background if self.disabled else self.normal_background
+            pos: self.pos
+            size: self.size
+        PushMatrix
+        Translate:
+            xy: self.center_x, self.center_y
+        Rotate:
+            angle: 90 if ctx.item.orientation == 'horizontal' else 0
+            axis: 0, 0, 1
+        Translate:
+            xy: -self.center_x, -self.center_y
+    canvas.after:
+        PopMatrix
 
 <SharingControls>:
     opacity: 0.0
@@ -28,7 +52,7 @@
     Accordion:
         orientation: 'vertical'
         pos: 16,0
-        min_space: 232
+        #min_space: 232
 
         AccordionItem:
             title: 'Print Copies'
@@ -86,6 +110,7 @@
                     height: 48
 
         AccordionItem:
+            title: 'Email'
             icon_source: 'images/icons/stamps/mail.png'
             icon_size: 256, 256
 
@@ -135,6 +160,7 @@
 
 
         IconAccordionItem:
+            title: 'Twitter'
             icon_source: 'images/icons/stamps/twitter.png'
             icon_size: 256, 256
 
@@ -160,7 +186,7 @@
 
         Image:
             uniqueid: 'background'
-            source: 'images/galaxy.jpg'
+            source: '/home/mjolnir/git/PURIKURA/resources/images/galaxy.jpg'
             allow_stretch: True
             color: 1, 1, 1, .5
             size_hint: 3, 1.5
@@ -168,9 +194,7 @@
 
         ScrollView:
             uniqueid: 'scrollview'
-
             size_hint: 1, .8
-
             do_scroll_y: False
 
             scroll_timeout: 500
@@ -185,4 +209,3 @@
                 rows: root.grid_rows
                 col_default_width: root.small_preview_size[0]
                 #row_default_height: root.small_preview_size[1]
-
