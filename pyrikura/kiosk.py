@@ -54,6 +54,7 @@ def load_config(name):
     cfg.read(path)
     return cfg
 
+
 cfg = load_config('kiosk.ini')
 
 MAXIMUM_PRINTS = cfg.getint('kiosk', 'max-prints')
@@ -160,14 +161,11 @@ class PickerScreen(Screen):
 
         def update_preview(widget, mouse_point):
             if widget.collide_point(mouse_point.x, mouse_point.y):
-                #pb_iface.capture_preview()
                 if os.path.exists('preview.jpg'):
                     widget.source = 'preview.jpg'
                     widget.reload()
 
         self.preview_widget.bind(on_touch_down=update_preview)
-
-        #pb_iface.connect_to_signal('preview_updated', update_preview)
 
         self.preview_label = Label(
             text='Touch preview to close',
@@ -478,7 +476,6 @@ class SharingControls(FloatLayout):
 
         popup.open()
 
-
     def do_email(self, popup, address, filename, widget):
         thread = SenderThread(address, filename)
         thread.daemon = True
@@ -511,7 +508,6 @@ class SharingControls(FloatLayout):
 
         popup.open()
 
-
     def confirm_print(self):
         layout0 = BoxLayout(orientation='vertical')
         layout1 = BoxLayout(orientation='horizontal')
@@ -543,7 +539,6 @@ class SharingControls(FloatLayout):
         button1.bind(on_release=popup.dismiss)
 
         popup.open()
-
 
     def confirm_address(self):
         if not self.email_addressee:
