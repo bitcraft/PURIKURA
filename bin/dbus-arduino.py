@@ -56,6 +56,7 @@ class ArduinoHandler(object):
 
             logger.debug('closing connection')
             try:
+                pass
                 #conn.send(str(-1) + '\r\n')
             except:
                 pass
@@ -151,10 +152,12 @@ class ArduinoService(dbus.service.Object):
 
 
 if __name__ == '__main__':
+    logger.debug('starting arduino service...')
     service = ArduinoService()
+    logger.debug('starting arduino gobject main loop...')
     loop = gobject.MainLoop()
 
-    logger.debug('starting gobject loop...')
+    logger.debug('starting arduino dbus loop...')
     try:
         loop.run()
     except:

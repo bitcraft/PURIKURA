@@ -65,8 +65,10 @@ class PreviewGetThread(threading.Thread):
     def __init__(self, q):
         super(PreviewGetThread, self).__init__()
         bus = dbus.SessionBus()
-        pb_obj = bus.get_object(dbus_name, dbus_path)
-        self.iface = dbus.Interface(pb_obj, dbus_interface=dbus_name)
+        _name = dbus_name + '.camera'
+        _path = dbus_path + '/camera'
+        pb_obj = bus.get_object(_name, _path)
+        self.iface = dbus.Interface(pb_obj, dbus_interface=_name)
         self.iface.open_camera()
         self.queue = q
         self.daemon = True
@@ -133,8 +135,10 @@ class ArduinoHandler(object):
     """
     def __init__(self):
         bus = dbus.SessionBus()
-        pb_obj = bus.get_object(dbus_name, dbus_path)
-        self.iface = dbus.Interface(pb_obj, dbus_interface=dbus_name)
+        _name = dbus_name + '.arduino'
+        _path = dbus_path + '/arduino'
+        pb_obj = bus.get_object(_name, _path)
+        self.iface = dbus.Interface(pb_obj, dbus_interface=_name)
         self.iface.open_arduino()
 
     def set_camera_tilt(self, value):

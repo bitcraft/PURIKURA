@@ -170,10 +170,12 @@ class CameraService(dbus.service.Object):
 
 
 if __name__ == '__main__':
+    logger.debug('starting camera service...')
     service = CameraService()
+    logger.debug('starting camera gobject loop...')
     loop = gobject.MainLoop()
 
-    logger.debug('starting camera dbus interface...')
+    logger.debug('starting camera dbus loop...')
     try:
         loop.run()
     except:
