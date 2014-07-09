@@ -144,8 +144,7 @@ class ArduinoService(dbus.service.Object):
 
         TODO: some kind of smoothing.
         """
-        with self._arduino_lock:
-            self._arduino_handler.set_camera_tilt(value)
+        self._arduino_handler.set_camera_tilt(value)
 
 
 if __name__ == '__main__':
