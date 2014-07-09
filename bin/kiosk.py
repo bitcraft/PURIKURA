@@ -118,10 +118,11 @@ class KioskApp(App):
 
 
 if __name__ == '__main__':
-    cursor = pygame.cursors.load_xbm(
-        os.path.join(app_images_path, 'blank-cursor.xbm'),
-        os.path.join(app_images_path, 'blank-cursor-mask.xbm'))
-    pygame.mouse.set_cursor(*cursor)
+    if pkConfig.get('display', 'hide-mouse'):
+        cursor = pygame.cursors.load_xbm(
+            os.path.join(app_images_path, 'blank-cursor.xbm'),
+            os.path.join(app_images_path, 'blank-cursor-mask.xbm'))
+        pygame.mouse.set_cursor(*cursor)
 
     app = KioskApp()
     #app.manager.add_widget(SinglePicker(name='singlepicker'))

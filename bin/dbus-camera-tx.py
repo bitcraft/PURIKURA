@@ -10,8 +10,8 @@ import logging
 import shutter
 
 from twisted.internet import reactor, defer
-from tx.dbus import client, objects, error
-from tx.dbus.interface import DBusInterface, Method
+from txdbus import client, objects, error
+from txdbus.interface import DBusInterface, Method
 
 from pyrikura.config import Config
 
@@ -171,7 +171,7 @@ class CameraService(objects.DBusObject):
 def main():
     logger.debug('exporting camera dbus interface...')
     try:
-        conn = yield client.connect(reactor)
+        conn = yield client.connect(reactor, 'session')
         conn.exportObject(CameraService(bus_path))
         yield conn.requestBusName(bus_name)
     except error.DBusException, e:

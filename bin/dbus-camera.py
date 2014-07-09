@@ -156,11 +156,11 @@ class CameraService(dbus.service.Object):
             try:
                 data = self._camera.capture_preview().get_data()
                 return dbus.Struct((True, dbus.ByteArray(data)),
-                                   signature='bay')
+                                   signature='(bay)')
             except shutter.ShutterError as e:
                 logger.debug('unhandled error %s: %s', e.result, e.message)
                 return dbus.Struct((False, dbus.ByteArray('')),
-                                   signature='bay')
+                                   signature='(bay)')
 
     @dbus.service.method(bus_name, out_signature='b')
     def reset(self):
