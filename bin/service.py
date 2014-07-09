@@ -19,12 +19,9 @@ import os
 import logging
 import pygame
 import dbus
-import serial
-import threading
 
-from twisted.internet import reactor, defer, task, protocol, threads
-from twisted.protocols.basic import LineReceiver
-from twisted.internet.serialport import SerialPort
+from twisted.internet import reactor, defer, task
+
 
 import yapsy
 from yapsy.PluginManager import PluginManager
@@ -218,91 +215,11 @@ class Session:
         self.do_session()
 
 
-class Arduino(LineReceiver):
-    """
-    protocol:
-
-    0x01: trigger
-    0x80: set servo
-    """
-    def __init__(self, session):
-        logger.debug('new arduino')
-        self.session = session
-        self.lock = threading.Lock()
-
-    def process(self, cmd, arg):
-        logger.debug('processing for arduino: %s %s', cmd, arg)
-        if cmd == 1 and arg == 2:
-            self.session.start()
-
-    def sendCommand(self, cmd, arg):
-        logger.debug('sending to arduino: %s %s', cmd, arg)
-        data = chr(cmd) + chr(arg)
-        self.transport.write(data)
-
-    def lineReceived(self, data):
-        logger.debug('got serial data %s', data)
-        try:
-            cmd, arg = [int(i) for i in data.split()]
-            logger.debug('got command %s %s', cmd, arg)
-            self.process(cmd, arg)
-        except ValueError:
-            logger.debug('unable to parse: %s', data)
-            raise
-
-
-class ServoServiceProtocol(LineReceiver):
-    def lineReceived(self, data):
-        logger.debug('got remote data %s', data)
-        value = None
-
-        try:
-            value = int(data)
-        except ValueError:
-            logger.debug('cannot process data %s', data)
-
-        if value == -1:
-            self.transport.loseConnection()
-            return
-
-        else:
-            try:
-                self.factory.arduino.sendCommand(0x80, value)
-            except:
-                logger.debug('problem communicating with arduino')
-                raise
-
-
-class ServoServiceFactory(protocol.ServerFactory):
-    protocol = ServoServiceProtocol
-
-    def __init__(self, arduino):
-        self._arduino = arduino
-
-    @property
-    def arduino(self):
-        return self._arduino
-
-
 if __name__ == '__main__':
     logger.debug('starting')
     session = Session()
-    arduino = Arduino(session)
 
-    logger.debug('building new serial port listener...')
-    try:
-        s = SerialPort(arduino,
-                       Config.get('arduino', 'port'),
-                       reactor,
-                       baudrate=Config.getint('arduino', 'baudrate'))
-    except serial.serialutil.SerialException:
-        raise
-
-    # starting arduino listener
-    reactor.listenTCP(Config.getint('arduino', 'tcp-port'),
-                      ServoServiceFactory(arduino))
-
-    logger.debug('starting reactor...')
+    logger.debug('starting service reactor...')
     try:
         reactor.run()
     except:
