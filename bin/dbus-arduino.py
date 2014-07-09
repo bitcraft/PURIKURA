@@ -5,7 +5,6 @@ DBus service to share the arduino object
 import sys
 sys.path.append('/home/mjolnir/git/PURIKURA/')
 
-import socket
 import threading
 import logging
 import gobject
@@ -39,16 +38,6 @@ class ArduinoHandler(object):
         TODO: some kind of smoothing.
         """
         def send_message():
-            host = 'localhost'
-            port = Config.getint('arduino', 'tcp-port')
-
-            try:
-                conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                conn.connect((host, port))
-            except:
-                self.thread = None
-                return
-
             while 1:
                 try:
                     logger.debug('waiting for value...')
@@ -59,15 +48,15 @@ class ArduinoHandler(object):
                 else:
                     logger.debug('sending %s', str(_value))
                     try:
-                        conn.send(str(_value) + '\r\n')
+                        #write to serial port
+                        #conn.send(str(_value) + '\r\n')
                         self.queue.task_done()
                     except:
                         break
 
             logger.debug('closing connection')
             try:
-                conn.send(str(-1) + '\r\n')
-                conn.close()
+                #conn.send(str(-1) + '\r\n')
             except:
                 pass
 
@@ -93,7 +82,6 @@ class ArduinoHandler(object):
             self.thread = threading.Thread(target=send_message)
             self.thread.daemon = True
             self.thread.start()
-
 
 class ArduinoService(dbus.service.Object):
     """ Sharing of arduino with a 'simple' api
