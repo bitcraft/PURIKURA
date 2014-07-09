@@ -20,4 +20,5 @@ do
         break
     fi
 done
+killall -9 python
 exit $OUT
