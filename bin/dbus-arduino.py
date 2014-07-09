@@ -29,7 +29,7 @@ bus = dbus.SessionBus()
 
 class ArduinoHandler(object):
     def __init__(self, port):
-        self.queue = queue.Queue(maxsize=4)
+        self.queue = queue.Queue(maxsize=15)
         self.lock = threading.Lock()
         self.thread = None
         self.port = port
