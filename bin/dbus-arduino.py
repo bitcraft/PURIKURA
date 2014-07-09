@@ -10,6 +10,7 @@ import logging
 import gobject
 import dbus
 import dbus.service
+import serial
 from dbus.mainloop.glib import DBusGMainLoop
 from six.moves import queue
 
@@ -27,10 +28,11 @@ bus = dbus.SessionBus()
 
 
 class ArduinoHandler(object):
-    def __init__(self):
+    def __init__(self, port):
         self.queue = queue.Queue(maxsize=4)
         self.lock = threading.Lock()
         self.thread = None
+        self.port = port
 
     def set_camera_tilt(self, value):
         """ Set camera tilt
@@ -48,35 +50,17 @@ class ArduinoHandler(object):
                 else:
                     logger.debug('sending %s', str(_value))
                     try:
-                        #write to serial port
-                        #conn.send(str(_value) + '\r\n')
+                        self.port.write(chr(0x80) + chr(_value))
                         self.queue.task_done()
                     except:
                         break
-
-            logger.debug('closing connection')
-            try:
-                pass
-                #conn.send(str(-1) + '\r\n')
-            except:
-                pass
 
             logger.debug('end of thread')
             self.thread = None
             return
 
-        try:
-            logger.debug('adding value to arduino queue')
-            self.queue.put(value, block=False)
-
-        except queue.Full:
-            logger.debug('arduino queue is full')
-            try:
-                self.queue.get()
-                self.queue.put(value, block=False)
-            except (queue.Full, queue.Empty):
-                logger.debug('got some error with arduino queue')
-                pass
+        logger.debug('adding value to arduino queue')
+        self.queue.put(value)
 
         if self.thread is None:
             logger.debug('starting socket thread')
@@ -93,20 +77,33 @@ class ArduinoService(dbus.service.Object):
         super(ArduinoService, self).__init__(name, bus_path)
         self._arduino_lock = threading.Lock()
         self._arduino_handler = None
+        self.port = None
 
     def _open_arduino(self):
         """ Open the arduino (internal use only)
         """
-        with self._arduino_lock:
-            self._arduino_handler = ArduinoHandler()
-        return True
+        if self.port is None:
+            with self._arduino_lock:
+                self.port = serial.Serial(
+                    Config.get('arduino', 'port'),
+                    Config.getint('arduino', 'baudrate')
+                )
+                self._arduino_handler = ArduinoHandler(self.port)
+            return True
+        else:
+            return True
 
     def _close_arduino(self):
         """ Close the arduino (internal use only)
         """
-        with self._arduino_lock:
-            self._arduino_handler = None
-        return True
+        if self.port is not None:
+            with self._arduino_lock:
+                self._arduino_handler = None
+                self.port.close()
+                self.port = None
+            return True
+        else:
+            return True
 
     def _reset_arduino(self):
         """ Reset arduino by closing and opening it again (internal use only)
