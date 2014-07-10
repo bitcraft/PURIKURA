@@ -29,7 +29,7 @@ bus = dbus.SessionBus()
 
 class ArduinoHandler(object):
     def __init__(self, port):
-        self.queue = queue.Queue(maxsize=15)
+        self.queue = queue.Queue(maxsize=255)
         self.thread = None
         self.port = port
 
@@ -38,13 +38,16 @@ class ArduinoHandler(object):
 
         TODO: some kind of smoothing.
         """
+        self.queue.put(value)
+
+    def start_thread(self):
         def send_message():
             while 1:
                 logger.debug('waiting for value...')
-                _value = self.queue.get()
-                logger.debug('sending %s', str(_value))
+                value = self.queue.get()
+                logger.debug('sending %s', str(value))
                 try:
-                    self.port.write(chr(0x80) + chr(_value))
+                    self.port.write(chr(0x80) + chr(value))
                 except:
                     self.queue.task_done()
                     break
@@ -54,11 +57,8 @@ class ArduinoHandler(object):
             logger.debug('end of thread')
             self.thread = None
 
-        logger.debug('adding value to arduino queue')
-        self.queue.put(value)
-
         if self.thread is None:
-            logger.debug('starting socket thread')
+            logger.debug('starting serial thread')
             self.thread = threading.Thread(target=send_message)
             self.thread.daemon = True
             self.thread.start()
@@ -139,7 +139,8 @@ class ArduinoService(dbus.service.Object):
 
         TODO: some kind of smoothing.
         """
-        self._arduino_handler.set_camera_tilt(value)
+        with self._arduino_lock:
+            self._arduino_handler.set_camera_tilt(value)
 
 
 if __name__ == '__main__':
