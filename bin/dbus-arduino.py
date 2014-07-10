@@ -30,7 +30,6 @@ bus = dbus.SessionBus()
 class ArduinoHandler(object):
     def __init__(self, port):
         self.queue = queue.Queue(maxsize=15)
-        self.lock = threading.Lock()
         self.thread = None
         self.port = port
 
@@ -41,23 +40,19 @@ class ArduinoHandler(object):
         """
         def send_message():
             while 1:
+                logger.debug('waiting for value...')
+                _value = self.queue.get()
+                logger.debug('sending %s', str(_value))
                 try:
-                    logger.debug('waiting for value...')
-                    _value = self.queue.get(timeout=1)
-                except queue.Empty:
-                    logger.debug('thread timeout')
+                    self.port.write(chr(0x80) + chr(_value))
+                except:
+                    self.queue.task_done()
                     break
                 else:
-                    logger.debug('sending %s', str(_value))
-                    try:
-                        self.port.write(chr(0x80) + chr(_value))
-                        self.queue.task_done()
-                    except:
-                        break
+                    self.queue.task_done()
 
             logger.debug('end of thread')
             self.thread = None
-            return
 
         logger.debug('adding value to arduino queue')
         self.queue.put(value)
