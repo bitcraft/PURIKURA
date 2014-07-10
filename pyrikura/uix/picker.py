@@ -85,7 +85,6 @@ class PreviewGetThread(threading.Thread):
         pil_open = PIL.Image.open
 
         while self._running:
-            time.sleep(interval)
             result, data = download_preview(byte_arrays=True)
 
             if result:
@@ -104,6 +103,8 @@ class PreviewGetThread(threading.Thread):
                                    im.tostring())
 
                 queue_put(imdata)
+
+            time.sleep(interval)
 
 
 class PreviewHandler(object):
