@@ -22,10 +22,9 @@ import os
 import pygame
 import threading
 import time
-import logging
-
 import dbus
-import dbus.service
+import logging
+import socket
 
 from ..config import Config as pkConfig
 from .sharing import SharingControls
@@ -133,18 +132,72 @@ class PreviewHandler(object):
             self.thread = None
 
 
-class ArduinoHandler(dbus.service.Object):
-    """ Manages connections to the arduino to send camera tilt information
-    """
+class ArduinoHandler(object):
     def __init__(self):
-        path = dbus_path + '/arduino'
-        bus = dbus.SessionBus()
-        dbus.service.Object.__init__(self, bus, path)
+        self.queue = queue.Queue(maxsize=4)
+        self.lock = threading.Lock()
+        self.thread = None
 
-    @dbus.service.signal(dbus_interface='com.kilbuckcreek.arduino',
-                         signature='i')
     def set_camera_tilt(self, value):
-        pass
+        """ Set camera tilt
+
+        TODO: some kind of smoothing.
+        """
+        def send_message():
+            host = 'localhost'
+            port = Config.getint('arduino', 'tcp-port')
+
+            try:
+                conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                conn.connect((host, port))
+            except:
+                self.thread = None
+                return
+
+            while 1:
+                try:
+                    logger.debug('waiting for value...')
+                    _value = self.queue.get(timeout=1)
+                except queue.Empty:
+                    logger.debug('thread timeout')
+                    break
+                else:
+                    logger.debug('sending %s', str(_value))
+                    try:
+                        conn.send(str(_value) + '\r\n')
+                        self.queue.task_done()
+                    except:
+                        break
+
+            logger.debug('closing connection')
+            try:
+                conn.send(str(-1) + '\r\n')
+                conn.close()
+            except:
+                pass
+
+            logger.debug('end of thread')
+            self.thread = None
+            return
+
+        try:
+            logger.debug('adding value to arduino queue')
+            self.queue.put(value, block=False)
+        except queue.Full:
+            logger.debug('arduino queue is full')
+            try:
+                self.queue.get()
+                self.queue.put(value, block=False)
+            except (queue.Full, queue.Empty):
+                logger.debug('got some error with arduino queue')
+                pass
+
+        if self.thread is None:
+            logger.debug('starting socket thread')
+            self.thread = threading.Thread(target=send_message)
+            self.thread.daemon = True
+            self.thread.start()
+
 
 class PickerScreen(Screen):
     """ A nice looking touch-enabled file browser

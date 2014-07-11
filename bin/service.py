@@ -258,6 +258,39 @@ class Arduino(LineReceiver):
             raise
 
 
+class ServoServiceProtocol(LineReceiver):
+    def lineReceived(self, data):
+        logger.debug('got remote data %s', data)
+        value = None
+
+        try:
+            value = int(data)
+        except ValueError:
+            logger.debug('cannot process data %s', data)
+
+        if value == -1:
+            self.transport.loseConnection()
+            return
+
+        else:
+            try:
+                self.factory.arduino.sendCommand(0x80, value)
+            except:
+                logger.debug('problem communicating with arduino')
+                raise
+
+
+class ServoServiceFactory(protocol.ServerFactory):
+    protocol = ServoServiceProtocol
+
+    def __init__(self, arduino):
+        self._arduino = arduino
+
+    @property
+    def arduino(self):
+        return self._arduino
+
+
 if __name__ == '__main__':
     def set_camera_tilt(value):
         arduino.sendCommand(0x80, value)
@@ -280,6 +313,10 @@ if __name__ == '__main__':
                        baudrate=Config.getint('arduino', 'baudrate'))
     except serial.serialutil.SerialException:
         raise
+
+    # starting arduino listener
+    reactor.listenTCP(Config.getint('arduino', 'tcp-port'),
+                      ServoServiceFactory(arduino))
 
     logger.debug('starting service reactor...')
     reactor.callWhenRunning(main)
