@@ -117,7 +117,7 @@ class CameraTrigger:
 
         d = self.d
         self.d = None
-        result = self.iface.capture_image(filename)
+        result = self.iface.capture_image(capture_image)
         if result:
             d.callback(result)
         else:
