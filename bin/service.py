@@ -73,8 +73,8 @@ pygame.mixer.init(frequency=Config.getint('sound', 'mixer-frequency'),
                   buffer=Config.getint('sound', 'mixer-buffer'))
 
 # specific to the camera system i use!
-dbus_name = Config.get('camera', 'dbus-name')
-dbus_path = Config.get('camera', 'dbus-path')
+dbus_name = Config.get('camera', 'dbus-name') + '.camera'
+dbus_path = Config.get('camera', 'dbus-path') + '/camera'
 
 # load all the stuff
 resources.load()
