@@ -102,12 +102,6 @@ class PreviewGetThread(threading.Thread):
                 im = im.crop((int(cx), 0, int(sw-cx), int(hh)))
                 im.load()
 
-                # crop to square format
-                #w, h = im.size
-                #d = (w - h)/2
-                #im = im.crop((d, 0, w-d, h))
-                #im.load()
-
                 im = im.transpose(PIL_Image.FLIP_TOP_BOTTOM)
                 imdata = ImageData(im.size[0],
                                    im.size[1],

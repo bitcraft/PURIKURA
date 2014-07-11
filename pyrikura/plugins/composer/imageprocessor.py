@@ -71,13 +71,6 @@ def process_image(raw_queue, ready_queue, global_config):
                     image.crop(left=cx, top=0,
                                right=image.width-cx, bottom=image.height)
 
-                #scale = float(h) / image.height
-                #sw = int(image.width * scale)
-                #image.resize(sw, h)
-                #d = (image.width - image.height)/2
-                #image.crop(left=d, top=0,
-                #           right=image.width-d, bottom=image.height)
-
             # S C A L E
             scale = image_config.get('scale', None)
             if scale:
