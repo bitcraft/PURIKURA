@@ -29,9 +29,9 @@ bus = dbus.SessionBus()
 
 class EmitterObject(dbus.service.Object):
     def __init__(self):
-        dbus.service.Object.__init__(self, bus, '/com/kilbuckcreek/photobooth')
+        dbus.service.Object.__init__(self, bus, '/com/kilbuckcreek/triggers')
 
-    @dbus.service.signal(dbus_interface='com.kilbuckcreek.photobooth')
+    @dbus.service.signal(dbus_interface='com.kilbuckcreek.triggers')
     def emit(self):
         logger.debug('got signal for session start')
 
@@ -58,11 +58,11 @@ class ArduinoReader(object):
                             print data
 
         if self.thread is None:
-            logger.debug('starting serial thread')
+            logger.debug('starting serial reading thread')
             self.thread = threading.Thread(target=read_forever)
             self.thread.daemon = True
-            self.thread.start()
             self.running = True
+            self.thread.start()
 
     def stop(self):
         self.running = False
@@ -85,7 +85,7 @@ class ArduinoWriter(object):
 
     def start(self):
         def send_message():
-            while 1:
+            while self.running:
                 logger.debug('waiting for value...')
                 value = self.queue.get()
                 logger.debug('sending %s', str(value))
@@ -105,9 +105,10 @@ class ArduinoWriter(object):
             self.thread = None
 
         if self.thread is None:
-            logger.debug('starting serial thread')
+            logger.debug('starting serial writing thread')
             self.thread = threading.Thread(target=send_message)
             self.thread.daemon = True
+            self.running = True
             self.thread.start()
 
     def stop(self):
@@ -118,8 +119,8 @@ class ArduinoService(dbus.service.Object):
     """ Sharing of arduino with a 'simple' api
     """
     def __init__(self):
-        logger.debug('starting photobooth service...')
-        name = dbus.service.BusName(bus_name, bus=dbus.SessionBus())
+        logger.debug('starting arduino service...')
+        name = dbus.service.BusName(bus_name, bus)
         super(ArduinoService, self).__init__(name, bus_path)
         self._arduino_lock = threading.Lock()
         self._arduino_writer = None

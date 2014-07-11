@@ -295,7 +295,7 @@ if __name__ == '__main__':
     service = PhotoboothService()
     loop = gobject.MainLoop()
 
-    logger.debug('starting gobject loop...')
+    logger.debug('starting photobooth service loop...')
     try:
         loop.run()
     except:

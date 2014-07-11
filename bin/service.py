@@ -226,7 +226,7 @@ if __name__ == '__main__':
         try:
             bus = dbus.SessionBus()
             bus.add_signal_receiver(session.start,
-                dbus_interface='com.kilbuckcreek.photobooth',
+                dbus_interface='com.kilbuckcreek.triggers',
                 signal_name='startSession')
         except:
             reactor.stop()
