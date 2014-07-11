@@ -92,9 +92,9 @@ class PreviewGetThread(threading.Thread):
                 im = pil_open(cStringIO(str(data)))
 
                 # crop to square format
-                w, h = im.size
-                d = (w - h)/2
-                im = im.crop((d, 0, w-d, h))
+                #w, h = im.size
+                #d = (w - h)/2
+                #im = im.crop((d, 0, w-d, h))
                 im.load()
 
                 im = im.transpose(PIL.Image.FLIP_TOP_BOTTOM)
