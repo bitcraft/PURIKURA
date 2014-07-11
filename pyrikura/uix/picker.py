@@ -145,7 +145,7 @@ class ArduinoHandler(object):
         """
         def send_message():
             host = 'localhost'
-            port = Config.getint('arduino', 'tcp-port')
+            port = pkConfig.getint('arduino', 'tcp-port')
 
             try:
                 conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
