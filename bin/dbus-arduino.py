@@ -45,6 +45,7 @@ class ArduinoReader(object):
         self.emmiter = EmitterObject()
 
     def start(self):
+        return
         def read_forever():
             while self.running:
                 with self.port_lock:
@@ -84,6 +85,7 @@ class ArduinoWriter(object):
         self.queue.put(value)
 
     def start(self):
+        return
         def send_message():
             while self.running:
                 logger.debug('waiting for value...')
