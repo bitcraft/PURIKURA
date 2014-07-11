@@ -91,11 +91,22 @@ class PreviewGetThread(threading.Thread):
             if result:
                 im = pil_open(cStringIO(str(data)))
 
+                # HACK
+                w, h = im.size
+                ww = 1.55 * 300
+                hh = 1.27 * 300
+                scale = hh / h
+                sw = int(w * scale)
+                cx = int((sw - ww) / 2)
+                im = im.resize(sw, hh, Image.ANTIALIAS)
+                im = im.crop((cx, 0, sw-cx, hh))
+                im.load()
+
                 # crop to square format
                 #w, h = im.size
                 #d = (w - h)/2
                 #im = im.crop((d, 0, w-d, h))
-                im.load()
+                #im.load()
 
                 im = im.transpose(PIL.Image.FLIP_TOP_BOTTOM)
                 imdata = ImageData(im.size[0],
