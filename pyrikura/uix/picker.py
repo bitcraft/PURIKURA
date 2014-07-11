@@ -17,7 +17,7 @@ from kivy.uix.slider import Slider
 
 from six.moves import cStringIO, queue
 import PIL
-from PIL import Image as PImage
+from PIL import Image as PIL_Image
 import os
 import pygame
 import threading
@@ -83,7 +83,7 @@ class PreviewGetThread(threading.Thread):
         interval = pkConfig.getfloat('camera', 'preview-interval')
         download_preview = self.iface.download_preview
         queue_put = self.queue.put
-        pil_open = PImage.open
+        pil_open = PIL_Image.open
 
         while self._running:
             result, data = download_preview(byte_arrays=True)
@@ -98,8 +98,8 @@ class PreviewGetThread(threading.Thread):
                 scale = hh / h
                 sw = int(w * scale)
                 cx = int((sw - ww) / 2)
-                im = im.resize((sw, int(hh)), PImage.ANTIALIAS)
-                im = im.crop((cx, 0, sw-cx, hh))
+                im = im.resize((int(sw), int(hh)), PIL_Image.ANTIALIAS)
+                im = im.crop((int(cx), 0, int(sw-cx), int(hh)))
                 im.load()
 
                 # crop to square format
@@ -108,7 +108,7 @@ class PreviewGetThread(threading.Thread):
                 #im = im.crop((d, 0, w-d, h))
                 #im.load()
 
-                im = im.transpose(PImage.FLIP_TOP_BOTTOM)
+                im = im.transpose(PIL_Image.FLIP_TOP_BOTTOM)
                 imdata = ImageData(im.size[0],
                                    im.size[1],
                                    im.mode.lower(),
