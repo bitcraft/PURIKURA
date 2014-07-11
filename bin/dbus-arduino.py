@@ -32,8 +32,8 @@ class EmitterObject(dbus.service.Object):
         dbus.service.Object.__init__(self, bus, '/com/kilbuckcreek/triggers')
 
     @dbus.service.signal(dbus_interface='com.kilbuckcreek.triggers')
-    def emit(self):
-        logger.debug('got signal for session start')
+    def startSession(self):
+        logger.debug('emit from reader thread?')
 
 
 class ArduinoReader(object):
@@ -48,13 +48,13 @@ class ArduinoReader(object):
         def read_forever():
             while self.running:
                 with self.port_lock:
-                    if self.port.inWaiting:
+                    if self.port.inWaiting():
                         try:
                             data = self.port.readline()
                         except serial.SerialTimeoutException:
                             pass
                         else:
-                            self.emmiter.emit()
+                            self.emmiter.startSteesion()
                             print data
 
         if self.thread is None:
