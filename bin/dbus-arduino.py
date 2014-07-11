@@ -27,11 +27,40 @@ DBusGMainLoop(set_as_default=True)
 bus = dbus.SessionBus()
 
 
-class ArduinoHandler(object):
-    def __init__(self, port):
+@dbus.service.signal(dbus_interface='com.kilbuckcreek.photobooth',
+                     signature='us')
+def start_session():
+    logger.debug('got signal for session start')
+
+
+class ArduinoReader(object):
+    def __init__(self, port, lock):
         self.queue = queue.Queue(maxsize=255)
         self.thread = None
         self.port = port
+        self.port_lock = lock
+        self.running = False
+
+    def start(self):
+        def read_forever():
+            while self.running:
+                with self.port_lock:
+                    data = self.port.read()
+                    print data
+
+        self.running = True
+
+    def stop(self):
+        self.running = False
+
+
+class ArduinoWriter(object):
+    def __init__(self, port, lock):
+        self.queue = queue.Queue(maxsize=255)
+        self.thread = None
+        self.port = port
+        self.port_lock = lock
+        self.running = False
 
     def set_camera_tilt(self, value):
         """ Set camera tilt
@@ -40,14 +69,15 @@ class ArduinoHandler(object):
         """
         self.queue.put(value)
 
-    def start_thread(self):
+    def start(self):
         def send_message():
             while 1:
                 logger.debug('waiting for value...')
                 value = self.queue.get()
                 logger.debug('sending %s', str(value))
                 try:
-                    self.port.write(chr(0x80) + chr(value))
+                    with self.port_lock:
+                        self.port.write(chr(0x80) + chr(value))
                 except:
                     self.queue.task_done()
                     break
@@ -63,6 +93,10 @@ class ArduinoHandler(object):
             self.thread.daemon = True
             self.thread.start()
 
+    def stop(self):
+        self.running = False
+
+
 class ArduinoService(dbus.service.Object):
     """ Sharing of arduino with a 'simple' api
     """
@@ -71,8 +105,10 @@ class ArduinoService(dbus.service.Object):
         name = dbus.service.BusName(bus_name, bus=dbus.SessionBus())
         super(ArduinoService, self).__init__(name, bus_path)
         self._arduino_lock = threading.Lock()
-        self._arduino_handler = None
+        self._arduino_writer = None
+        self._arduino_reader = None
         self.port = None
+        self.port_lock = threading.Lock()
 
     def _open_arduino(self):
         """ Open the arduino (internal use only)
@@ -83,7 +119,8 @@ class ArduinoService(dbus.service.Object):
                     Config.get('arduino', 'port'),
                     Config.getint('arduino', 'baudrate')
                 )
-                self._arduino_handler = ArduinoHandler(self.port)
+                self._arduino_writer = ArduinoWriter(self.port, self.port_lock)
+                self._arduino_reader = ArduinoReader(self.port, self.port_lock)
             return True
         else:
             return True
@@ -93,7 +130,10 @@ class ArduinoService(dbus.service.Object):
         """
         if self.port is not None:
             with self._arduino_lock:
-                self._arduino_handler = None
+                self._arduino_writer.stop()
+                self._arduino_reader.stop()
+                self._arduino_writer = None
+                self._arduino_reader = None
                 self.port.close()
                 self.port = None
             return True
@@ -140,7 +180,7 @@ class ArduinoService(dbus.service.Object):
         TODO: some kind of smoothing.
         """
         with self._arduino_lock:
-            self._arduino_handler.set_camera_tilt(value)
+            self._arduino_writer.set_camera_tilt(value)
 
 
 if __name__ == '__main__':

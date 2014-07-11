@@ -22,6 +22,12 @@ import dbus
 
 from twisted.internet import reactor, defer, task
 
+from twisted.internet import glib2reactor
+glib2reactor.install()
+
+import dbus, gobject
+from dbus.mainloop.glib import DBusGMainLoop
+DBusGMainLoop(set_as_default=True)
 
 import yapsy
 from yapsy.PluginManager import PluginManager
@@ -216,10 +222,21 @@ class Session:
 
 
 if __name__ == '__main__':
+    def main():
+        try:
+            bus = dbus.SessionBus()
+            bus.add_signal_reciever(session.start,
+                dbus_interface='com.kilbuckcreek.photobooth',
+                signal_name='startSession')
+        except:
+            reactor.stop()
+            raise
+
     logger.debug('starting')
     session = Session()
 
     logger.debug('starting service reactor...')
+    reactor.callWhenRunning(main)
     try:
         reactor.run()
     except:
