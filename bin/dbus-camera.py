@@ -132,7 +132,7 @@ class CameraService(dbus.service.Object):
 
         with self._camera_lock:
             try:
-                self._camera.capture_image(filename)
+                self._camera.capture_image(self.capture_filename)
                 return True
             except shutter.ShutterError as e:
                 if e.result == -1:

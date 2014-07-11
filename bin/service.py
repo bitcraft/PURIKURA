@@ -112,8 +112,7 @@ class CameraTrigger:
         if self.d is None:
             return
 
-        total_captures += 1
-        filename = "raw-capture{}.jpg".format(total_captures)
+        #filename = "raw-capture{}.jpg".format(total_captures)
 
         d = self.d
         self.d = None
