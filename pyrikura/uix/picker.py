@@ -131,26 +131,18 @@ class PreviewHandler(object):
             self.thread = None
 
 
-class ArduinoHandler(object):
+class ArduinoHandler(dbus.service.Object):
     """ Manages connections to the arduino to send camera tilt information
     """
     def __init__(self):
+        path = dbus_path + '/arduino'
         bus = dbus.SessionBus()
-        _name = dbus_name + '.arduino'
-        _path = dbus_path + '/arduino'
-        pb_obj = bus.get_object(_name, _path)
-        self.iface = dbus.Interface(pb_obj, dbus_interface=_name)
-        self.iface.open_arduino()
+        dbus.service.Object.__init__(self, bus, path)
 
+    @dbus.service.signal(dbus_interface='com.kilbuckcreek.arduino',
+                         signature='i')
     def set_camera_tilt(self, value):
-        try:
-            value = int(value)
-        except ValueError:
-            logger.debug('cannot accept %s for camera tilt', value)
-            return
-
-        self.iface.set_camera_tilt(value)
-
+        pass
 
 class PickerScreen(Screen):
     """ A nice looking touch-enabled file browser
