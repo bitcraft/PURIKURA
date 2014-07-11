@@ -99,12 +99,12 @@ def process_image(raw_queue, ready_queue, global_config):
 
             image.format = 'png'
             image.save(filename=image_config['filename'])
-            image.close()
 
         done.append((w, h))
         this_config = dict(image_config)
         this_config['area'] = (x, y, w, h)
         ready_queue.put(this_config)
 
+    image.close()
     ready_queue.close()
     raw_queue.task_done()
