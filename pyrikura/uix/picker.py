@@ -138,6 +138,7 @@ class ArduinoHandler(dbus.service.Object):
         path = dbus_path + '/arduino'
         bus = dbus.SessionBus()
         dbus.service.Object.__init__(self, bus, path)
+        pass
 
     @dbus.service.signal(dbus_interface='com.kilbuckcreek.arduino',
                          signature='i')
