@@ -44,7 +44,7 @@ def compose(conn, ready_queue, images, config):
             cache[image_config['filename']] = temp_image
         base.composite(temp_image, x, y)
 
-    new_path = 'composite-0000.png'
+    new_path = 'composite.png'
     overwrite = True
     if not overwrite:
         for image in cache.values():
@@ -52,7 +52,7 @@ def compose(conn, ready_queue, images, config):
 
         # append a dash and numeral if there is a duplicate
         if os.path.exists(new_path):
-            i = 1
+            i = 0
             root, ext = os.path.splitext(new_path)
             new_path = "{0}-{1:04d}{2}".format(root, i, ext)
             while os.path.exists(new_path):
