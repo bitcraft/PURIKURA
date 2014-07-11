@@ -31,8 +31,7 @@ class EmitterObject(dbus.service.Object):
     def __init__(self, object_path):
         dbus.service.Object.__init__(self, bus, 'com.kilbuckcreek.photobooth')
 
-    @dbus.service.signal(dbus_interface='com.kilbuckcreek.photobooth',
-                         signature='us')
+    @dbus.service.signal(dbus_interface='com.kilbuckcreek.photobooth')
     def emit(self):
         logger.debug('got signal for session start')
 
