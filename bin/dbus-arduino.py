@@ -28,7 +28,7 @@ bus = dbus.SessionBus()
 
 
 class EmitterObject(dbus.service.Object):
-    def __init__(self, object_path):
+    def __init__(self):
         dbus.service.Object.__init__(self, bus, 'com.kilbuckcreek.photobooth')
 
     @dbus.service.signal(dbus_interface='com.kilbuckcreek.photobooth')
