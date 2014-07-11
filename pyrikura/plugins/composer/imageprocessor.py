@@ -60,15 +60,21 @@ def process_image(raw_queue, ready_queue, global_config):
             # A U T O C R O P
             autocrop = image_config.get('autocrop', None)
             if autocrop:
-                r0 = float(w) / h
-                r1 = float(image.width) / image.height
-
-                if r1 > r0:
-                    scale = float(h) / image.height
-                    sw = int(image.width * scale)
-                    cx = int((sw - w) / 2)
-                    image.resize(sw, h)
-                    image.crop(left=cx, width=sw, height=h)
+                # r0 = float(w) / h
+                # r1 = float(image.width) / image.height
+                #
+                # if r1 > r0:
+                #     scale = float(h) / image.height
+                #     sw = int(image.width * scale)
+                #     cx = int((sw - w) / 2)
+                #     image.resize(sw, h)
+                #     image.crop(left=cx, width=sw, height=h)
+                scale = float(h) / image.height
+                sw = int(image.width * scale)
+                image.resize(sw, h)
+                d = (image.width - image.height)/2
+                image.crop(left=d, top=0,
+                           right=image.width-d, bottom=image.height)
 
             # S C A L E
             scale = image_config.get('scale', None)
