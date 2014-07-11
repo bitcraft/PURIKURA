@@ -38,7 +38,6 @@ class EmitterObject(dbus.service.Object):
 
 class ArduinoReader(object):
     def __init__(self, port, lock):
-        self.queue = queue.Queue(maxsize=255)
         self.thread = None
         self.port = port
         self.port_lock = lock
@@ -49,11 +48,21 @@ class ArduinoReader(object):
         def read_forever():
             while self.running:
                 with self.port_lock:
-                    data = self.port.read()
-                    self.emmiter.emit()
-                    print data
+                    if self.port.isWaiting:
+                        try:
+                            data = self.port.readline()
+                        except serial.SerialTimeoutException:
+                            pass
+                        else:
+                            self.emmiter.emit()
+                            print data
 
-        self.running = True
+        if self.thread is None:
+            logger.debug('starting serial thread')
+            self.thread = threading.Thread(target=read_forever)
+            self.thread.daemon = True
+            self.thread.start()
+            self.running = True
 
     def stop(self):
         self.running = False
@@ -82,7 +91,10 @@ class ArduinoWriter(object):
                 logger.debug('sending %s', str(value))
                 try:
                     with self.port_lock:
-                        self.port.write(chr(0x80) + chr(value))
+                        try:
+                            self.port.write(chr(0x80) + chr(value))
+                        except serial.SerialTimeoutException:
+                            pass
                 except:
                     self.queue.task_done()
                     break
@@ -122,10 +134,12 @@ class ArduinoService(dbus.service.Object):
             with self._arduino_lock:
                 self.port = serial.Serial(
                     Config.get('arduino', 'port'),
-                    Config.getint('arduino', 'baudrate')
+                    Config.getint('arduino', 'baudrate'),
+                    timeout=1
                 )
                 self._arduino_writer = ArduinoWriter(self.port, self.port_lock)
                 self._arduino_reader = ArduinoReader(self.port, self.port_lock)
+                self._arduino_reader.start()
             return True
         else:
             return True
