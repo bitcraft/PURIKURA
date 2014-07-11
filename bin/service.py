@@ -15,17 +15,17 @@ arduino for input.  Free free to customize.
 import sys
 sys.path.append('/home/mjolnir/git/PURIKURA/')
 
-import os
-import logging
-import pygame
-import dbus
-
-from twisted.internet import reactor, defer, task
 
 from twisted.internet import glib2reactor
 glib2reactor.install()
 
-import dbus, gobject
+from twisted.internet import reactor, defer, task
+import os
+import logging
+import pygame
+
+import dbus
+import gobject
 from dbus.mainloop.glib import DBusGMainLoop
 DBusGMainLoop(set_as_default=True)
 
