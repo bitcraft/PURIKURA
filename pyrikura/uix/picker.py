@@ -22,8 +22,10 @@ import os
 import pygame
 import threading
 import time
-import dbus
 import logging
+
+import dbus
+import dbus.service
 
 from ..config import Config as pkConfig
 from .sharing import SharingControls
@@ -138,7 +140,6 @@ class ArduinoHandler(dbus.service.Object):
         path = dbus_path + '/arduino'
         bus = dbus.SessionBus()
         dbus.service.Object.__init__(self, bus, path)
-        pass
 
     @dbus.service.signal(dbus_interface='com.kilbuckcreek.arduino',
                          signature='i')
@@ -147,8 +148,6 @@ class ArduinoHandler(dbus.service.Object):
 
 class PickerScreen(Screen):
     """ A nice looking touch-enabled file browser
-
-    state transistions need some work...a lot of work.
     """
     large_preview_size = ListProperty()
     small_preview_size = ListProperty()
