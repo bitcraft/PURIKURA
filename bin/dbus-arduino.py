@@ -48,7 +48,7 @@ class ArduinoReader(object):
         def read_forever():
             while self.running:
                 with self.port_lock:
-                    if self.port.isWaiting:
+                    if self.port.inWaiting:
                         try:
                             data = self.port.readline()
                         except serial.SerialTimeoutException:
