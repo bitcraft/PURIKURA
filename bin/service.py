@@ -267,7 +267,7 @@ if __name__ == '__main__':
         bus.add_signal_receiver(set_camera_tilt,
             dbus_interface='com.kilbuckcreek.arduino',
             signal_name='set_camera_tilt',
-            signature='i')
+            in_signature='i')
 
     logger.debug('starting photo booth service')
     session = Session()
