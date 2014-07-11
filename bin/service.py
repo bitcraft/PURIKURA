@@ -259,8 +259,15 @@ class Arduino(LineReceiver):
 
 
 if __name__ == '__main__':
+    def set_camera_tilt(value):
+        arduino.sendCommand(0x80, value)
+
     def main():
-        pass
+        bus = dbus.SessionBus()
+        bus.add_signal_receiver(set_camera_tilt,
+            dbus_interface='com.kilbuckcreek.arduino',
+            signal_name='set_camera_tilt',
+            signature='i')
 
     logger.debug('starting photo booth service')
     session = Session()
