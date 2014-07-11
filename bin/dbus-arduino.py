@@ -59,9 +59,9 @@ class ArduinoReader(object):
 
         if self.thread is None:
             logger.debug('starting serial reading thread')
+            self.running = True
             self.thread = threading.Thread(target=read_forever)
             self.thread.daemon = True
-            self.running = True
             self.thread.start()
 
     def stop(self):
@@ -101,14 +101,11 @@ class ArduinoWriter(object):
                 else:
                     self.queue.task_done()
 
-            logger.debug('end of thread')
-            self.thread = None
-
         if self.thread is None:
             logger.debug('starting serial writing thread')
+            self.running = True
             self.thread = threading.Thread(target=send_message)
             self.thread.daemon = True
-            self.running = True
             self.thread.start()
 
     def stop(self):
@@ -140,6 +137,7 @@ class ArduinoService(dbus.service.Object):
                 )
                 self._arduino_writer = ArduinoWriter(self.port, self.port_lock)
                 self._arduino_reader = ArduinoReader(self.port, self.port_lock)
+                self._arduino_writer.start()
                 self._arduino_reader.start()
             return True
         else:
