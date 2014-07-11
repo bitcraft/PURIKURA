@@ -20,9 +20,6 @@ def process_image(raw_queue, ready_queue, global_config):
         return
 
     image = Image(filename=image_config['filename'])
-
-    print image_config['filename']
-
     raw_areas = []
     all_areas = []
     done = []
