@@ -19,7 +19,11 @@ sys.path.append('/home/mjolnir/git/PURIKURA/')
 from twisted.internet import glib2reactor
 glib2reactor.install()
 
-from twisted.internet import reactor, defer, task
+from twisted.internet import reactor, defer, task, protocol
+from twisted.protocols.basic import LineReceiver
+from twisted.internet.serialport import SerialPort
+import threading
+import serial
 import os
 import logging
 import pygame
@@ -221,19 +225,55 @@ class Session:
         self.do_session()
 
 
-if __name__ == '__main__':
-    def main():
+class Arduino(LineReceiver):
+    """
+    protocol:
+
+    0x01: trigger
+    0x80: set servo
+    """
+    def __init__(self, session):
+        logger.debug('new arduino')
+        self.session = session
+        self.lock = threading.Lock()
+
+    def process(self, cmd, arg):
+        logger.debug('processing for arduino: %s %s', cmd, arg)
+        if cmd == 1 and arg == 2:
+            self.session.start()
+
+    def sendCommand(self, cmd, arg):
+        logger.debug('sending to arduino: %s %s', cmd, arg)
+        data = chr(cmd) + chr(arg)
+        self.transport.write(data)
+
+    def lineReceived(self, data):
+        logger.debug('got serial data %s', data)
         try:
-            bus = dbus.SessionBus()
-            bus.add_signal_receiver(session.start,
-                dbus_interface='com.kilbuckcreek.triggers',
-                signal_name='startSession')
-        except:
-            reactor.stop()
+            cmd, arg = [int(i) for i in data.split()]
+            logger.debug('got command %s %s', cmd, arg)
+            self.process(cmd, arg)
+        except ValueError:
+            logger.debug('unable to parse: %s', data)
             raise
 
-    logger.debug('starting')
+
+if __name__ == '__main__':
+    def main():
+        pass
+
+    logger.debug('starting photo booth service')
     session = Session()
+
+    logger.debug('building new serial port listener...')
+    arduino = Arduino(session)
+    try:
+        s = SerialPort(arduino,
+                       Config.get('arduino', 'port'),
+                       reactor,
+                       baudrate=Config.getint('arduino', 'baudrate'))
+    except serial.serialutil.SerialException:
+        raise
 
     logger.debug('starting service reactor...')
     reactor.callWhenRunning(main)
