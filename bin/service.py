@@ -89,6 +89,8 @@ finished = resources.sounds['finished']
 bell1.set_volume(bell1.get_volume() * .6)
 finished.set_volume(finished.get_volume() * .5)
 
+total_captures = 0
+
 
 class CameraTrigger:
     def __init__(self):
@@ -104,13 +106,18 @@ class CameraTrigger:
         self.d = None
 
     def __call__(self):
+        global total_captures
+
         logger.debug('calling the camera trigger')
         if self.d is None:
             return
 
+        total_captures += 1
+        filename = "raw-capture{}.jpg".format(total_captures)
+
         d = self.d
         self.d = None
-        result = self.iface.capture_image()
+        result = self.iface.capture_image(filename)
         if result:
             d.callback(result)
         else:

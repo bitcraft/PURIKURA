@@ -1,6 +1,7 @@
 from multiprocessing import JoinableQueue, Process, Pipe
 import shutil
 import sys
+import tempfile
 import os
 from six.moves import configparser, queue
 

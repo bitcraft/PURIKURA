@@ -118,7 +118,7 @@ class CameraService(dbus.service.Object):
                 return False
 
     @dbus.service.method(bus_name, out_signature='b')
-    def capture_image(self):
+    def capture_image(self, filename=None):
         """ Capture a full image and save to a file
 
         Returns boolean of succeeded or not
@@ -127,9 +127,12 @@ class CameraService(dbus.service.Object):
             logger.debug('want to capture, but camera is not setup')
             return False
 
+        if filename is None:
+            filename = self.capture_filename
+
         with self._camera_lock:
             try:
-                self._camera.capture_image(self.capture_filename)
+                self._camera.capture_image(filename)
                 return True
             except shutter.ShutterError as e:
                 if e.result == -1:
