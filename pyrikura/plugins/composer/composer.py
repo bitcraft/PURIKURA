@@ -43,7 +43,6 @@ def compose(conn, ready_queue, images, config):
             temp_image = Image(filename=image_config['filename'])
             cache[image_config['filename']] = temp_image
         base.composite(temp_image, x, y)
-        print temp_image
 
     new_path = 'composite.png'
     overwrite = True
@@ -157,6 +156,8 @@ class ComposerBroker(Broker):
         config = self._config_queue.pop()
         config['filename'] = msg
         self.preprocess(config)
+
+        print "recieved", msg
 
         if len(self._config_queue) == 0:
             filename = self._p_conn.recv()
