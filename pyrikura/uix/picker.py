@@ -98,7 +98,7 @@ class PreviewGetThread(threading.Thread):
                 scale = hh / h
                 sw = int(w * scale)
                 cx = int((sw - ww) / 2)
-                im = im.resize(sw, hh, PImage.ANTIALIAS)
+                im = im.resize((sw, hh), PImage.ANTIALIAS)
                 im = im.crop((cx, 0, sw-cx, hh))
                 im.load()
 
