@@ -12,7 +12,7 @@ autocrop = true
 
 [01portrait]
 filename = auto
-area1 = .37, 1.6, 1.5, 1.27
+area1 = .37, 1.6, 1.55, 1.27
 area2 = 2.37, 1.6, 1.55, 1.27
 autocrop = true
 
