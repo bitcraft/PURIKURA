@@ -54,7 +54,7 @@ class ArduinoReader(object):
                         except serial.SerialTimeoutException:
                             pass
                         else:
-                            self.emmiter.startSteesion()
+                            self.emmiter.startSession()
                             print data
 
         if self.thread is None:
