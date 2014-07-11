@@ -27,10 +27,14 @@ DBusGMainLoop(set_as_default=True)
 bus = dbus.SessionBus()
 
 
-@dbus.service.signal(dbus_interface='com.kilbuckcreek.photobooth',
-                     signature='us')
-def start_session():
-    logger.debug('got signal for session start')
+class EmitterObject(dbus.service.Object):
+    def __init__(self, object_path):
+        dbus.service.Object.__init__(self, bus, 'com.kilbuckcreek.photobooth')
+
+    @dbus.service.signal(dbus_interface='com.kilbuckcreek.photobooth',
+                         signature='us')
+    def emit(self):
+        logger.debug('got signal for session start')
 
 
 class ArduinoReader(object):
@@ -40,12 +44,14 @@ class ArduinoReader(object):
         self.port = port
         self.port_lock = lock
         self.running = False
+        self.emmiter = EmitterObject()
 
     def start(self):
         def read_forever():
             while self.running:
                 with self.port_lock:
                     data = self.port.read()
+                    self.emmiter.emit()
                     print data
 
         self.running = True
