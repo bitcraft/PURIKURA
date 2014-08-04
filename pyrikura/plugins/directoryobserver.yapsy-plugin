@@ -1,9 +1,0 @@
-[Core]
-Name = DirectoryObserver
-Module = directoryobserver
-
-[Documentation]
-Description = Continuously track new files added to a directory
-Author = leif theden
-Version = 0.1
-Website = http://github.com/bitcraft/pyrikura

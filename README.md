@@ -18,9 +18,6 @@ Modes of Operation
 
 PURIKURA supports many modes of operation and is very flexible.
 
-The workflow/broker system allows almost unlimited customization.
-Workflows can be saved and used at a later time.
-
 Many dSLR and consumer cameras are supported.  Eye-fi cameras are supported
 with addition software, such as iii.
 
@@ -40,7 +37,7 @@ this time.
 
 http://www.gphoto.org/proj/libgphoto2/support.php
 
-Webcams are not supported.
+Webcams are not supported at this time.
 
 
 Interaction
@@ -57,7 +54,7 @@ Running the touch interface
 
 Check out the software and hardware requirements first.  You can use the
 supplied script 'run.sh' to get started.  Please let me know if you have any
-issues!
+issues.
 
 
 Slideshow
@@ -66,37 +63,6 @@ Slideshow
 A simple slideshow is included that will automatically add new images from a
 hot folder.  There are currently 3 formats that rotate: a ken burns effect, a
 stacked photos effect, and simple scrolling photos effect.
-
-
-Boring Technical Details
-------------------------
-
-The core concept of pyrikura is the *workflow*.  A workflow describes how
-images are manipulated.  A workflow is comprised of many different 'brokers'.
-
-Plugins are used to create brokers.  Included broker plugins are:
-    - Composer (for templates)
-    - Folder Watcher (hot folders)
-    - File move and copy
-    - Tethered Camera
-    - Twitter
-    - Arduino
-    - Printer
-
-Brokers are connected to each other to create a workflow.  A simple workflow for
-a photobooth could be this:
-
-    arduino => camera =============> composer => twitter
-                      => file copy            => printer
-
-
-In words:
-    The arduino recieves a trigger to take the picture
-    The camera takes one photo sends it to the composer and file copier
-        the file copier copies the original file to archive it
-        the composer uses a template to add a background
-            this modified photo is posted to twitter, printed, and archived
-
 
 
 Getting Help
@@ -124,8 +90,8 @@ The Name
 'purukura' is a term used in Japan for their ubiquitous style of photo booths.
 
 
-Software and Hardware Requirements
-----------------------------------
+Requirements
+------------
 
 -  Debian Linux (Wheezy/Testing just a guideline)
 -  Python 2.7

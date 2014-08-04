@@ -1,0 +1,9 @@
+kivy
+twisted
+pyserial
+twython
+python-dbus
+shutter
+wand
+PIL
+pyglet

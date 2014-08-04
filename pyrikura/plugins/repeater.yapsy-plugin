@@ -1,9 +1,0 @@
-[Core]
-Name = Repeater
-Module = repeater
-
-[Documentation]
-Description = Repeats a message passed.  Blocks other incoming messages.  Has a delay.
-Author = leif theden
-Version = 0.1
-Website = http://github.com/bitcraft/pyrikura

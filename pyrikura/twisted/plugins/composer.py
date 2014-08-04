@@ -1,17 +1,27 @@
+from zope.interface import implements
+from twisted.plugin import IPlugin
+from twisted.internet import reactor
 from multiprocessing import JoinableQueue, Process, Pipe
-import shutil
-import sys
-import tempfile
-import os
 from six.moves import configparser, queue
+from pyrikura import ipyrikura
 
-from pyrikura.plugin import Plugin
-from pyrikura.broker import Broker
+import os
+import shutil
 
 
-# mangle import paths to enable this sweet hack
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from imageprocessor import *
+class Composer(object):
+    implements(IPlugin, ipyrikura.IFileOp)
+
+    def _do_copy(self, path, dest):
+        shutil.copyfile(path, dest)
+
+    def process(self, msg, sender=None):
+
+
+class RealComposer(object):
+    def __init__(self):
+        self.
+
 
 
 # stupid hack to work around stale references in Wand

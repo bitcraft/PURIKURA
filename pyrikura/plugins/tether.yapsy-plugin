@@ -1,9 +1,0 @@
-[Core]
-Name = Tether
-Module = tether
-
-[Documentation]
-Description = Tethered camera support
-Author = leif theden
-Version = 0.1
-Website = http://github.com/bitcraft/pyrikura
