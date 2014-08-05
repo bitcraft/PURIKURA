@@ -1,7 +1,6 @@
 from zope.interface import implements
 from twisted.plugin import IPlugin
-from twisted.internet import reactor
-from multiprocessing import JoinableQueue, Process, Pipe
+from twisted.internet import reactor, defer
 from six.moves import configparser, queue
 from pyrikura import ipyrikura
 
@@ -9,93 +8,80 @@ import os
 import shutil
 
 
+class ComposerFactory(object):
+    implements(IPlugin)
+
+    def new(self, *args, **kwargs):
+        return Composer(*args, **kwargs)
+
+
 class Composer(object):
-    implements(IPlugin, ipyrikura.IFileOp)
-
-    def _do_copy(self, path, dest):
-        shutil.copyfile(path, dest)
-
-    def process(self, msg, sender=None):
-
-
-class RealComposer(object):
-    def __init__(self):
-        self.
-
-
-
-# stupid hack to work around stale references in Wand
-def compose(conn, ready_queue, images, config):
-    from wand.image import Image
-    from wand.color import Color
-
-    # get all the images and overlay them
-    layers = []
-    while len(layers) < images:
-        try:
-            this_config = ready_queue.get()
-            layers.append((this_config['name'], this_config))
-        except queue.Empty:
-            pass
-
-    # the base to the image we are producing
-    base = Image(width=config['width'],
-                 height=config['height'],
-                 background=Color(config['background']))
-
-    cache = {}
-
-    for name, image_config in sorted(layers):
-        x, y, w, h = image_config['area']
-        try:
-            temp_image = cache[image_config['filename']]
-        except KeyError:
-            temp_image = Image(filename=image_config['filename'])
-            cache[image_config['filename']] = temp_image
-        base.composite(temp_image, x, y)
-
-    new_path = 'composite.png'
-    overwrite = True
-
-    for image in cache.values():
-        image.close()
-
-    if not overwrite:
-        # append a dash and numeral if there is a duplicate
-        if os.path.exists(new_path):
-            i = 0
-            root, ext = os.path.splitext(new_path)
-            new_path = "{0}-{1:04d}{2}".format(root, i, ext)
-            while os.path.exists(new_path):
-                i += 1
-                new_path = "{0}-{1:04d}{2}".format(root, i, ext)
-
-    base.format = 'png'
-    base.save(filename=new_path)
-    base.close()
-    conn.send(new_path)
-    conn.close()
-
-
-class ComposerBroker(Broker):
     """
     uses templates and images to create print layouts
     """
+    implements(ipyrikura.IFileOp)
 
-    def __init__(self, **kwargs):
-        super(ComposerBroker, self).__init__(**kwargs)
-        self.template = kwargs['template']
-        self._processes = []
-        self.raw_queue = JoinableQueue()
-        self.ready_queue = JoinableQueue()
-        self.reset()
+    def __init__(self, template, **kwargs):
+        self.template = template
+        self.queue = defer.DeferredQueue()
+        self._config_queue = queue.Queue
+
+    def compose(conn, ready_queue, images, config):
+        """
+        superimpose the layers together
+        """
+        # hack to work around stale references in Wand
+        from wand.image import Image
+        from wand.color import Color
+
+        # get all the images and overlay them
+        layers = []
+        while len(layers) < images:
+            try:
+                this_config = ready_queue.get()
+                layers.append((this_config['name'], this_config))
+            except queue.Empty:
+                pass
+
+        # the base to the image we are producing
+        base = Image(width=config['width'],
+                     height=config['height'],
+                     background=Color(config['background']))
+
+        cache = {}
+
+        for name, image_config in sorted(layers):
+            x, y, w, h = image_config['area']
+            try:
+                temp_image = cache[image_config['filename']]
+            except KeyError:
+                temp_image = Image(filename=image_config['filename'])
+                cache[image_config['filename']] = temp_image
+            base.composite(temp_image, x, y)
+
+        new_path = 'composite.png'
+        overwrite = True
+
+        for image in cache.values():
+            image.close()
+
+        if not overwrite:
+            # append a dash and numeral if there is a duplicate
+            if os.path.exists(new_path):
+                i = 0
+                root, ext = os.path.splitext(new_path)
+                new_path = "{0}-{1:04d}{2}".format(root, i, ext)
+                while os.path.exists(new_path):
+                    i += 1
+                    new_path = "{0}-{1:04d}{2}".format(root, i, ext)
+
+        base.format = 'png'
+        base.save(filename=new_path)
+        base.close()
+        conn.send(new_path)
+        conn.close()
 
     def reset(self):
-        """
-        template is reloaded each time the template is finished
-        creating a composite
-        """
-
         # reread the template
         cfg = configparser.ConfigParser()
         cfg.read(self.template)
@@ -163,45 +149,16 @@ class ComposerBroker(Broker):
         self._composer_process.start()
 
     def process(self, msg, sender=None):
-        config = self._config_queue.pop()
-        config['filename'] = msg
-        self.preprocess(config)
-
-        print "recieved", msg
-
-        if len(self._config_queue) == 0:
-            filename = self._p_conn.recv()
-            self._composer_process.join()
-
-            # make sure all children are kill
-            for p in self._processes:
-                p.join()
-
-            self._processes = []
-            self._composer_process = None
-            self.reset()
-            self.publish([filename])
-
-    def preprocess(self, config):
-        """ start a subprocess to preformat the incoming image
-        """
-        filename = config['filename']
-        root, ext = os.path.splitext(filename)
-        new_filename = 'temp-{}{}'.format(len(self._config_queue), ext)
-        config['filename'] = new_filename
-        shutil.copy(filename, new_filename)
-        self.raw_queue.put(config)
-
-        # spawn another process for processing the image
-        # normally, there will be only one active, but may be more
-        # if the system is slow or busy
-        p = Process(
-            target=process_image,
-            args=(self.raw_queue, self.ready_queue, self.config)
-        )
-        p.start()
-        self._processes.append(p)
+        def compose():
+            config = self._config_queue.pop()
+            config['filename'] = msg
+            self.preprocess(config)
 
 
-class Composer(Plugin):
-    _decendant = ComposerBroker
+
+        d = defer.Deferred()
+        d.addCallback(compose)
+        return d
+
+
+factory = ComposerFactory()

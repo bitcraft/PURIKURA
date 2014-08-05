@@ -19,7 +19,7 @@ sys.path.append('/Volumes/Mac2/Users/leif/pycharm/PURIKURA/pyrikura')
 
 from twisted.internet import reactor, defer, task, protocol
 from twisted.protocols.basic import LineReceiver
-from twisted.plugin import getPlugins
+from twisted.plugin import getPlugins, IPlugin
 import threading
 import os
 import logging
@@ -78,30 +78,6 @@ finished = resources.sounds['finished']
 bell1.set_volume(bell1.get_volume() * .6)
 finished.set_volume(finished.get_volume() * .5)
 
-total_captures = 0
-
-
-class CameraTrigger:
-    def __init__(self):
-        self.iface.open_camera()
-        self.d = None
-
-    def __call__(self):
-        logger.debug('calling the camera trigger')
-        d = self.d
-        self.d = None
-        result = self.iface.capture_image(capture_image)
-        if result:
-            d.callback(result)
-        else:
-            d.errback(Exception('Camera not focused'))
-
-    def trigger(self, result):
-        logger.debug('cameratrigger.trigger')
-        self.d = defer.Deferred()
-        reactor.callLater(1, self)
-        return self.d
-
 
 class Session:
     needed_captures = Config.getint('event', 'needed-captures')
@@ -110,12 +86,15 @@ class Session:
 
     def __init__(self):
         logger.debug('building new session...')
-
         self.running = False
         self.captures = 0
+        self.process_chain = []
 
-        for p in getPlugins(ipyrikura.IFileOp):
-            print p.__provides__
+        plugins = list(getPlugins(ipyrikura.IPyrikuraPlugin))
+        p = plugins[-1]
+
+        fc = p.new('tmp')
+        self.process_chain.append(fc)
 
         # build a basic workflow
 
@@ -136,15 +115,17 @@ class Session:
         logger.debug('successful capture (%s/%s)',
                      self.captures, self.needed_captures)
 
-        if self.captures == self.needed_captures:
+        if self.captures >= self.needed_captures:
             logger.debug('finished the session')
             bell1.play()
+            self.running = False
         else:
             logger.debug('finished the capture')
             finished.play()
+            reactor.callLater(self.next_countdown_delay, self.capture)
 
-        self.comp.process(capture_image)
-        self.arch1.process(capture_image)
+        # result is a capture filename or data
+        d = self.process_chain[0].process(result)
 
     def failed_capture(self, result):
         """ plays the error sound rapidly 3x """
@@ -153,39 +134,31 @@ class Session:
         task.deferLater(reactor, .15, error.play)
         task.deferLater(reactor, .30, error.play)
 
-    def countdown(self):
-        c = task.LoopingCall(bell0.play)
+    def capture(self):
+        def fake_shutter(result=None):
+            return 'capture.jpg'
+
+        # this is the countdown timer
         delay = (self.needed_captures - 1) * self.countdown_interval
+        c = task.LoopingCall(bell0.play)
         task.deferLater(reactor, delay, c.stop)
         d = c.start(self.countdown_interval)
-        return d
 
-    def schedule_next(self, result):
-        if self.captures < self.needed_captures:
-            d = defer.Deferred()
-            reactor.callLater(self.next_countdown_delay, self.do_session)
-            return d
-        else:
-            self.running = False
-
-    def do_session(self, result=None):
-        logger.debug('start new session')
-        cam = CameraTrigger()
-
-        d = self.countdown()
-        d = d.addCallback(cam.trigger)
+        # this is the camera trigger
+        d = d.addCallback(fake_shutter)
         d.addCallback(self.successful_capture)
-        d.addErrback(self.failed_capture)
-        d.addCallback(self.schedule_next)
+        #d.addErrback(self.failed_capture)
+        return d
 
     def start(self, result=None):
         if self.running:
             logger.debug('want to start, but already running')
             return
 
+        logger.debug('start new session')
         self.running = True
         self.captures = 0
-        self.do_session()
+        self.capture()
 
 
 class Arduino(LineReceiver):
@@ -258,6 +231,8 @@ if __name__ == '__main__':
     logger.debug('starting photo booth service')
     session = Session()
 
+
+    reactor.callWhenRunning(session.start)
     logger.debug('starting service reactor...')
     try:
         reactor.run()

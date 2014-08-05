@@ -1,4 +1,9 @@
 from zope.interface import Interface, Attribute
+from twisted.plugin import IPlugin
+
+
+class IPyrikuraPlugin(Interface):
+    pass
 
 
 class ITrigger(Interface):
