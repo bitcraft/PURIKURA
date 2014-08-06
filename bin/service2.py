@@ -96,6 +96,7 @@ class Session:
         fc = p.new('tmp')
         self.process_chain.append(fc)
 
+
         # build a basic workflow
 
         #arch1 = p('FileCopy', dest=originals_path)
