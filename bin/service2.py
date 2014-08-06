@@ -13,9 +13,9 @@ This configuration is used in my professional photo booth service and uses an
 arduino for input.  Free free to customize.
 """
 import sys
-#sys.path.append('/home/mjolnir/git/PURIKURA/')
-sys.path.append('/Volumes/Mac2/Users/leif/pycharm/PURIKURA/')
-sys.path.append('/Volumes/Mac2/Users/leif/pycharm/PURIKURA/pyrikura')
+sys.path.append('/home/mjolnir/git/PURIKURA/')
+#sys.path.append('/Volumes/Mac2/Users/leif/pycharm/PURIKURA/')
+#sys.path.append('/Volumes/Mac2/Users/leif/pycharm/PURIKURA/pyrikura')
 
 from twisted.internet import reactor, defer, task, protocol
 from twisted.protocols.basic import LineReceiver
