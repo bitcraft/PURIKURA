@@ -106,13 +106,9 @@ class CameraTrigger:
         self.d = None
 
     def __call__(self):
-        global total_captures
-
         logger.debug('calling the camera trigger')
         if self.d is None:
             return
-
-        #filename = "raw-capture{}.jpg".format(total_captures)
 
         d = self.d
         self.d = None
@@ -218,8 +214,8 @@ class Session:
         d = self.countdown()
         d = d.addCallback(cam.trigger)
         d.addCallback(self.successful_capture)
-        d.addErrback(self.failed_capture)
         d.addCallback(self.schedule_next)
+        d.addErrback(self.failed_capture)
 
     def start(self, result=None):
         if self.running:
