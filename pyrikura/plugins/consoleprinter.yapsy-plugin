@@ -1,9 +1,0 @@
-[Core]
-Name = ConsolePrinter
-Module = consoleprinter
-
-[Documentation]
-Description = Print messages to stdout
-Author = leif theden
-Version = 0.1
-Website = http://github.com/bitcraft/pyrikura

@@ -1,9 +1,0 @@
-[Core]
-Name = Arduino
-Module = arduino
-
-[Documentation]
-Description = Super basic communication with arduino through serial port
-Author = leif theden
-Version = 0.1
-Website = http://github.com/bitcraft/pyrikura

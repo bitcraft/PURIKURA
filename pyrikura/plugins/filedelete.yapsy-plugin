@@ -1,9 +1,0 @@
-[Core]
-Name = FileDelete
-Module = filedelete
-
-[Documentation]
-Description = Delete Files
-Author = leif theden
-Version = 0.1
-Website = http://github.com/bitcraft/pyrikura
