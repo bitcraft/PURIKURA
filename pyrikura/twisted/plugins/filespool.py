@@ -3,7 +3,7 @@ from twisted.plugin import IPlugin
 from twisted.internet import defer
 from pyrikura import ipyrikura
 
-import subprocess
+import subprocess32
 
 
 class FileSpoolFactory(object):
@@ -21,9 +21,7 @@ class FileSpool(object):
 
     def process(self, msg, sender=None):
         cmd = [self.print_command, msg]
-        d = defer.Deferred
-        d.addCallback(subprocess.call, cmd)
-        return d
+        return threads.deferToThread(subprocess.call, cmd)
 
 
 factory = FileSpoolFactory()

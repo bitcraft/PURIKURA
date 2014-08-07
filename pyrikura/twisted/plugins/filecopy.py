@@ -1,6 +1,6 @@
 from zope.interface import implements
 from twisted.plugin import IPlugin
-from twisted.internet import defer
+from twisted.internet import defer, threads
 from pyrikura import ipyrikura
 
 import os
@@ -32,9 +32,7 @@ class FileCopy(object):
                 i += 1
                 new_path = "{0}-{1:04d}{2}".format(root, i, ext)
 
-        d = defer.Deferred()
-        d.addCallback(shutil.copyfile, msg, new_path)
-        return d
+        return threads.deferToThread(shutil.copyfile, msg, new_path)
 
 
 factory = FileCopyFactory()

@@ -1,9 +1,10 @@
 from zope.interface import implements
 from twisted.plugin import IPlugin
 from twisted.internet import defer
+from twisted.internet import threads
 from pyrikura import ipyrikura
 
-import subprocess
+import subprocess32
 import threading
 import shlex
 import os
@@ -27,15 +28,16 @@ class ImageThumb(object):
     """
     implements(ipyrikura.IFileOp)
 
+    def __init__(self, size):
+        self.size = size
+
     def process(self, msg, sender=None):
         def thumbnail():
             hint = '600x600'
+            size = self.self
             new_path = os.path.join(destination, os.path.basename(filename))
-            thumbnail_cmd.format(hint, filename, size, size, new_path)
-            subprocess.call(shlex.split(thumbnail_cmd))
-
-        d = defer.Deferred()
-        d.addCallback(thumbnail)
-        return d
+            cmd = thumbnail_cmd.format(hint, filename, size, size, new_path)
+            subprocess.call(shlex.split(cmd))
+        return threads.deferToThread(thumbnail)
 
 factory = ImageThumbFactory()

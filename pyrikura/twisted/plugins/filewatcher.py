@@ -4,6 +4,8 @@ from twisted.internet import defer
 from pyrikura import ipyrikura
 
 import os
+import threading
+import watchdog
 
 
 class FileWatcherFactory(object):
@@ -20,32 +22,26 @@ class FileWatcher(object):
     """
     implements(ipyrikura.IFileOp)
 
-    def __init__(self, path, regex=None):
+    def __init__(self, path, regex=None, recursive=False):
         self._path = path
         self._regex = regex
+        self._recursive = recursive
         self._queue = defer.DeferredQueue()
-        self._seen = set()
+        self.observer = None
+        self.handler = None
+        return self.reset()
 
     def reset(self):
-        self._seen = set()
+        if self.observer is not None:
+            self.observer.stop()
 
-    def tick(self, td=0.0):
-        if self._regex is None:
-            files = set(os.listdir(self._path))
+        if self.regex is None:
+            self.handler = watchdog.FileSystemEventHandler()
         else:
-            files = set()
-            for fn in os.listdir(self._path):
-                match = self._regex.match(fn)
-                if match:
-                    files.add(fn)
-
-        # get files that have not been seen before and publish them
-        pub = [os.path.join(self._path, i) for i in files - self._seen]
-
-        # add the new items to the seen set
-        self._seen.update(files)
-
-        return self._queue
-
+            self.handler = watchdog.PatternMatchingEventHandler(self.regex)
+        self.observer = watchdog.Observer()
+        self.observer.schedule(self.handler, self._path, self._recursive)
+        self.observer.start()
+        return self.handler
 
 factory = FileWatcherFactory()

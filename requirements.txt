@@ -1,8 +1,9 @@
 kivy
+watchdog
+subprocess32
 twisted
 pyserial
 twython
-python-dbus
 shutter
 wand
 PIL

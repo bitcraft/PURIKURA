@@ -1,6 +1,7 @@
 from zope.interface import implements
 from twisted.plugin import IPlugin
 from twisted.internet import defer
+from twisted.internet import threads
 from pyrikura import ipyrikura
 
 import pickle
@@ -24,18 +25,19 @@ class ImageTweet(object):
     def auth(self, auth_file, *arg, **kwarg):
         with open(auth_file) as fh:
             self._auth = pickle.load(fh)['twitter']
-        self.connect()
+        return self.connect()
 
     def process(self, msg, sender=None):
-        def send():
+        def send(result):
             self._conn.update_status_with_media(msg, status='Test!')
-
-        d = defer.Deferred()
-        d.addCallback(send)
-        return d
+        return threads.deferToThread(send)
 
     def connect(self):
-        self._conn = twython.Twython(**self._auth)
+        def conn(result):
+            self._conn = result
+        d = threads.deferToThread(twython.Twython, **self._auth)
+        d.addCallback(conn)
+        return d
 
 
 factory = ImageTweetFactory

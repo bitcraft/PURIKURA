@@ -9,7 +9,7 @@ import shutil
 
 
 class ComposerFactory(object):
-    implements(IPlugin)
+    implements(IPlugin, ipyrikura.IPyrikuraPlugin)
 
     def new(self, *args, **kwargs):
         return Composer(*args, **kwargs)

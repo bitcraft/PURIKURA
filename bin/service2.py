@@ -1,19 +1,10 @@
 #!/usr/bin/env python
 """
 This program is the nuts and bolts of the photo booth.
-
-It uses a workflow/broker hack to make a photobooth.  In relationship with
-the entire project, this is all that is needed to accept input, take photos,
-compose and print them.  The kiosk app can be thought of as a pretty
-touch-enabled file browser.
-
-This creates all the images that you can browse with in the kiosk app.
-
-This configuration is used in my professional photo booth service and uses an
-arduino for input.  Free free to customize.
 """
 import sys
 sys.path.append('/home/mjolnir/git/PURIKURA/')
+sys.path.append('/home/mjolnir/git/PURIKURA/pyrikura')
 #sys.path.append('/Volumes/Mac2/Users/leif/pycharm/PURIKURA/')
 #sys.path.append('/Volumes/Mac2/Users/leif/pycharm/PURIKURA/pyrikura')
 
@@ -78,6 +69,12 @@ finished = resources.sounds['finished']
 bell1.set_volume(bell1.get_volume() * .6)
 finished.set_volume(finished.get_volume() * .5)
 
+def get_class(o):
+    name = o.__class__.__name__
+    if name.endswith('Factory'):
+        return name[:-7]
+    else:
+        return name
 
 class Session:
     needed_captures = Config.getint('event', 'needed-captures')
@@ -88,28 +85,27 @@ class Session:
         logger.debug('building new session...')
         self.running = False
         self.captures = 0
-        self.process_chain = []
 
-        plugins = list(getPlugins(ipyrikura.IPyrikuraPlugin))
-        p = plugins[-1]
+        p = dict((get_class(p), p) for p in 
+                 getPlugins(ipyrikura.IPyrikuraPlugin))
+        
+        fc0 = p['FileCopy'].new(originals_path)
+        fc1 = p['FileCopy'].new(composites_path)
+        fc2 = p['FileCopy'].new(shared_path)
+        fc3 = p['FileCopy'].new(thumbs_path)
+        fc4 = p['FileCopy'].new(details_path)
+        fc5 = p['FileCopy'].new(template_path)
+    
+        th0 = p['ImageThumb'].new(size='256x256')
+        th1 = p['ImageThumb'].new(size='1024x1024')
 
-        fc = p.new('tmp')
-        self.process_chain.append(fc)
-
+        cm = p['Composer'].new(template_path)
 
         # build a basic workflow
-
-        #arch1 = p('FileCopy', dest=originals_path)
-        #arch2 = p('FileCopy', dest=composites_path)
-        #spool = p('FileCopy', dest=shared_path)
-        #thumb1 = p('Thumbnailer', size='256x256', dest=thumbs_path)
-        #thumb2 = p('Thumbnailer', size='1024x1024', dest=details_path)
-        #comp = p('Composer', template=template_path)
-        #if Config.getboolean('kiosk', 'print'):
-        #    spool.subscribe(comp)
-        #arch2.subscribe(comp)
-        #thumb1.subscribe(arch1)
-        #thumb2.subscribe(arch1)
+        if Config.getboolean('kiosk', 'print'):
+            self.chain = [fc0, [[th0, fc3], [th1, fc4], [cm, [fc1, fc2]]]]
+        else:
+            self.chain = [fc0, [[th0, fc3], [th1, fc4], [cm, fc1]]]
 
     def successful_capture(self, result):
         self.captures += 1
@@ -125,8 +121,7 @@ class Session:
             finished.play()
             reactor.callLater(self.next_countdown_delay, self.capture)
 
-        # result is a capture filename or data
-        d = self.process_chain[0].process(result)
+        return 'test.txt'
 
     def failed_capture(self, result):
         """ plays the error sound rapidly 3x """
@@ -159,7 +154,10 @@ class Session:
         logger.debug('start new session')
         self.running = True
         self.captures = 0
-        self.capture()
+        d = self.capture()
+
+        for chain in self.chain:
+            d.addCallback(chain.process)
 
 
 class Arduino(LineReceiver):
@@ -231,8 +229,6 @@ class ServoServiceFactory(protocol.ServerFactory):
 if __name__ == '__main__':
     logger.debug('starting photo booth service')
     session = Session()
-
-
     reactor.callWhenRunning(session.start)
     logger.debug('starting service reactor...')
     try:

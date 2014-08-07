@@ -14,7 +14,7 @@ NtRp6
 (dp7
 S'moduleName'
 p8
-S'pyrikura.plugins.composer'
+S'twisted.plugins.composer'
 p9
 sS'description'
 p10

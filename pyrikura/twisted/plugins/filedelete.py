@@ -1,6 +1,7 @@
 from zope.interface import implements
 from twisted.plugin import IPlugin
 from twisted.internet import defer
+from twisted.internet import threads
 from pyrikura import ipyrikura
 
 import os
@@ -17,9 +18,7 @@ class FileDelete(object):
     implements(ipyrikura.IFileOp)
 
     def process(self, msg, sender=None):
-        d = defer.Deferred()
-        d.addCallback(os.unlink, msg)
-        return d
+        return threads.deferToThread(os.unlink, msg)
 
 
 factory = FileDeleteFactory()
