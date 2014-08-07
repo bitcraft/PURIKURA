@@ -6,10 +6,7 @@ amixer -c 0 set Master 100%
 
 while true
 do
-    python bin/dbus-arduino.py &
-    python bin/dbus-camera.py &
     python bin/service.py &
-    sleep 1
     python bin/kiosk.py &&
     OUT=$?
     killall -9 python

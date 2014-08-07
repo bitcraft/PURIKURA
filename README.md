@@ -16,7 +16,7 @@ I use PURIKURA for my professional photobooth service.
 Modes of Operation
 ------------------
 
-PURIKURA supports many modes of operation and is very flexible.
+PYRIKURA supports many modes of operation and is very flexible.
 
 Many dSLR and consumer cameras are supported.  Eye-fi cameras are supported
 with addition software, such as iii.
@@ -32,8 +32,8 @@ Cameras
 -------
 
 Any camera supported by libgphoto2 is supported by this software.  An up-to-date
-list is available on their website.  Live-view is functional, but unused at
-this time.
+list is available on their website.  Live-view is functional, and can be used
+to preview photos before they are taken.
 
 http://www.gphoto.org/proj/libgphoto2/support.php
 
@@ -74,8 +74,8 @@ use this software and need help getting you system going I will be accepting
 paypal donations in exchange for my time.
 
 I reserve all rights to determine what features will be added and how the
-interface is used.  You are welcome to fork this project at any time and
-customize it as you wish.
+interface is used for this software that is hosted here.  You are welcome to
+fork this project at any time and customize it as you wish.
 
 
 Why is it free?
@@ -93,14 +93,15 @@ The Name
 Requirements
 ------------
 
--  Debian Linux (Wheezy/Testing just a guideline)
+This is a general list of software requirements.  Certain functions of this
+software may require additional dependancies.
+
+-  Debian Linux or OS X 10.x
 -  Python 2.7
--  libgphoto
--  piggyphoto (included)
--  Pygame (for sound)
--  GraphicsMagick
--  Imagemagick (possibly required...)
 -  Twisted
+-  shutter
+-  PyGame
+-  libgphoto
 
 
 All files under the 'pyrikura' directory are copyright Leif Theden, 2012-2014
