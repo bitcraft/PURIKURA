@@ -1,3 +1,6 @@
+import sys                                                                                                 
+sys.path.append('/home/mjolnir/git/PURIKURA')
+
 from zope.interface import implements
 from twisted.plugin import IPlugin
 from pyrikura import ipyrikura
@@ -5,110 +8,113 @@ from six.moves import queue
 import os
 
 
-def process_image(raw_queue, ready_queue, global_config):
-    """
-    process an image
+def autocrop(image, area):
+    x, y, w, h = area
+    r0 = float(w) / h
+    r1 = float(image.width) / image.height
 
-    :param raw_queue:
-    :param ready_queue:
-    :param global_config:
-    :return:
+    if r1 > r0:
+        scale = float(h) / image.height
+        sw = int(image.width * scale)
+        cx = int((sw - w) / 2)
+        image.resize(sw, h)
+        image.crop(left=cx, top=0,
+                   right=image.width-cx, bottom=image.height)
+
+    return image
+
+def scale(image, area):
+    x, y, w, h = area
+    image.resize(w, h)
+    return image
+
+def toaster(image, area):
+    x, y, w, h = area
+    scratch = 'prefilter-{}.miff'.format(image_config['filename'])
+    image.filename = image_config['filename']
+    image.format = os.path.splitext(scratch)[1][1:]
+    image.save(filename=scratch)
+    image.close()
+    image = None
+    scratch = toaster(scratch, sw, h)
+    return scratch
+
+
+filters = {
+    'autocrop': autocrop,
+    'scale': scale,
+    'toaster': toaster,
+}
+
+
+def image_processor(task_queue, finished_queue, global_config):
+    """
+    image processing worker
+    this will take one section of a template ("00portrait", etc)
     """
     # hack to get around stale references
     from wand.image import Image
 
+    units = global_config['units']
+    dpi = global_config['dpi']
+
     # get an image from the queue
-    try:
-        image_config = raw_queue.get()
-    except queue.Empty:
-        return
+    config = task_queue.get()
 
-    image = Image(filename=image_config['filename'])
-    raw_areas = []
-    all_areas = []
-    done = []
+    image = Image(filename=config['filename'])
+    sizes = set()
 
-    temp_areas = [i for i in image_config.keys() if i[:4].lower() == 'area']
-    for area in temp_areas:
-        area = image_config[area]
-        raw_areas.append(tuple([float(i) for i in area.split(',')]))
+    # the 'area' key in template configs defines where an image is positioned
+    # on the final product.  it can be listed more than once, and it is
+    # checked here.  each area key can be filtered, cropped, and is scaled
+    # to fit into each area/
 
-    temp_positions = [i for i in image_config.keys() if
-                      i[:8].lower() == 'position']
+    for area in (i for i in config.keys() if i[:4].lower() == 'area'):
+        area = tuple(float(i) for i in config['area'].split(','))
 
-    for pos in temp_positions:
+        if units == 'pixels':
+            x, y, w, h = (int(i) for i in area)
+
+        elif units == 'inches':
+            x, y, w, h = (int(i * dpi) for i in area)
+
+        # prevent processing an image if it has already been processed at
+        # the same size, but with a different position
+        if (w, h) in sizes:
+            continue
+        sizes.add((w, h))
+
+        # create a new image in memory for manipulation with Wand
+        scratch = "scratch.tmp"
+        with Image(filename=scratch) as temp_image:
+            image = Image(image=temp_image)
+        del temp_image
+
+        # bug: filters will be out of order, resulting in unpredictable results
+        for key in config.keys():
+            try:
+                filters[key](image, (x, y, w, h))
+            except KeyError:
+                pass
+
+        this_config = dict(config)
+        this_config['area'] = (x, y, w, h)
+        ready_queue.put(this_config)
+
+    # the position keyword can be used if the target file is just positioned,
+    # but not scaled.
+
+    for pos in (i for i in config.keys() if i[:8].lower() == 'position'):
         pos = image_config[pos]
-        if global_config['units'] == 'pixels':
-            x, y = [int(i) for i in pos.split(',')]
+
+        if units == 'pixels':
+            x, y = (int(i) for i in pos.split(','))
             w, h = image.size
-        else:
-            x, y = [int(int(i) * global_config['dpi']) for i in pos.split(',')]
-            w, h = [int(int(i) / global_config['dpi']) for i in image.size]
+        elif units == 'inches':
+            x, y = (int(i * dpi) for i in pos.split(','))
+            w, h = (int(i / dpi) for i in image.size)
 
-        this_config = dict(image_config)
+        this_config = dict(config)
         this_config['area'] = (x, y, w, h)
         ready_queue.put(this_config)
 
-    # REWRITE THIS!
-    for area in raw_areas:
-        if global_config['units'] == 'pixels':
-            x, y, w, h = [int(i) for i in area]
-        else:
-            x, y, w, h = [int(float(i) * global_config['dpi']) for i in area]
-        all_areas.append((x, y, w, h))
-
-    # process each image
-    for x, y, w, h in all_areas:
-        if (w, h) not in done:
-
-            # A U T O C R O P
-            autocrop = image_config.get('autocrop', None)
-            if autocrop:
-                r0 = float(w) / h
-                r1 = float(image.width) / image.height
-
-                if r1 > r0:
-                    scale = float(h) / image.height
-                    sw = int(image.width * scale)
-                    cx = int((sw - w) / 2)
-                    image.resize(sw, h)
-                    image.crop(left=cx, top=0,
-                               right=image.width-cx, bottom=image.height)
-
-            # S C A L E
-            scale = image_config.get('scale', None)
-            if scale:
-                image.resize(w, h)
-
-            # F I L T E R S
-            filter = image_config.get('filter', None)
-            if filter:
-                scratch = 'prefilter-{}.miff'.format(image_config['filename'])
-                image.filename = image_config['filename']
-                image.format = os.path.splitext(scratch)[1][1:]
-                image.save(filename=scratch)
-                image.close()
-                image = None
-
-                if filter.lower() == 'toaster':
-                    scratch = toaster(scratch, sw, h)
-
-                # create a new Image object for the queue
-                with Image(filename=scratch) as temp_image:
-                    image = Image(image=temp_image)
-                del temp_image
-
-                # delete our temporary image file
-                os.unlink(scratch)
-
-            image.format = 'png'
-            image.save(filename=image_config['filename'])
-            image.close()
-
-        done.append((w, h))
-        this_config = dict(image_config)
-        this_config['area'] = (x, y, w, h)
-        ready_queue.put(this_config)
-
-    ready_queue.task_done()
-    raw_queue.task_done()
