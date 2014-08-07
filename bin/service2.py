@@ -11,6 +11,7 @@ sys.path.append('/home/mjolnir/git/PURIKURA/pyrikura')
 from twisted.internet import reactor, defer, task, protocol
 from twisted.protocols.basic import LineReceiver
 from twisted.plugin import getPlugins, IPlugin
+from six.moves import configparser
 import threading
 import os
 import logging
@@ -18,6 +19,8 @@ import pygame
 
 from pyrikura import ipyrikura
 from pyrikura import resources
+from pyrikura import template
+from pyrikura.graph import Graph
 from pyrikura.config import Config
 
 logging.basicConfig(level=logging.DEBUG)
@@ -34,7 +37,7 @@ app_sounds_path = jpath(app_resources_path, 'sounds')
 app_images_path = jpath(app_resources_path, 'images')
 all_templates_path = jpath(app_resources_path, 'templates')
 all_images_path = Config.get('paths', 'images')
-capture_image = Config.get('camera', 'capture-image')
+capture_filename = Config.get('camera', 'capture-filename')
 shared_path = Config.get('paths', 'shared')
 plugins_path = Config.get('paths', 'plugins')
 
@@ -51,10 +54,6 @@ paths = ('thumbnails', 'detail', 'originals', 'composites')
 # mixer must be initialized before sounds will play
 pygame.mixer.init(frequency=Config.getint('sound', 'mixer-frequency'),
                   buffer=Config.getint('sound', 'mixer-buffer'))
-
-# specific to the camera system i use!
-dbus_name = Config.get('camera', 'dbus-name') + '.camera'
-dbus_path = Config.get('camera', 'dbus-path') + '/camera'
 
 # load all the stuff
 resources.load()
@@ -77,14 +76,8 @@ def get_class(o):
         return name
 
 class Session:
-    needed_captures = Config.getint('event', 'needed-captures')
-    next_countdown_delay = Config.getint('event', 'next-countdown-delay')
-    countdown_interval = 1
-
     def __init__(self):
         logger.debug('building new session...')
-        self.running = False
-        self.captures = 0
 
         p = dict((get_class(p), p) for p in 
                  getPlugins(ipyrikura.IPyrikuraPlugin))
@@ -99,65 +92,60 @@ class Session:
         th0 = p['ImageThumb'].new(size='256x256')
         th1 = p['ImageThumb'].new(size='1024x1024')
 
-        cm = p['Composer'].new(template_path)
+        #cm = p['Composer'].new(template_path)
 
         # build a basic workflow
         if Config.getboolean('kiosk', 'print'):
-            self.chain = [fc0, [[th0, fc3], [th1, fc4], [cm, [fc1, fc2]]]]
-        else:
-            self.chain = [fc0, [[th0, fc3], [th1, fc4], [cm, fc1]]]
+            pass
 
-    def successful_capture(self, result):
-        self.captures += 1
-        logger.debug('successful capture (%s/%s)',
-                     self.captures, self.needed_captures)
-
-        if self.captures >= self.needed_captures:
-            logger.debug('finished the session')
-            bell1.play()
-            self.running = False
-        else:
-            logger.debug('finished the capture')
-            finished.play()
-            reactor.callLater(self.next_countdown_delay, self.capture)
-
-        return 'test.txt'
-
-    def failed_capture(self, result):
-        """ plays the error sound rapidly 3x """
-        logger.debug('failed capture')
-        task.deferLater(reactor, 0, error.play)
-        task.deferLater(reactor, .15, error.play)
-        task.deferLater(reactor, .30, error.play)
+        g = Graph()
+        g.update(fc0, [th0, th1])
+        g.update(th0, [fc3])
+        g.update(th1, [fc4])
+        #g.update(cm, [fc1])
+        self.graph = g
+        self.head = fc0
 
     def capture(self):
         def fake_shutter(result=None):
             return 'capture.jpg'
 
-        # this is the countdown timer
-        delay = (self.needed_captures - 1) * self.countdown_interval
+        interval = Config.getint('camera', 'countdown-interval')
         c = task.LoopingCall(bell0.play)
-        task.deferLater(reactor, delay, c.stop)
-        d = c.start(self.countdown_interval)
-
-        # this is the camera trigger
+        d = c.start(interval)
         d = d.addCallback(fake_shutter)
-        d.addCallback(self.successful_capture)
-        #d.addErrback(self.failed_capture)
+        task.deferLater(reactor, 3 * interval, c.stop)
         return d
 
+    @defer.inlineCallbacks 
     def start(self, result=None):
-        if self.running:
-            logger.debug('want to start, but already running')
-            return
-
         logger.debug('start new session')
-        self.running = True
-        self.captures = 0
-        d = self.capture()
 
-        for chain in self.chain:
-            d.addCallback(chain.process)
+        countdown_delay = Config.getint('camera', 'countdown-delay')
+        this_template = configparser.ConfigParser()
+        this_template.read(template_path)
+        needed_captures = template.needed_captures(this_template)
+        captures = 0
+
+        while captures < needed_captures:
+            try:
+                filename = yield task.deferLater(reactor, countdown_delay, self.capture)
+            except:
+                logger.debug('failed capture')
+                task.deferLater(reactor, 0, error.play)
+                task.deferLater(reactor, .15, error.play)
+                task.deferLater(reactor, .30, error.play)
+                continue
+
+            captures += 1
+            logger.debug('successful capture (%s/%s)',
+                         captures, needed_captures)
+
+            if captures < needed_captures: 
+                finished.play()
+
+        bell1.play()
+        logger.debug('finished the session')
 
 
 class Arduino(LineReceiver):
