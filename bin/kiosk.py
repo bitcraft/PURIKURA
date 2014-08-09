@@ -31,13 +31,18 @@ Config.set('kivy', 'keyboard_mode', 'dock')
 Config.set('kivy', 'keyboard_layout', DEFAULT_VKEYBOARD_LAYOUT)
 
 # set the display up
-Config.set('graphics', 'fullscreen', pkConfig.getboolean('display', 'fullscreen'))
-Config.set('graphics', 'width', pkConfig.getint('display', 'width'))
-Config.set('graphics', 'height', pkConfig.getint('display', 'height'))
+Config.set('graphics', 'fullscreen',
+           pkConfig.getboolean('display', 'fullscreen'))
+Config.set('graphics', 'width',
+           pkConfig.getint('display', 'width'))
+Config.set('graphics', 'height',
+           pkConfig.getint('display', 'height'))
 
 # the display/touch input i use needs some love
-Config.set('postproc', 'retain_time', 170)
-Config.set('postproc', 'retain_distance', 90)
+Config.set('postproc', 'retain_time',
+           pkConfig.getint('kiosk', 'rouch-retain-time')
+Config.set('postproc', 'retain_distance',
+           pkConfig.getint('kiosk', 'rouch-retain-distance')
 
 # because i hate typing
 jpath = os.path.join
@@ -63,15 +68,6 @@ details_path = jpath(event_images_path, 'detail')
 originals_path = jpath(event_images_path, 'originals')
 composites_path = jpath(event_images_path, 'composites')
 paths = ('thumbnails', 'detail', 'originals', 'composites')
-
-# make sure directory structure is usuable
-for d in (thumbs_path, details_path, originals_path, composites_path):
-    try:
-        isdir = os.path.isdir(d)
-    except:
-        raise
-    if not isdir:
-        os.makedirs(d, 0755)
 
 module = 'pyrikura'
 Builder.load_file(os.path.join(module, 'kiosk-common.kv'))

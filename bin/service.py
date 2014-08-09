@@ -37,7 +37,6 @@ app_sounds_path = jpath(app_resources_path, 'sounds')
 app_images_path = jpath(app_resources_path, 'images')
 all_templates_path = jpath(app_resources_path, 'templates')
 all_images_path = Config.get('paths', 'images')
-capture_filename = Config.get('camera', 'capture-filename')
 shared_path = Config.get('paths', 'shared')
 plugins_path = Config.get('paths', 'plugins')
 
@@ -50,6 +49,17 @@ details_path = jpath(event_images_path, 'detail')
 originals_path = jpath(event_images_path, 'originals')
 composites_path = jpath(event_images_path, 'composites')
 paths = ('thumbnails', 'detail', 'originals', 'composites')
+
+# make sure directory structure is usuable                                                                                 
+if Config.get('paths', 'make-images-path'):
+    for d in (thumbs_path, details_path, originals_path, composites_path):                                                     
+        try:                                                                                                                   
+            isdir = os.path.isdir(d)                                                                                           
+        except:                                                                                                                
+            raise                                                                                                              
+        if not isdir:                                                                                                          
+            os.makedirs(d, 0755)
+
 
 # mixer must be initialized before sounds will play
 pygame.mixer.init(frequency=Config.getint('sound', 'mixer-frequency'),
@@ -79,32 +89,40 @@ class Session:
     def __init__(self):
         logger.debug('building new session...')
 
+        self.template = configparser.ConfigParser()
+        self.template.read(template_path)
+
         p = dict((get_class(p), p) for p in 
                  getPlugins(ipyrikura.IPyrikuraPlugin))
         
+        for name in p.keys():
+            logger.debug("loaded plugin %s", name)
+
         fc0 = p['FileCopy'].new(originals_path)
-        fc1 = p['FileCopy'].new(composites_path)
+        fc1 = p['FileCopy'].new(composites_path, delete=True)
         fc2 = p['FileCopy'].new(shared_path)
         fc3 = p['FileCopy'].new(thumbs_path)
         fc4 = p['FileCopy'].new(details_path)
         fc5 = p['FileCopy'].new(template_path)
     
-        th0 = p['ImageThumb'].new(size='256x256')
-        th1 = p['ImageThumb'].new(size='1024x1024')
+        th0 = p['ImageThumb'].new(size='256x256', destination='thumbnail.png')
+        th1 = p['ImageThumb'].new(size='1024x1024', destination='thumbnail.png')
 
-        #cm = p['Composer'].new(template_path)
+        cm = p['Composer'].new(self.template)
+        fd = p['FileDelete'].new()
 
         # build a basic workflow
         if Config.getboolean('kiosk', 'print'):
             pass
 
         g = Graph()
-        g.update(fc0, [th0, th1])
+        g.update(fc0, [cm, th0, th1, fd])
+        g.update(cm,  [fc1, fd])
         g.update(th0, [fc3])
         g.update(th1, [fc4])
-        #g.update(cm, [fc1])
         self.graph = g
         self.head = fc0
+        self.chain = None
 
     def capture(self):
         def fake_shutter(result=None):
@@ -121,28 +139,47 @@ class Session:
     def start(self, result=None):
         logger.debug('start new session')
 
-        countdown_delay = Config.getint('camera', 'countdown-delay')
-        this_template = configparser.ConfigParser()
-        this_template.read(template_path)
-        needed_captures = template.needed_captures(this_template)
-        captures = 0
+        def next_plugin(result=None):
+            try:
+                parent, plugin = next(self.chain)
+            except StopIteration:
+                return None
+            if parent is None:
+                d = plugin.process(result)
+            else:
+                d = parent.process(result)
+            if d is not None:
+                d.addCallback(next_plugin)
+            print "===========> %s:\t%s\t%s" % (get_class(parent), get_class(plugin), result)
+            return d
 
-        while captures < needed_captures:
+        countdown_delay = Config.getint('camera', 'countdown-delay')
+        needed_captures = template.needed_captures(self.template)
+        captures = 0
+        errors = 0
+
+        while captures < needed_captures and errors < 3:
             try:
                 filename = yield task.deferLater(reactor, countdown_delay, self.capture)
             except:
-                logger.debug('failed capture')
+                errors += 1
+                logger.debug('failed capture %s/3', errors)
                 task.deferLater(reactor, 0, error.play)
                 task.deferLater(reactor, .15, error.play)
                 task.deferLater(reactor, .30, error.play)
                 continue
 
             captures += 1
+            errors = 0
             logger.debug('successful capture (%s/%s)',
                          captures, needed_captures)
 
             if captures < needed_captures: 
                 finished.play()
+
+            # start processing chain
+            self.chain = self.graph.search(self.head)
+            next_plugin(filename)
 
         bell1.play()
         logger.debug('finished the session')

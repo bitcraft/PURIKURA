@@ -5,6 +5,5 @@ twisted
 pyserial
 twython
 shutter
-wand
-PIL
+pillow
 pyglet

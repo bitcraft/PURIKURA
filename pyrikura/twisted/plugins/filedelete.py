@@ -13,6 +13,8 @@ class FileDeleteFactory(object):
     def new(self, *args, **kwargs):
         return FileDelete(*args, **kwargs)
 
+factory = FileDeleteFactory()
+
 
 class FileDelete(object):
     implements(ipyrikura.IFileOp)
@@ -21,4 +23,3 @@ class FileDelete(object):
         return threads.deferToThread(os.unlink, msg)
 
 
-factory = FileDeleteFactory()

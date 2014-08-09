@@ -4,7 +4,7 @@ from twisted.internet import defer
 from twisted.internet import threads
 from pyrikura import ipyrikura
 
-import subprocess32
+import subprocess32 as subprocess
 import threading
 import shlex
 import os
@@ -18,6 +18,8 @@ class ImageThumbFactory(object):
     def new(self, *args, **kwargs):
         return ImageThumb(*args, **kwargs)
 
+factory = ImageThumbFactory()
+
 
 class ImageThumb(object):
     """
@@ -28,16 +30,15 @@ class ImageThumb(object):
     """
     implements(ipyrikura.IFileOp)
 
-    def __init__(self, size):
+    def __init__(self, size, destination):
         self.size = size
+        self.destination = destination
 
-    def process(self, msg, sender=None):
+    def process(self, filename):
         def thumbnail():
             hint = '600x600'
-            size = self.self
-            new_path = os.path.join(destination, os.path.basename(filename))
-            cmd = thumbnail_cmd.format(hint, filename, size, size, new_path)
+            path = self.destination
+            cmd = thumbnail_cmd.format(hint, filename, self.size, self.size, path)
             subprocess.call(shlex.split(cmd))
+            return path
         return threads.deferToThread(thumbnail)
-
-factory = ImageThumbFactory()

@@ -13,6 +13,8 @@ class FileCopyFactory(object):
     def new(self, *args, **kwargs):
         return FileCopy(*args, **kwargs)
 
+factory = FileCopyFactory()
+
 
 class FileCopy(object):
     implements(ipyrikura.IFileOp)
@@ -20,19 +22,23 @@ class FileCopy(object):
     def __init__(self, dest, **kwargs):
         self.dest = dest
         self.overwrite = kwargs.get('overwrite', False)
+        self.delete = kwargs.get('delete', False)
 
-    def process(self, msg, sender=None):
-        new_path = os.path.join(self.dest, os.path.basename(msg))
+    def process(self, filename):
+        def func():
+            path = os.path.join(self.dest, os.path.basename(filename))
+            if not self.overwrite and os.path.exists(path):
+                i = 1
+                root, ext = os.path.splitext(path)
+                path = "{0}-{1:04d}{2}".format(root, i, ext)
+                while os.path.exists(path):
+                    i += 1
+                    path = "{0}-{1:04d}{2}".format(root, i, ext)
+            
+            if self.delete:
+                shutil.move(filename, path)
+            else:
+                shutil.copyfile(filename, path)
+            return path
 
-        if not self.overwrite and os.path.exists(new_path):
-            i = 1
-            root, ext = os.path.splitext(new_path)
-            new_path = "{0}-{1:04d}{2}".format(root, i, ext)
-            while os.path.exists(new_path):
-                i += 1
-                new_path = "{0}-{1:04d}{2}".format(root, i, ext)
-
-        return threads.deferToThread(shutil.copyfile, msg, new_path)
-
-
-factory = FileCopyFactory()
+        return threads.deferToThread(func)
