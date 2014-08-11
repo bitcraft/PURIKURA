@@ -6,6 +6,7 @@ from itertools import chain
 from six.moves import configparser
 from six.moves import queue
 from pyrikura import ipyrikura
+from PIL import Image
 
 """
 image processor/composer that manipulates images
@@ -22,8 +23,6 @@ how things generally work:
 # Image manipulation functions
 #
 def autocrop(image, area):
-    from PIL import Image
-
     iw, ih = image.size
     x, y, w, h = area
     r0 = float(w) / h
@@ -34,6 +33,7 @@ def autocrop(image, area):
         sw = int(iw * scale)
         cx = int((sw - w) / 2)
         image = image.resize((sw, h), Image.BICUBIC)
+        iw, ih = image.size
         image = image.crop((cx, 0, iw-cx, ih))
 
     return image
@@ -55,8 +55,6 @@ def composite(config, layers, filename):
     layer a bunch of images.  not in the Composer object since
     this is meant to run in another thread
     """
-    from PIL import Image
-
     base = Image.new("RGB", (config['width'], config['height']),
                      config['background'])
 
@@ -74,9 +72,6 @@ def image_processor(config):
     image processing worker
     this will take one section of a template ("00portrait", etc)
     """
-    # hack to get around stale references caused by multiple threads
-    from PIL import Image
-
     # create a new image in memory for manipulation with Wand
     master = Image.open(config['filename'])
 
@@ -104,6 +99,8 @@ def image_processor(config):
                     image = filters[key](image, (x, y, w, h))
                 except KeyError:
                     pass
+
+            image.load()  # required by PIL to save modifications
             cache[(w, h)] = image
         return area, image
 
@@ -122,10 +119,15 @@ class Composer(object):
         self.ready_queue = defer.DeferredQueue()
         self.filename_queue = defer.DeferredQueue()
         self.running = False
-        self._d = None
 
     @defer.inlineCallbacks
     def compose(self):
+        """
+        waits for filenames
+        makes one thread for each file
+        filters/resizes each file
+        when all are ready, call the compose() thread
+        """
         template = self.template
 
         units = template.get('general', 'units').lower()
