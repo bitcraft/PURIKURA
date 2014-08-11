@@ -40,9 +40,9 @@ Config.set('graphics', 'height',
 
 # the display/touch input i use needs some love
 Config.set('postproc', 'retain_time',
-           pkConfig.getint('kiosk', 'rouch-retain-time')
+           pkConfig.getint('kiosk', 'touch-retain-time'))
 Config.set('postproc', 'retain_distance',
-           pkConfig.getint('kiosk', 'rouch-retain-distance')
+           pkConfig.getint('kiosk', 'touch-retain-distance'))
 
 # because i hate typing
 jpath = os.path.join

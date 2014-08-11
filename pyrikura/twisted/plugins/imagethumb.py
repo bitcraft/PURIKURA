@@ -12,15 +12,6 @@ import os
 thumbnail_cmd = 'convert -define jpeg:size={} {} -thumbnail {}^ -gravity center -extent {} {}'
 
 
-class ImageThumbFactory(object):
-    implements(IPlugin, ipyrikura.IPyrikuraPlugin)
-
-    def new(self, *args, **kwargs):
-        return ImageThumb(*args, **kwargs)
-
-factory = ImageThumbFactory()
-
-
 class ImageThumb(object):
     """
     simple thumbnailer.
@@ -42,3 +33,14 @@ class ImageThumb(object):
             subprocess.call(shlex.split(cmd))
             return path
         return threads.deferToThread(thumbnail)
+
+
+class ImageThumbFactory(object):
+    implements(IPlugin, ipyrikura.IPyrikuraPlugin)
+    __plugin__ = ImageThumb
+
+    @classmethod
+    def new(cls, *args, **kwargs):
+        return cls.__plugin__(*args, **kwargs)
+
+factory = ImageThumbFactory()

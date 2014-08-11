@@ -22,7 +22,6 @@ import os
 import pygame
 import threading
 import time
-import dbus
 import logging
 import socket
 
@@ -33,8 +32,6 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('purikura.picker')
 
 OFFSET = 172
-dbus_name = pkConfig.get('camera', 'dbus-name')
-dbus_path = pkConfig.get('camera', 'dbus-path')
 jpath = os.path.join
 
 
@@ -61,16 +58,8 @@ def image_path(filename):
 
 
 class PreviewGetThread(threading.Thread):
-    """ Pulls data from dbus service and prepares it for the preview widget
-    """
     def __init__(self, q):
         super(PreviewGetThread, self).__init__()
-        bus = dbus.SessionBus()
-        _name = dbus_name + '.camera'
-        _path = dbus_path + '/camera'
-        pb_obj = bus.get_object(_name, _path)
-        self.iface = dbus.Interface(pb_obj, dbus_interface=_name)
-        self.iface.open_camera()
         self.queue = q
         self.daemon = True
         self._running = False
@@ -81,36 +70,52 @@ class PreviewGetThread(threading.Thread):
     def run(self):
         self._running = True
         interval = pkConfig.getfloat('camera', 'preview-interval')
-        download_preview = self.iface.download_preview
         queue_put = self.queue.put
         pil_open = PIL_Image.open
 
+        host = 'localhost'
+        port = 23453
+        buffer_size = 1024
+
         while self._running:
-            result, data = download_preview(byte_arrays=True)
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect((host, port))
+            except:
+                raise
 
-            if result:
-                im = pil_open(cStringIO(str(data)))
+            data = ''
+            try:
+                chunk = s.recv(buffer_size)
+                while len(chunk):
+                    data += chunk
+                    chunk = s.recv(buffer_size)
+                s.close()
+                data = data[4:]
+            except:
+                raise
 
-                # HACK
-                w, h = im.size
-                ww = 1.55 * 300
-                hh = 1.27 * 300
-                scale = hh / h
-                sw = int(w * scale)
-                cx = int((sw - ww) / 2)
-                im = im.resize((int(sw), int(hh)), PIL_Image.ANTIALIAS)
-                im = im.crop((int(cx), 0, int(sw-cx), int(hh)))
-                im.load()
+            im = pil_open(cStringIO(str(data)))
 
-                im = im.transpose(PIL_Image.FLIP_TOP_BOTTOM)
-                imdata = ImageData(im.size[0],
-                                   im.size[1],
-                                   im.mode.lower(),
-                                   im.tostring())
+            # HACK
+            w, h = im.size
+            ww = 1.55 * 300
+            hh = 1.27 * 300
+            scale = hh / h
+            sw = int(w * scale)
+            cx = int((sw - ww) / 2)
+            im = im.resize((int(sw), int(hh)), PIL_Image.ANTIALIAS)
+            im = im.crop((int(cx), 0, int(sw-cx), int(hh)))
+            im.load()
 
-                queue_put(imdata)
+            im = im.transpose(PIL_Image.FLIP_TOP_BOTTOM)
+            imdata = ImageData(im.size[0],
+                               im.size[1],
+                               im.mode.lower(),
+                               im.tostring())
 
-            time.sleep(interval)
+            queue_put(imdata)
+            #time.sleep(interval)
 
 
 class PreviewHandler(object):
@@ -270,7 +275,6 @@ class PickerScreen(Screen):
         def set_camera_tilt(widget, value):
             self.arduino_handler.set_camera_tilt(value)
 
-        # this handles pulling the preview images from the dbus service
         # queueing them and updaing the widget's texture
         self.preview_queue = queue.Queue(maxsize=10)
         self.preview_handler = PreviewHandler(self.preview_queue)

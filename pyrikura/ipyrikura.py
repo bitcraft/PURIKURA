@@ -21,10 +21,6 @@ class IFileOp(Interface):
         pass
 
 
-class ICameraProvider(Interface):
-    new = Attribute("get a new camera")
-
-
 class ICamera(Interface):
     capture_preview = Attribute("capture preview")
     capture_image = Attribute("capture image")

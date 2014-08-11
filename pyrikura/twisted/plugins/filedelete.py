@@ -7,15 +7,6 @@ from pyrikura import ipyrikura
 import os
 
 
-class FileDeleteFactory(object):
-    implements(IPlugin, ipyrikura.IPyrikuraPlugin)
-
-    def new(self, *args, **kwargs):
-        return FileDelete(*args, **kwargs)
-
-factory = FileDeleteFactory()
-
-
 class FileDelete(object):
     implements(ipyrikura.IFileOp)
 
@@ -23,3 +14,12 @@ class FileDelete(object):
         return threads.deferToThread(os.unlink, msg)
 
 
+class FileDeleteFactory(object):
+    implements(IPlugin, ipyrikura.IPyrikuraPlugin)
+    __plugin__ = FileDelete
+
+    @classmethod
+    def new(cls, *args, **kwargs):
+        return cls.__plugin__(*args, **kwargs)
+
+factory = FileDeleteFactory()

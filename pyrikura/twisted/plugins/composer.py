@@ -18,18 +18,12 @@ how things generally work:
     when workers are finshed, layer images for final output
 """
 
-class ComposerFactory(object):
-    implements(IPlugin, ipyrikura.IPyrikuraPlugin)
-
-    def new(self, *args, **kwargs):
-        return Composer(*args, **kwargs)
-
-factory = ComposerFactory()
-
 # ===========================================================
 # Image manipulation functions
 #
 def autocrop(image, area):
+    from PIL import Image
+
     iw, ih = image.size
     x, y, w, h = area
     r0 = float(w) / h
@@ -204,4 +198,15 @@ class Composer(object):
         else:
             self.running = True
             return self.compose()
+
+
+class ComposerFactory(object):
+    implements(IPlugin, ipyrikura.IPyrikuraPlugin)
+    __plugin__ = Composer
+
+    @classmethod
+    def new(cls, *args, **kwargs):
+        return cls.__plugin__(*args, **kwargs)
+
+factory = ComposerFactory()
 

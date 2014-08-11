@@ -7,15 +7,6 @@ import os
 import shutil
 
 
-class FileCopyFactory(object):
-    implements(IPlugin, ipyrikura.IPyrikuraPlugin)
-
-    def new(self, *args, **kwargs):
-        return FileCopy(*args, **kwargs)
-
-factory = FileCopyFactory()
-
-
 class FileCopy(object):
     implements(ipyrikura.IFileOp)
 
@@ -42,3 +33,16 @@ class FileCopy(object):
             return path
 
         return threads.deferToThread(func)
+
+
+class FileCopyFactory(object):
+    implements(IPlugin, ipyrikura.IPyrikuraPlugin)
+    __plugin__ = FileCopy
+
+    @classmethod
+    def new(cls, *args, **kwargs):
+        return cls.__plugin__(*args, **kwargs)
+
+factory = FileCopyFactory()
+
+

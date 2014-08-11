@@ -9,9 +9,12 @@ sys.path.append('/home/mjolnir/git/PURIKURA/pyrikura')
 #sys.path.append('/Volumes/Mac2/Users/leif/pycharm/PURIKURA/pyrikura')
 
 from twisted.internet import reactor, defer, task, protocol
-from twisted.protocols.basic import LineReceiver
+from twisted.protocols import basic
 from twisted.plugin import getPlugins, IPlugin
+from zope.interface.verify import verifyObject
 from six.moves import configparser
+import zope.interface.exceptions
+import traceback
 import threading
 import os
 import logging
@@ -91,12 +94,15 @@ class Session:
 
         self.template = configparser.ConfigParser()
         self.template.read(template_path)
+        self.camera = None
 
         p = dict((get_class(p), p) for p in 
                  getPlugins(ipyrikura.IPyrikuraPlugin))
         
         for name in p.keys():
             logger.debug("loaded plugin %s", name)
+
+        self.camera = p['ShutterCamera'].new()
 
         fc0 = p['FileCopy'].new(originals_path)
         fc1 = p['FileCopy'].new(composites_path, delete=True)
@@ -125,13 +131,14 @@ class Session:
         self.chain = None
 
     def capture(self):
-        def fake_shutter(result=None):
-            return 'capture.jpg'
+        def shutter(result=None):
+            d = self.camera.capture_image()
+            return d
 
         interval = Config.getint('camera', 'countdown-interval')
         c = task.LoopingCall(bell0.play)
         d = c.start(interval)
-        d = d.addCallback(fake_shutter)
+        d = d.addCallback(shutter)
         task.deferLater(reactor, 3 * interval, c.stop)
         return d
 
@@ -162,6 +169,7 @@ class Session:
             try:
                 filename = yield task.deferLater(reactor, countdown_delay, self.capture)
             except:
+                traceback.print_exc(file=sys.stdout)
                 errors += 1
                 logger.debug('failed capture %s/3', errors)
                 task.deferLater(reactor, 0, error.play)
@@ -185,7 +193,7 @@ class Session:
         logger.debug('finished the session')
 
 
-class Arduino(LineReceiver):
+class Arduino(basic.LineReceiver):
     """
     protocol:
 
@@ -218,7 +226,7 @@ class Arduino(LineReceiver):
             raise
 
 
-class ServoServiceProtocol(LineReceiver):
+class ServoServiceProtocol(basic.LineReceiver):
     def lineReceived(self, data):
         logger.debug('got remote data %s', data)
         value = None
@@ -255,6 +263,12 @@ if __name__ == '__main__':
     logger.debug('starting photo booth service')
     session = Session()
     reactor.callWhenRunning(session.start)
+
+    preview_port = 23453
+    factory = protocol.Factory()
+    factory.protocol = session.camera.create_producer
+    reactor.listenTCP(preview_port, factory)
+
     logger.debug('starting service reactor...')
     try:
         reactor.run()

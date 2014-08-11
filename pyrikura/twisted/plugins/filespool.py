@@ -6,13 +6,6 @@ from pyrikura import ipyrikura
 import subprocess32
 
 
-class FileSpoolFactory(object):
-    implements(IPlugin, ipyrikura.IPyrikuraPlugin)
-
-    def new(self, *args, **kwargs):
-        return FileSpool(*args, **kwargs)
-
-
 class FileSpool(object):
     implements(ipyrikura.IFileOp)
 
@@ -22,6 +15,15 @@ class FileSpool(object):
     def process(self, msg, sender=None):
         cmd = [self.print_command, msg]
         return threads.deferToThread(subprocess.call, cmd)
+
+
+class FileSpoolFactory(object):
+    implements(IPlugin, ipyrikura.IPyrikuraPlugin)
+    __plugin__ = FileSpool
+
+    @classmethod
+    def new(cls, *args, **kwargs):
+        return cls.__plugin__(*args, **kwargs)
 
 
 factory = FileSpoolFactory()
