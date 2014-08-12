@@ -13,7 +13,6 @@ class FileCopy(object):
     def __init__(self, dest, **kwargs):
         self.dest = dest
         self.overwrite = kwargs.get('overwrite', False)
-        self.delete = kwargs.get('delete', False)
 
     def process(self, filename):
         def func():
@@ -26,10 +25,8 @@ class FileCopy(object):
                     i += 1
                     path = "{0}-{1:04d}{2}".format(root, i, ext)
             
-            if self.delete:
-                shutil.move(filename, path)
-            else:
-                shutil.copyfile(filename, path)
+            print path
+            shutil.copyfile(filename, path)
             return path
 
         return threads.deferToThread(func)

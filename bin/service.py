@@ -55,14 +55,13 @@ paths = ('thumbnails', 'detail', 'originals', 'composites')
 
 # make sure directory structure is usuable                                                                                 
 if Config.get('paths', 'make-images-path'):
-    for d in (thumbs_path, details_path, originals_path, composites_path):                                                     
-        try:                                                                                                                   
-            isdir = os.path.isdir(d)                                                                                           
-        except:                                                                                                                
-            raise                                                                                                              
-        if not isdir:                                                                                                          
+    for d in (thumbs_path, details_path, originals_path, composites_path):
+        try:
+            isdir = os.path.isdir(d)
+        except:
+            raise
+        if not isdir:
             os.makedirs(d, 0755)
-
 
 # mixer must be initialized before sounds will play
 pygame.mixer.init(frequency=Config.getint('sound', 'mixer-frequency'),
@@ -146,20 +145,6 @@ class Session:
     def start(self, result=None):
         logger.debug('start new session')
 
-        def next_plugin(result=None):
-            try:
-                parent, plugin = next(self.chain)
-            except StopIteration:
-                return None
-            if parent is None:
-                d = plugin.process(result)
-            else:
-                d = parent.process(result)
-            if d is not None:
-                d.addCallback(next_plugin)
-            print "===========> %s:\t%s\t%s" % (get_class(parent), get_class(plugin), result)
-            return d
-
         countdown_delay = Config.getint('camera', 'countdown-delay')
         needed_captures = template.needed_captures(self.template)
         captures = 0
@@ -186,8 +171,15 @@ class Session:
                 finished.play()
 
             # start processing chain
-            self.chain = self.graph.search(self.head)
-            next_plugin(filename)
+            chain = self.graph.search(self.head, filename)
+            #chain.send(None)  # 'prime' the generator
+            result = None
+
+            # build callback chain
+            for parent, plugin, arg in chain.send(result):
+                d = plugin.process(arg)
+                print "%s-%s\t%s(%s)".format(parent, id(parent), plugin, arg)
+                result = yield d
 
         bell1.play()
         logger.debug('finished the session')
