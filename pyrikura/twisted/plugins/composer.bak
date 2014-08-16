@@ -1,0 +1,122 @@
+from zope.interface import implements
+from twisted.plugin import IPlugin
+from twisted.internet import defer
+from six.moves import configparser
+from six.moves import queue
+from pyrikura import ipyrikura
+
+"""
+image processor/composer that manipulates images
+in memory according to an ini-style template system
+
+how things generally work:
+    the composer reads a template
+    generate a new config for each image in the template
+    using a pool of workers that process each image
+    when workers are finshed, layer images for final output
+"""
+
+class ComposerFactory(object):
+    implements(IPlugin, ipyrikura.IPyrikuraPlugin)
+
+    def new(self, *args, **kwargs):
+        return Composer(*args, **kwargs)
+
+factory = ComposerFactory()
+
+
+class Composer(object):
+    """
+    uses templates and images to create print layouts
+    """
+    implements(ipyrikura.IFileOp)
+
+    def __init__(self, template, **kwargs):
+        self.template = template
+        self.finished_layers = queue.Queue()
+        self.task_queue = queue.Queue()
+
+        # this will be passed to processors
+        config = dict()
+
+        for section in reversed(sorted(template.sections())):
+            if not section.lower() == 'general':
+                new_template = dict(template.items(section))
+                new_template['name'] = section
+                areas = [i for i in new_template.keys() if
+                         i.lower()[:4] == 'area']
+                pos = [i for i in new_template.keys() if
+                       i.lower()[:8] == 'position']
+                self.task_queue.put(new_template)
+
+        config['units'] = template.get('general', 'units').lower()
+        config['dpi'] = template.getfloat('general', 'dpi')
+        config['background'] = template.get('general', 'background')
+
+        s = template.get('general', 'size').split(',')
+
+        if config['units'] == 'pixels':
+            size = [int(i) for i in s]
+
+        elif config['units'] == 'inches':
+            size = [int(float(i) * config['dpi']) for i in s]
+
+        else:
+            raise ValueError
+
+        config['width'], config['height'] = size
+
+        self.config = config
+
+    def compose(self):
+        """
+        superimpose the layers together
+        """
+        # hack to work around stale references in Wand
+        from wand.image import Image
+        from wand.color import Color
+
+        # layers is a list of (name, config) tuples
+        layers = []
+
+        # the base to the image we are producing
+        base = Image(width=config['width'],
+                     height=config['height'],
+                     background=Color(config['background']))
+
+        # some layouts may reference the same image for than twice, for
+        # instance, 2x6 stips on a 4x6 image.  the cache prevents the
+        # image from wastefullly being loaded more than once.
+        cache = {}
+
+        # layers are sorted with the last items 'on top' of the final image
+        for name, config in sorted(layers):
+            filename = config['filename']
+            try:
+                image = cache[filename]
+            except KeyError:
+                image = Image(filename=filename)
+                cache[filename] = image
+            x, y, w, h = config['area']
+            base.composite(image, x, y)
+
+        # the images must be explicitly closed
+        for image in cache.values():
+            image.close()
+
+        filename = 'composite.png'
+
+        base.format = filename[-3]
+        base.save(filename=new_path)
+        base.close()
+
+    def process(self, filename):
+        def func():
+            while 1:
+                try:
+                    filename = self.task_queue.get()
+
+                except queue.Empty:
+                    break
+            return 'composite.png'
+        return defer.execute(func)

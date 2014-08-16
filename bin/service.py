@@ -9,16 +9,19 @@ sys.path.append('/home/mjolnir/git/PURIKURA/pyrikura')
 #sys.path.append('/Volumes/Mac2/Users/leif/pycharm/PURIKURA/pyrikura')
 
 from twisted.internet import reactor, defer, task, protocol
+from twisted.internet.serialport import SerialPort
 from twisted.protocols import basic
 from twisted.plugin import getPlugins, IPlugin
 from zope.interface.verify import verifyObject
 from six.moves import configparser
 import zope.interface.exceptions
+import serial
 import traceback
 import threading
-import os
 import logging
 import pygame
+import os
+import re
 
 from pyrikura import ipyrikura
 from pyrikura import resources
@@ -77,8 +80,8 @@ error = resources.sounds['error']
 finished = resources.sounds['finished']
 
 # manage volumes a bit
-bell1.set_volume(bell1.get_volume() * .6)
-finished.set_volume(finished.get_volume() * .5)
+bell1.set_volume(bell1.get_volume() * .9)
+finished.set_volume(finished.get_volume() * .8)
 
 def get_class(o):
     name = o.__class__.__name__
@@ -101,28 +104,31 @@ class Session:
         for name in p.keys():
             logger.debug("loaded plugin %s", name)
 
-        self.camera = p['ShutterCamera'].new()
+        self.camera = p['ShutterCamera'].new(
+                re.compile(Config.get('camera', 'name')))
 
         fc0 = p['FileCopy'].new(originals_path)
         fc1 = p['FileCopy'].new(composites_path, delete=True)
-        fc2 = p['FileCopy'].new(shared_path)
         fc3 = p['FileCopy'].new(thumbs_path)
         fc4 = p['FileCopy'].new(details_path)
         fc5 = p['FileCopy'].new(template_path)
+        spool = p['FileCopy'].new(shared_path)
     
         th0 = p['ImageThumb'].new(size='256x256', destination='thumbnail.png')
         th1 = p['ImageThumb'].new(size='1024x1024', destination='thumbnail.png')
 
         cm = p['Composer'].new(self.template)
-        fd = p['FileDelete'].new()
+        fd0 = p['FileDelete'].new()
+        fd1 = p['FileDelete'].new()
 
         # build a basic workflow
         if Config.getboolean('kiosk', 'print'):
             pass
 
         g = Graph()
-        g.update(fc0, [cm, th0, th1, fd])
-        g.update(cm,  [fc1, fd])
+        g.update(fc0, [th0, th1])
+        #g.update(fc0, [cm, th0, th1])
+        g.update(cm,  [fc1, fd1])
         g.update(th0, [fc3])
         g.update(th1, [fc4])
         self.graph = g
@@ -171,16 +177,43 @@ class Session:
                 finished.play()
 
             # start processing chain
-            chain = self.graph.search(self.head, filename)
-            #chain.send(None)  # 'prime' the generator
-            result = None
+            chain = self.graph.search(self.head)
+
+            r = dict()
+            def log(result, plugin, parent=None):
+                if parent:
+                    print "---->", get_class(parent), get_class(plugin), result
+                else:
+                    print "====>", get_class(plugin), result
+                return result
+
 
             # build callback chain
-            for parent, plugin, arg in chain.send(result):
-                d = plugin.process(arg)
-                print "%s-%s\t%s(%s)".format(parent, id(parent), plugin, arg)
-                result = yield d
+            dd = dict()
+            parent, head_plugin = next(chain)
+            head_deferred = defer.Deferred()
+            head_deferred.addCallback(head_plugin.process)
+            dd[head_plugin] = head_deferred
+            print "    >", None, get_class(head_plugin)
 
+            def err(fail):
+                print "error!"
+                #print fail
+
+            for parent, plugin in chain:
+                print "    >", get_class(parent), get_class(plugin)
+
+                d = defer.Deferred()
+                d.addCallback(log, plugin, parent)
+                d.addCallbacks(plugin.process, err)
+                dd[plugin] = d
+
+                #dd[parent].addCallback(d.callback)
+                #d.chainDeferred(dd[parent])
+                dd[parent].chainDeferred(d)
+
+            head_deferred.callback(filename)
+                
         bell1.play()
         logger.debug('finished the session')
 
@@ -254,8 +287,20 @@ class ServoServiceFactory(protocol.ServerFactory):
 if __name__ == '__main__':
     logger.debug('starting photo booth service')
     session = Session()
-    reactor.callWhenRunning(session.start)
+    arduino = Arduino(session)
+    #reactor.callWhenRunning(session.start)
 
+    try:
+        s = SerialPort(arduino, Config.get('arduino', 'port'), reactor,
+        baudrate=Config.getint('arduino', 'baudrate'))
+    except serial.serialutil.SerialException:
+        raise
+
+    # arduino servo tilt server
+    reactor.listenTCP(Config.getint('arduino', 'tcp-port'),
+        ServoServiceFactory(arduino))
+
+    # preview frame producer
     preview_port = 23453
     factory = protocol.Factory()
     factory.protocol = session.camera.create_producer

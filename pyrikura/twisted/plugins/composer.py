@@ -196,9 +196,11 @@ class Composer(object):
     def process(self, filename):
         self.filename_queue.put(filename)
         if self.running:
-            return None
+            return "syke!"
         else:
             self.running = True
+            #self.compose()
+            #return "adfdsafasdfasdfads"
             return self.compose()
 
 

@@ -25,9 +25,11 @@ class FileCopy(object):
                     i += 1
                     path = "{0}-{1:04d}{2}".format(root, i, ext)
             
-            print path
             shutil.copyfile(filename, path)
-            return path
+            return filename, path
+
+        if filename is None:
+            raise ValueError
 
         return threads.deferToThread(func)
 
