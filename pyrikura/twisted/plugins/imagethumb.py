@@ -3,9 +3,6 @@ from twisted.plugin import IPlugin
 from twisted.internet import defer
 from twisted.internet import threads
 from pyrikura import ipyrikura
-from PIL import Image
-
-import os
 
 
 class ImageThumb(object):
@@ -22,6 +19,7 @@ class ImageThumb(object):
         self.destination = destination
 
     def thumbnail(self, filename):
+        from PIL import Image
         image = Image.open(filename)
         image.thumbnail(self.size)
         image.save(self.destination)

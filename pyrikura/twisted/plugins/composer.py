@@ -6,7 +6,11 @@ from itertools import chain
 from six.moves import configparser
 from six.moves import queue
 from pyrikura import ipyrikura
-from PIL import Image
+
+try:
+    from PIL import Image
+except ImportError:
+    pass
 
 """
 image processor/composer that manipulates images
@@ -61,7 +65,7 @@ def composite(config, layers, filename):
     for config, images in layers:
         for area, image in images:
             base.paste(image, area[:2])
-   
+
     base.save(filename)
 
     return filename
