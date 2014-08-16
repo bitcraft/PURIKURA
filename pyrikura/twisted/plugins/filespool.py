@@ -14,7 +14,7 @@ class FileSpool(object):
 
     def process(self, msg, sender=None):
         cmd = [self.print_command, msg]
-        return threads.deferToThread(subprocess.call, cmd)
+        return threads.deferToThread(subprocess32.call, cmd)
 
 
 class FileSpoolFactory(object):

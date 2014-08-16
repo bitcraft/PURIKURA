@@ -3,29 +3,31 @@
 This program is the nuts and bolts of the photo booth.
 """
 import sys
-sys.path.append('/home/mjolnir/git/PURIKURA/')
-sys.path.append('/home/mjolnir/git/PURIKURA/pyrikura')
+import os
+
+# CHANGE THIS
+head = '/Volumes/Mac2/Users/leif/pycharm/PURIKURA'
+
+sys.path.append(head)
+sys.path.append(os.path.join(head, 'pyrikura/'))
 #sys.path.append('/Volumes/Mac2/Users/leif/pycharm/PURIKURA/')
 #sys.path.append('/Volumes/Mac2/Users/leif/pycharm/PURIKURA/pyrikura')
 
 from twisted.internet import reactor, defer, task, protocol
-from twisted.internet.serialport import SerialPort
 from twisted.protocols import basic
 from twisted.plugin import getPlugins, IPlugin
 from zope.interface.verify import verifyObject
 from six.moves import configparser
 import zope.interface.exceptions
-import serial
 import traceback
 import threading
 import logging
 import pygame
-import os
 import re
 
 from pyrikura import ipyrikura
 from pyrikura import resources
-from pyrikura import template
+#from pyrikura import template
 from pyrikura.graph import Graph
 from pyrikura.config import Config
 
@@ -56,15 +58,15 @@ originals_path = jpath(event_images_path, 'originals')
 composites_path = jpath(event_images_path, 'composites')
 paths = ('thumbnails', 'detail', 'originals', 'composites')
 
-# make sure directory structure is usuable                                                                                 
-if Config.get('paths', 'make-images-path'):
-    for d in (thumbs_path, details_path, originals_path, composites_path):
-        try:
-            isdir = os.path.isdir(d)
-        except:
-            raise
-        if not isdir:
-            os.makedirs(d, 0755)
+# make sure directory structure is usuable
+#if Config.get('paths', 'make-images-path'):
+#    for d in (thumbs_path, details_path, originals_path, composites_path):
+#        try:
+#            isdir = os.path.isdir(d)
+#        except:
+#            raise
+#        if not isdir:
+#            os.makedirs(d, 0755)
 
 # mixer must be initialized before sounds will play
 pygame.mixer.init(frequency=Config.getint('sound', 'mixer-frequency'),
@@ -86,9 +88,8 @@ finished.set_volume(finished.get_volume() * .8)
 def get_class(o):
     name = o.__class__.__name__
     if name.endswith('Factory'):
-        return name[:-7]
-    else:
-        return name
+        name = name[:-7]
+    return "%s (%s)" % (name, id(o))
 
 class Session:
     def __init__(self):
@@ -98,14 +99,14 @@ class Session:
         self.template.read(template_path)
         self.camera = None
 
-        p = dict((get_class(p), p) for p in 
+        p = dict((get_class(p).split(" ")[0], p) for p in
                  getPlugins(ipyrikura.IPyrikuraPlugin))
-        
+
         for name in p.keys():
             logger.debug("loaded plugin %s", name)
 
-        self.camera = p['ShutterCamera'].new(
-                re.compile(Config.get('camera', 'name')))
+        #self.camera = p['ShutterCamera'].new(
+        #        re.compile(Config.get('camera', 'name')))
 
         fc0 = p['FileCopy'].new(originals_path)
         fc1 = p['FileCopy'].new(composites_path, delete=True)
@@ -113,11 +114,11 @@ class Session:
         fc4 = p['FileCopy'].new(details_path)
         fc5 = p['FileCopy'].new(template_path)
         spool = p['FileCopy'].new(shared_path)
-    
-        th0 = p['ImageThumb'].new(size='256x256', destination='thumbnail.png')
-        th1 = p['ImageThumb'].new(size='1024x1024', destination='thumbnail.png')
 
-        cm = p['Composer'].new(self.template)
+        #th0 = p['ImageThumb'].new(size='256x256', destination='thumbnail.png')
+        #th1 = p['ImageThumb'].new(size='1024x1024', destination='thumbnail.png')
+
+        #cm = p['Composer'].new(self.template)
         fd0 = p['FileDelete'].new()
         fd1 = p['FileDelete'].new()
 
@@ -126,18 +127,20 @@ class Session:
             pass
 
         g = Graph()
-        g.update(fc0, [th0, th1])
+        g.update(fc0, [fc1, fc3])
+        #g.update(fc0, [th0, th1])
         #g.update(fc0, [cm, th0, th1])
-        g.update(cm,  [fc1, fd1])
-        g.update(th0, [fc3])
-        g.update(th1, [fc4])
+        #g.update(cm,  [fc1, fd1])
+        g.update(fc4, [fc5])
+        #g.update(th1, [fc4])
         self.graph = g
         self.head = fc0
         self.chain = None
 
     def capture(self):
         def shutter(result=None):
-            d = self.camera.capture_image()
+            #d = self.camera.capture_image()
+            d = 'capture.jpg'
             return d
 
         interval = Config.getint('camera', 'countdown-interval')
@@ -147,12 +150,13 @@ class Session:
         task.deferLater(reactor, 3 * interval, c.stop)
         return d
 
-    @defer.inlineCallbacks 
+    @defer.inlineCallbacks
     def start(self, result=None):
         logger.debug('start new session')
 
         countdown_delay = Config.getint('camera', 'countdown-delay')
-        needed_captures = template.needed_captures(self.template)
+        #needed_captures = template.needed_captures(self.template)
+        needed_captures = 4
         captures = 0
         errors = 0
 
@@ -173,7 +177,7 @@ class Session:
             logger.debug('successful capture (%s/%s)',
                          captures, needed_captures)
 
-            if captures < needed_captures: 
+            if captures < needed_captures:
                 finished.play()
 
             # start processing chain
@@ -197,8 +201,8 @@ class Session:
             print "    >", None, get_class(head_plugin)
 
             def err(fail):
-                print "error!"
-                #print fail
+                #print "error!"
+                print fail
 
             for parent, plugin in chain:
                 print "    >", get_class(parent), get_class(plugin)
@@ -212,99 +216,17 @@ class Session:
                 #d.chainDeferred(dd[parent])
                 dd[parent].chainDeferred(d)
 
+            # start the callbacks
             head_deferred.callback(filename)
-                
+
         bell1.play()
         logger.debug('finished the session')
-
-
-class Arduino(basic.LineReceiver):
-    """
-    protocol:
-
-    0x01: trigger
-    0x80: set servo
-    """
-    def __init__(self, session):
-        logger.debug('new arduino')
-        self.session = session
-        self.lock = threading.Lock()
-
-    def process(self, cmd, arg):
-        logger.debug('processing for arduino: %s %s', cmd, arg)
-        if cmd == 1 and arg == 2:
-            self.session.start()
-
-    def sendCommand(self, cmd, arg):
-        logger.debug('sending to arduino: %s %s', cmd, arg)
-        data = chr(cmd) + chr(arg)
-        self.transport.write(data)
-
-    def lineReceived(self, data):
-        logger.debug('got serial data %s', data)
-        try:
-            cmd, arg = [int(i) for i in data.split()]
-            logger.debug('got command %s %s', cmd, arg)
-            self.process(cmd, arg)
-        except ValueError:
-            logger.debug('unable to parse: %s', data)
-            raise
-
-
-class ServoServiceProtocol(basic.LineReceiver):
-    def lineReceived(self, data):
-        logger.debug('got remote data %s', data)
-        value = None
-
-        try:
-            value = int(data)
-        except ValueError:
-            logger.debug('cannot process data %s', data)
-
-        if value == -1:
-            self.transport.loseConnection()
-            return
-
-        else:
-            try:
-                self.factory.arduino.sendCommand(0x80, value)
-            except:
-                logger.debug('problem communicating with arduino')
-                raise
-
-
-class ServoServiceFactory(protocol.ServerFactory):
-    protocol = ServoServiceProtocol
-
-    def __init__(self, arduino):
-        self._arduino = arduino
-
-    @property
-    def arduino(self):
-        return self._arduino
 
 
 if __name__ == '__main__':
     logger.debug('starting photo booth service')
     session = Session()
-    arduino = Arduino(session)
-    #reactor.callWhenRunning(session.start)
-
-    try:
-        s = SerialPort(arduino, Config.get('arduino', 'port'), reactor,
-        baudrate=Config.getint('arduino', 'baudrate'))
-    except serial.serialutil.SerialException:
-        raise
-
-    # arduino servo tilt server
-    reactor.listenTCP(Config.getint('arduino', 'tcp-port'),
-        ServoServiceFactory(arduino))
-
-    # preview frame producer
-    preview_port = 23453
-    factory = protocol.Factory()
-    factory.protocol = session.camera.create_producer
-    reactor.listenTCP(preview_port, factory)
+    reactor.callWhenRunning(session.start)
 
     logger.debug('starting service reactor...')
     try:

@@ -1,7 +1,6 @@
 kivy
-watchdog
-subprocess32
 twisted
+subprocess32
 pyserial
 twython
 shutter
