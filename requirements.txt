@@ -1,0 +1,10 @@
+kivy
+watchdog
+subprocess32
+twisted
+pyserial
+twython
+shutter
+pillow
+pyglet
+six
